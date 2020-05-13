@@ -10,6 +10,7 @@ import argparse
 import re
 from itertools import compress
 import dill  # for pickling lambdas
+import os
 
 # previously used packages: csv, os, glob, plt, json, jsonpickle, pickle
 
@@ -87,7 +88,7 @@ class NonAblativeMaterial(Material):
         with open(csv_file) as f:
             data = pd.read_csv(f, sep=';', decimal=',')
 
-        data = data.dropna()
+        data = dropnafromboth(data)
 
         checkForNonSI(data, csv_file)
 
@@ -126,7 +127,7 @@ class AblativeMaterial(Material):
 
         self.beta = sp.symbols("beta")
 
-        self.necessarydirs = [Path(d) for d in ["Virgin/cp", "Virgin/eps", "Virgin/k",
+        self.necessarydirs = [Path(d) for d in ["Virgin/cp", "Virgin/eps", "Virgin/k", "Virgin/comp",
                                                 "Char/cp", "Char/eps", "Char/k",
                                                 "Gas/h",
                                                 "Combined"]]
@@ -135,17 +136,22 @@ class AblativeMaterial(Material):
 
         self.calculateVariables()
 
+        self.calculateAblativeProperties()
+
     def readFile(self, iDir, globdir, csv_files):
         # Open files and read data
         global data
-        if iDir != 7:
+        if iDir != 8:
             csv_file = Path.joinpath(globdir, csv_files[0])
+
+            head, index = (None, 0) if iDir==3 else (0, None)
+
 
             # Open file
             with open(csv_file) as f:
-                data = pd.read_csv(f, sep=';', decimal=',')
+                data = pd.read_csv(f, sep=';', decimal=',', header=head, index_col=index)
 
-            data = data.dropna()
+            data = dropnafromboth(data)
 
             checkForNonSI(data, csv_file)
 
@@ -157,7 +163,7 @@ class AblativeMaterial(Material):
             with open(hof_file) as f:
                 hof_data = pd.read_csv(f, sep=';', decimal=',', header=None)
 
-            hof_data = hof_data.dropna()
+            hof_data = dropnafromboth(hof_data)
 
             checkForNonSI(hof_data, hof_file)
 
@@ -175,7 +181,7 @@ class AblativeMaterial(Material):
             dec_data = dec_data.apply(lambda x: x.str.replace(',', '.'))
             dec_data = dec_data.apply(lambda x: x.str.replace(r'^\s*$', "NaN", regex=True))
             dec_data = dec_data.astype(np.float64)
-            dec_data = dec_data.dropna()
+            dec_data = dropnafromboth(dec_data)
 
             checkForNonSI(dec_data, dec_file)
 
@@ -190,18 +196,25 @@ class AblativeMaterial(Material):
             self.virgin.data.Tfork = data.values[:, 0]
             self.virgin.data.k = data.values[:, 1]
         elif iDir == 3:
+            # Composition
+            self.virgin.data.comp = pd.DataFrame(data=data.values[0:3], index=['C', 'H', 'O'], columns=['initialComp'])
+            #self.virgin.data.comp = {"C": data.values[0],
+            #                         "H": data.values[1],
+            #                         "O": data.values[2]}
+            self.virgin.data.gyield = data.values[3]
+        elif iDir == 4:
             self.char.data.Tforcp = data.values[:, 0]
             self.char.data.cp = data.values[:, 1]
-        elif iDir == 4:
+        elif iDir == 5:
             self.char.data.Tforeps = data.values[:, 0]
             self.char.data.eps = data.values[:, 1]
-        elif iDir == 5:
+        elif iDir == 6:
             self.char.data.Tfork = data.values[:, 0]
             self.char.data.k = data.values[:, 0]
-        elif iDir == 6:
+        elif iDir == 7:
             self.gas.data.Tforh = data.values[:, 0]
             self.gas.data.h = data.values[:, 1]
-        elif iDir == 7:
+        elif iDir == 8:
 
             # Heats of formation
             self.data.Tref = hof_data.values[0, 1]
@@ -282,6 +295,47 @@ class AblativeMaterial(Material):
         self.data.ePiece = (1 - self.beta) * self.virgin.data.ePiece + self.beta * self.char.data.ePiece
         self.e = lambdify([self.T, self.beta], self.data.ePiece, 'numpy')
 
+    def calculateAblativeProperties(self):
+
+        self.calculatePyroGasComposition()
+
+    def calculatePyroGasComposition(self):
+
+        a = self.virgin.data.comp  # for easier understanding of code
+
+        # Calculate composition of pyrolysis gas based on char yield
+        a['virginmolefrac'] = a['initialComp'] / sum(a['initialComp'])
+        a['molarmass'] = [12.011, 1.008, 15.999]
+        a['virginmass'] = a['virginmolefrac'] * a['molarmass']
+        a['pyromass'] = a['virginmass']
+        a.at['C', 'pyromass'] = a.at['C', 'virginmass'] - self.virgin.data.gyield * sum(a['virginmass'])
+        a['pyroweightfrac'] = a['pyromass'] / sum(a['pyromass'])
+        a['pyromoles'] = a['pyromass'] / a['molarmass']
+        a['pyromolefrac'] = a['pyromoles'] / sum(a['pyromoles'])
+
+        # Construct Mutation++ mixture file
+        xmldata = Path("Templates/mutationpp_mixtures.xml").read_text()
+
+        xmldata = xmldata.replace("!name", args["input_dir"].name)  # Replace name input dir name
+        moletxt = ""
+        for index, row in a.iterrows():
+            moletxt += str(row.name) + str(":") + str(row["pyromolefrac"]) + ", "
+        xmldata = xmldata.replace("!gascomp", moletxt[:-2])  # Replace mole fractions
+
+        xmlfilename = Path(args["input_dir"], "mutationpp_" + args["input_dir"].name + ".xml")
+        with open(xmlfilename, 'w') as xmlfile:
+            xmlfile.write(xmldata)
+
+        # Construct mppequil command
+        moletxt = ""
+        for index, row in a.iterrows():
+            moletxt += str(row.name) + str(":") + str(row["pyromolefrac"]) + ","
+        mppcmd = "mppequil -T " + args["temprange"] + " -P " + args["prange"] + " -m 0,10 " + str(xmlfilename)
+
+        h = os.popen(mppcmd).read()
+
+        aaa = 1
+
 
 def constructPiecewise(x, y, symbol):
     sorted_order = np.argsort(x)
@@ -298,6 +352,13 @@ def constructPiecewise(x, y, symbol):
 
     return Piecewise(*piecewisef)
 
+def dropnafromboth(x):
+    if type(x) is pd.DataFrame:
+        x = x.dropna(how='all', axis=0)
+        x = x.dropna(how='all', axis=1)
+        return x
+    else:
+        raise TypeError
 
 def createPoly(x, y, polydeg, symbol):
     # Calculate maximum possible degree if specified
@@ -357,6 +418,11 @@ def handleArguments():
                         help="Specify if material is ablative.", default=True)
     parser.add_argument('-na', '--non-ablative', action='store_false', dest='ablative',
                         help="Specify if material is non-ablative.")
+    parser.add_argument('-T', '--temperature', action='store', dest='temprange',
+                        help="Temperature range in K \"T1:dT:T2\" or simply T (default = 200:100:3000 K)",
+                        default='200:100:3000')
+    parser.add_argument('-P', '--pressure', action='store', dest='prange',
+                        help="pressure range in Pa \"P1:dP:P2\" or simply P (default = 1 atm)", default='1')
     args = vars(parser.parse_args())
 
     # Construct input directory path
