@@ -11,6 +11,7 @@ import re
 from itertools import compress
 import dill  # for pickling lambdas
 import os
+from io import StringIO
 
 # previously used packages: csv, os, glob, plt, json, jsonpickle, pickle
 
@@ -301,7 +302,7 @@ class AblativeMaterial(Material):
 
     def calculatePyroGasComposition(self):
 
-        a = self.virgin.data.comp  # for easier understanding of code
+        a = self.virgin.data.comp  # for easier understanding of code below
 
         # Calculate composition of pyrolysis gas based on char yield
         a['virginmolefrac'] = a['initialComp'] / sum(a['initialComp'])
@@ -332,9 +333,17 @@ class AblativeMaterial(Material):
             moletxt += str(row.name) + str(":") + str(row["pyromolefrac"]) + ","
         mppcmd = "mppequil -T " + args["temprange"] + " -P " + args["prange"] + " -m 0,10 " + str(xmlfilename)
 
-        h = os.popen(mppcmd).read()
+        expDYLD = 'export DYLD_LIBRARY_PATH=$MPP_DIRECTORY/install/lib:$DYLD_LIBRARY_PATH\n'
+        h = StringIO(os.popen(expDYLD + mppcmd).read())  # Execute mppequil command
 
-        aaa = 1
+        # Read table
+        htab = pd.read_table(h, header=0, delim_whitespace=True)
+
+        # Calculate enthalpy
+        self.gas.data.hPiece = constructPiecewise(htab.values[:, 0], htab.values[:, 1], self.T)
+        self.gas.data.hPiece = self.gas.data.hPiece - self.gas.data.hPiece.evalf(subs={self.T: self.data.Tref}) + \
+                               self.gas.data.hf
+        self.gas.h = lambdify(self.T, self.gas.data.hPiece, 'numpy')
 
 
 def constructPiecewise(x, y, symbol):
