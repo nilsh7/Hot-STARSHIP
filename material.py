@@ -384,13 +384,13 @@ class AblativeMaterial(Material):
         b_vals = np.concatenate((b_vals, b_fine))
         b_vals.sort()
 
-        # Construct empty numpy arrays
+        # Construct empty numpy arrays for bc and hw
         T_low, T_step, T_high = [float(T) for T in args["temprange"].split(":")]
         numTs = int(np.floor((T_high-T_low)/T_step)) + 1
         self.data.bc = np.empty((numTs, b_vals.size))
         self.data.hw = np.empty((numTs, b_vals.size))
 
-        # Execute code
+        # Execute code and fill bc and hw consecutively
         for ib, bg in enumerate(b_vals):
             bprimecmd = "bprime -T " + args["temprange"] + " -P " + args["p"] + " -b " + str(bg) + " -m " + str(xmlfilename) + " -bl " +\
                         str(args["planet"]) + " -py " + str(gasname)
@@ -407,11 +407,18 @@ class AblativeMaterial(Material):
         self.data.Tforbprime = bhtab['Tw[K]'].values
         self.data.bg = b_vals
 
-        # Fit into format
+        # Calculate interpolation functions
         self.bc = interpolate.interp2d(self.data.bg, self.data.Tforbprime, self.data.bc)
         self.hw = interpolate.interp2d(self.data.bg, self.data.Tforbprime, self.data.hw)
 
+        # Calculate gradient functions
+        self.dbcdT  = lambda bg, T, tol: (self.bc(bg, T+tol) - self.bc(bg, T-tol)) / (2*tol)
+        self.dbcdbg = lambda bg, T, tol: (self.bc(bg+tol, T) - self.bc(bg-tol, T)) / (2*tol)
+        self.dhwdT  = lambda bg, T, tol: (self.hw(bg, T+tol) - self.hw(bg, T-tol)) / (2*tol)
+        self.dhwdbg = lambda bg, T, tol: (self.hw(bg+tol, T) - self.hw(bg-tol, T)) / (2*tol)
+
     def plotBc(self):
+
         for ib, bg in enumerate(self.data.bg):
             plt.semilogy(self.data.Tforbprime, self.data.bc[:, ib], label='%.2g' % bg)
 
@@ -419,7 +426,8 @@ class AblativeMaterial(Material):
         plt.ylabel('B\'_c [-]')
         plt.grid(axis='x', which='major')
         plt.grid(axis='y', which='both')
-        plt.legend(title='B\'_g')
+        plt.legend(bbox_to_anchor=(1.04, 0.5), loc="center left", borderaxespad=0, title='B\'_g')
+        plt.subplots_adjust(right=0.7)
         plt.show()
 
 def constructPiecewise(x, y, symbol):
