@@ -12,6 +12,8 @@ from itertools import compress
 import dill  # for pickling lambdas
 import os
 from io import StringIO
+import matplotlib.pyplot as plt
+from scipy import interpolate
 
 # previously used packages: csv, os, glob, plt, json, jsonpickle, pickle
 
@@ -373,16 +375,52 @@ class AblativeMaterial(Material):
         b_low, b_high = (float(args["b"].split(":")[0]), float(args["b"].split(":")[2]))
         explow, exphigh = (np.log10(b_low), np.log10(b_high))
         expstep = float(args["b"].split(":")[1])
-        b_vals = 10**np.arange(start=explow, stop=exphigh+1e-2, step=expstep)
+        nums = int(round((exphigh - explow) / expstep) + 1) # Calculate number of values
+        b_vals = 10**np.linspace(start=explow, stop=exphigh, num=nums)
+
+        # Add fine region where high precision is necessary
+        b_fine = np.array([0.3, 0.35, 0.4, 0.41, 0.42, 0.43, 0.44, 0.45, 0.46, 0.48, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+        b_vals = b_vals[np.logical_not(np.logical_and(min(b_fine)-1.0e-6 < b_vals, b_vals < max(b_fine)+1.0e-6))]  # Delete b values in this region
+        b_vals = np.concatenate((b_vals, b_fine))
+        b_vals.sort()
+
+        # Construct empty numpy arrays
+        T_low, T_step, T_high = [float(T) for T in args["temprange"].split(":")]
+        numTs = int(np.floor((T_high-T_low)/T_step)) + 1
+        self.data.bc = np.empty((numTs, b_vals.size))
+        self.data.hw = np.empty((numTs, b_vals.size))
 
         # Execute code
-        for b in b_vals:
-            bprimecmd = "bprime -T " + args["temprange"] + " -P " + args["p"] + " -b " + str(b) + " -m Char -bl " +\
+        for ib, bg in enumerate(b_vals):
+            bprimecmd = "bprime -T " + args["temprange"] + " -P " + args["p"] + " -b " + str(bg) + " -m " + str(xmlfilename) + " -bl " +\
                         str(args["planet"]) + " -py " + str(gasname)
 
-        # Fit into format
-        pass
+            expDYLD = 'export DYLD_LIBRARY_PATH=$MPP_DIRECTORY/install/lib:$DYLD_LIBRARY_PATH\n'
+            h = StringIO(os.popen(expDYLD + bprimecmd).read())  # Execute mppequil command
 
+            # Read table
+            bhtab = pd.read_table(h, header=0, delim_whitespace=True, usecols=[0, 1, 2])
+
+            self.data.bc[:, ib] = bhtab['B\'c'].values
+            self.data.hw[:, ib] = bhtab['hw[MJ/kg]'].values * 1e6
+
+        self.data.Tforbprime = bhtab['Tw[K]'].values
+        self.data.bg = b_vals
+
+        # Fit into format
+        self.bc = interpolate.interp2d(self.data.bg, self.data.Tforbprime, self.data.bc)
+        self.hw = interpolate.interp2d(self.data.bg, self.data.Tforbprime, self.data.hw)
+
+    def plotBc(self):
+        for ib, bg in enumerate(self.data.bg):
+            plt.semilogy(self.data.Tforbprime, self.data.bc[:, ib], label='%.2g' % bg)
+
+        plt.xlabel('T [K]')
+        plt.ylabel('B\'_c [-]')
+        plt.grid(axis='x', which='major')
+        plt.grid(axis='y', which='both')
+        plt.legend(title='B\'_g')
+        plt.show()
 
 def constructPiecewise(x, y, symbol):
     sorted_order = np.argsort(x)
@@ -466,14 +504,15 @@ def handleArguments():
     parser.add_argument('-na', '--non-ablative', action='store_false', dest='ablative',
                         help="Specify if material is non-ablative.")
     parser.add_argument('-T', '--temperature', action='store', dest='temprange',
-                        help="Temperature range in K \"T1:dT:T2\" or simply T (default = 200:100:3000 K)",
-                        default='200:100:3000')
+                        help="Temperature range in K \"T1:dT:T2\" or simply T (default = 300:100:6000 K)",
+                        default='300:100:6000')
     parser.add_argument('-p', '--pressure', action='store', dest='p',
                         help="pressure in Pa (default = 101325 Pa (1 atm))", default='101325')
     parser.add_argument('-b', '--gasblow', action='store', dest='b',
-                        help="pyrolysis gas blowing rate in \"b1:dB_order:b2\" ", default='0.01:1:100')
+                        help="pyrolysis gas blowing rate in \"b1:dB_order:b2\" (default 0.01:1/3:100)",
+                        default='0.01:0.3333:100')
     parser.add_argument('--planet', action='store', dest='planet',
-                        help="planet whose atmospheric data is used", default="Earth")
+                        help="planet whose atmospheric data is used (default Earth)", default="Earth")
     args = vars(parser.parse_args())
 
     # Construct input directory path
