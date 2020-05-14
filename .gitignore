@@ -2,5 +2,5 @@
 .idea/
 venv/
 ~$*
-Data/*.matp
-Data/*.xml
+Data/**.matp
+Data/**.xml

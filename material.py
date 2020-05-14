@@ -133,6 +133,9 @@ class AblativeMaterial(Material):
                                                 "Gas/h",
                                                 "Combined"]]
 
+        self.pyroelems = '{gases with C, H, O, e-}'
+        self.surfelems = '{gases with C, H, N, O, e-, Ar} C(gr)'
+
         self.readData()
 
         self.calculateVariables()
@@ -298,7 +301,9 @@ class AblativeMaterial(Material):
 
     def calculateAblativeProperties(self):
 
-        self.calculatePyroGasComposition()
+        xmldata, gasname = self.calculatePyroGasComposition()
+
+        self.calculateBPrimes(xmldata, gasname)
 
     def calculatePyroGasComposition(self):
 
@@ -315,15 +320,16 @@ class AblativeMaterial(Material):
         a['pyromolefrac'] = a['pyromoles'] / sum(a['pyromoles'])
 
         # Construct Mutation++ mixture file
-        xmldata = Path("Templates/mutationpp_mixtures.xml").read_text()
-
-        xmldata = xmldata.replace("!name", args["input_dir"].name)  # Replace name input dir name
+        xmldata = Path("Templates/mutationpp_mixtures_pyrogas.xml").read_text()
+        gasname = args["input_dir"].name + "_Gas"
+        xmldata = xmldata.replace("!name", gasname)  # Replace name input dir name
+        xmldata = xmldata.replace("!elems", self.pyroelems)
         moletxt = ""
         for index, row in a.iterrows():
             moletxt += str(row.name) + str(":") + str(row["pyromolefrac"]) + ", "
         xmldata = xmldata.replace("!gascomp", moletxt[:-2])  # Replace mole fractions
 
-        xmlfilename = Path(args["input_dir"], "mutationpp_" + args["input_dir"].name + ".xml")
+        xmlfilename = Path(args["input_dir"], "mutationpp_gas_" + args["input_dir"].name + ".xml")
         with open(xmlfilename, 'w') as xmlfile:
             xmlfile.write(xmldata)
 
@@ -331,7 +337,7 @@ class AblativeMaterial(Material):
         moletxt = ""
         for index, row in a.iterrows():
             moletxt += str(row.name) + str(":") + str(row["pyromolefrac"]) + ","
-        mppcmd = "mppequil -T " + args["temprange"] + " -P " + args["prange"] + " -m 0,10 " + str(xmlfilename)
+        mppcmd = "mppequil -T " + args["temprange"] + " -P " + args["p"] + " -m 0,10 " + str(xmlfilename)
 
         expDYLD = 'export DYLD_LIBRARY_PATH=$MPP_DIRECTORY/install/lib:$DYLD_LIBRARY_PATH\n'
         h = StringIO(os.popen(expDYLD + mppcmd).read())  # Execute mppequil command
@@ -344,6 +350,38 @@ class AblativeMaterial(Material):
         self.gas.data.hPiece = self.gas.data.hPiece - self.gas.data.hPiece.evalf(subs={self.T: self.data.Tref}) + \
                                self.gas.data.hf
         self.gas.h = lambdify(self.T, self.gas.data.hPiece, 'numpy')
+
+        return xmldata, gasname
+
+    def calculateBPrimes(self, xmldata, gasname):
+
+        # Construct Mutation++ mixture file
+        xmldata = Path("Templates/mutationpp_mixtures_surface.xml").read_text()
+        gasname = args["input_dir"].name + "_Gas"
+        xmldata = xmldata.replace("!name", gasname)  # Replace name input dir name
+        xmldata = xmldata.replace("!elems", self.surfelems)
+        moletxt = ""
+        for index, row in self.virgin.data.comp.iterrows():
+            moletxt += str(row.name) + str(":") + str(row["pyromolefrac"]) + ", "
+        xmldata = xmldata.replace("!gascomp", moletxt[:-2])  # Replace mole fractions
+
+        xmlfilename = Path(args["input_dir"], "mutationpp_surf_" + args["input_dir"].name + ".xml")
+        with open(xmlfilename, 'w') as xmlfile:
+            xmlfile.write(xmldata)
+
+        # Determine b range
+        b_low, b_high = (float(args["b"].split(":")[0]), float(args["b"].split(":")[2]))
+        explow, exphigh = (np.log10(b_low), np.log10(b_high))
+        expstep = float(args["b"].split(":")[1])
+        b_vals = 10**np.arange(start=explow, stop=exphigh+1e-2, step=expstep)
+
+        # Execute code
+        for b in b_vals:
+            bprimecmd = "bprime -T " + args["temprange"] + " -P " + args["p"] + " -b " + str(b) + " -m Char -bl " +\
+                        str(args["planet"]) + " -py " + str(gasname)
+
+        # Fit into format
+        pass
 
 
 def constructPiecewise(x, y, symbol):
@@ -417,7 +455,7 @@ def checkForNonSI(data, file):
 def handleArguments():
     # Create argument paser with respective options
     parser = argparse.ArgumentParser(description='Create material properties file (.matp) '
-                                                 'for ablative material calculation.')
+                                                 'for material calculation.')
 
     parser.add_argument('-i', '--input', action='store', dest='input_dir',
                         help="Input directory with material information (default current directory)")
@@ -430,8 +468,12 @@ def handleArguments():
     parser.add_argument('-T', '--temperature', action='store', dest='temprange',
                         help="Temperature range in K \"T1:dT:T2\" or simply T (default = 200:100:3000 K)",
                         default='200:100:3000')
-    parser.add_argument('-P', '--pressure', action='store', dest='prange',
-                        help="pressure range in Pa \"P1:dP:P2\" or simply P (default = 1 atm)", default='1')
+    parser.add_argument('-p', '--pressure', action='store', dest='p',
+                        help="pressure in Pa (default = 101325 Pa (1 atm))", default='101325')
+    parser.add_argument('-b', '--gasblow', action='store', dest='b',
+                        help="pyrolysis gas blowing rate in \"b1:dB_order:b2\" ", default='0.01:1:100')
+    parser.add_argument('--planet', action='store', dest='planet',
+                        help="planet whose atmospheric data is used", default="Earth")
     args = vars(parser.parse_args())
 
     # Construct input directory path
@@ -445,6 +487,16 @@ def handleArguments():
         args["output_file"] = Path.joinpath(args["input_dir"], args["input_dir"].name + ".matp")
     else:
         args["output_file"] = Path.joinpath(Path.cwd(), args["output_file"])
+
+    # Check whether pressure is in correct format
+    try:
+        float(args['p'])
+    except ValueError:
+        raise IOError("Check pressure input. Got %s" % args['p'])
+
+    # Check if valid atmosphere
+    if args["planet"] not in ('Earth', 'Mars', 'Venus'):
+        raise IOError("Unimplemented planet %s" % args["planet"])
 
     return args
 
