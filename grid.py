@@ -3,11 +3,20 @@ import sympy as sp
 from scipy.optimize import newton
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
+import warnings
 
 
 class Grid:
     def __init__(self):
-        self.nC = 0
+        self.nC = None
+        self.growth = None
+        self.zj = None
+        self.zjp12 = None
+        self.zjm12 = None
+        self.mat = None
+
+    def setMaterial(self, mat):
+        self.mat = mat
 
 
 class FrontGrid(Grid):
@@ -37,6 +46,15 @@ class DeepGrid(Grid):
 
         # Calculate necessary growth/shrink factor to fit cells inside
         nC = self.nC
+        if nC == 1 or nC == 0:
+            self.zj = np.array([z0+length/2])
+            self.zjp12 = np.array([z0+length])
+            self.zjm12 = np.array([z0])
+            self.growth = length/lIni
+            self.nC = 1
+            warnings.warn("Grid at z0 = %.3f m contains only one cell and might have large volume changes. "
+                          "Volume change is %.3f." % (z0, self.growth), UserWarning)
+            return
         if nC % 2 != 0:
             eq_gr = lambda gr: length - lIni * (1 + 2 * (gr * (1 - gr ** ((self.nC - 1) / 2))) / (1 - gr))
         else:
@@ -109,9 +127,9 @@ def plotGrids(*grids):
 
 if __name__ == "__main__":
 
-    lFront = 100
+    lFront = 0.05
     fgrid = FrontGrid(length=lFront, l0=lFront / 500, maxgrowth=1.1)
 
-    dgrid = DeepGrid(length=lFront*0.55, lIni=fgrid.zjp12[-1] - fgrid.zjm12[-1], z0=lFront)
+    dgrid = DeepGrid(length=lFront*0.1, lIni=fgrid.zjp12[-1] - fgrid.zjm12[-1], z0=lFront)
 
     plotGrids(fgrid, dgrid)
