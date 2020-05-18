@@ -36,7 +36,7 @@ class Material:
     def calculateVariables(self):
         pass  # to be intitiated in Ablative or NonAblativeMaterial
 
-    def readData(self):
+    def readData(self, args):
 
         # Construct path to current material and check existent
         if not Path.is_dir(args["input_dir"]):
@@ -72,13 +72,14 @@ class Data:
 
 
 class NonAblativeMaterial(Material):
-    def __init__(self):
+    def __init__(self, args):
+
         Material.__init__(self)
 
         # List of necessary directories
         self.necessarydirs = [Path(d) for d in ["cp", "eps", "k"]]
 
-        self.readData()
+        self.readData(args)
 
         self.calculateVariables()
 
@@ -122,7 +123,10 @@ class NonAblativeMaterial(Material):
 
 
 class AblativeMaterial(Material):
-    def __init__(self):
+    def __init__(self, args):
+
+        self.storeVariables(args)
+
         Material.__init__(self)
         self.virgin = State()
         self.char = State()
@@ -138,11 +142,11 @@ class AblativeMaterial(Material):
         self.pyroelems = '{gases with C, H, O, e-}'
         self.surfelems = '{gases with C, H, N, O, e-, Ar} C(gr)'
 
-        self.readData()
+        self.readData(args)
 
         self.calculateVariables()
 
-        self.calculateAblativeProperties()
+        self.calculateAblativeProperties(args)
 
     def readFile(self, iDir, globdir, csv_files):
         # Open files and read data
@@ -301,13 +305,13 @@ class AblativeMaterial(Material):
         self.data.ePiece = (1 - self.beta) * self.virgin.data.ePiece + self.beta * self.char.data.ePiece
         self.e = lambdify([self.T, self.beta], self.data.ePiece, 'numpy')
 
-    def calculateAblativeProperties(self):
+    def calculateAblativeProperties(self, args):
 
-        xmldata, gasname = self.calculatePyroGasComposition()
+        xmldata, gasname = self.calculatePyroGasComposition(args)
 
-        self.calculateBPrimes(xmldata, gasname)
+        self.calculateBPrimes(xmldata, gasname, args)
 
-    def calculatePyroGasComposition(self):
+    def calculatePyroGasComposition(self, args):
 
         a = self.virgin.data.comp  # for easier understanding of code below
 
@@ -339,7 +343,7 @@ class AblativeMaterial(Material):
         moletxt = ""
         for index, row in a.iterrows():
             moletxt += str(row.name) + str(":") + str(row["pyromolefrac"]) + ","
-        mppcmd = "mppequil -T " + args["temprange"] + " -P " + args["p"] + " -m 0,10 " + str(xmlfilename)
+        mppcmd = "mppequil -T " + args["temprange"] + " -P " + str(args["p"]) + " -m 0,10 " + str(xmlfilename)
 
         expDYLD = 'export DYLD_LIBRARY_PATH=$MPP_DIRECTORY/install/lib:$DYLD_LIBRARY_PATH\n'
         h = StringIO(os.popen(expDYLD + mppcmd).read())  # Execute mppequil command
@@ -355,7 +359,7 @@ class AblativeMaterial(Material):
 
         return xmldata, gasname
 
-    def calculateBPrimes(self, xmldata, gasname):
+    def calculateBPrimes(self, xmldata, gasname, args):
 
         # Construct Mutation++ mixture file
         xmldata = Path("Templates/mutationpp_mixtures_surface.xml").read_text()
@@ -392,7 +396,7 @@ class AblativeMaterial(Material):
 
         # Execute code and fill bc and hw consecutively
         for ib, bg in enumerate(b_vals):
-            bprimecmd = "bprime -T " + args["temprange"] + " -P " + args["p"] + " -b " + str(bg) + " -m " + str(xmlfilename) + " -bl " +\
+            bprimecmd = "bprime -T " + args["temprange"] + " -P " + str(args["p"]) + " -b " + str(bg) + " -m " + str(xmlfilename) + " -bl " +\
                         str(args["planet"]) + " -py " + str(gasname)
 
             expDYLD = 'export DYLD_LIBRARY_PATH=$MPP_DIRECTORY/install/lib:$DYLD_LIBRARY_PATH\n'
@@ -429,6 +433,10 @@ class AblativeMaterial(Material):
         plt.legend(bbox_to_anchor=(1.04, 0.5), loc="center left", borderaxespad=0, title='B\'_g')
         plt.subplots_adjust(right=0.7)
         plt.show()
+
+    def storeVariables(self, args):
+        self.pressure = float(args["p"])
+        self.atmosphere = args["planet"]
 
 def constructPiecewise(x, y, symbol):
     sorted_order = np.argsort(x)
@@ -512,17 +520,23 @@ def handleArguments():
     parser.add_argument('-na', '--non-ablative', action='store_false', dest='ablative',
                         help="Specify if material is non-ablative.")
     parser.add_argument('-T', '--temperature', action='store', dest='temprange',
-                        help="Temperature range in K \"T1:dT:T2\" or simply T (default = 300:100:6000 K)",
+                        help="Temperature range for bprime determination in K \"T1:dT:T2\" "
+                             "or simply T (default = 300:100:6000 K)",
                         default='300:100:6000')
     parser.add_argument('-p', '--pressure', action='store', dest='p',
-                        help="pressure in Pa (default = 101325 Pa (1 atm))", default='101325')
+                        help="pressure in Pa for bprime determination (default = 101325 Pa (1 atm))", default='101325')
     parser.add_argument('-b', '--gasblow', action='store', dest='b',
-                        help="pyrolysis gas blowing rate in \"b1:dB_order:b2\" (default 0.01:1/3:100)",
+                        help="pyrolysis gas blowing rate in \"b1:dB_order:b2\" (default 0.01:0.3333:100)",
                         default='0.01:0.3333:100')
     parser.add_argument('--planet', action='store', dest='planet',
                         help="planet whose atmospheric data is used (default Earth)", default="Earth")
     args = vars(parser.parse_args())
 
+    args = checkInput(args)
+
+    return args
+
+def checkInput(args):
     # Construct input directory path
     if not args["input_dir"]:
         args["input_dir"] = Path.cwd()
@@ -547,13 +561,37 @@ def handleArguments():
 
     return args
 
+def createMaterial(inputdir, outfile=None, ablative=True, Trange="300:100:6000", pressure=101325, b="0.01:0.3333:100",
+                   atmosphere="Earth"):
+
+    args = {}
+    args["input_dir"] = inputdir
+    args["output_file"] = outfile
+    args["ablative"] = ablative
+    args["temprange"] = Trange
+    args["p"] = pressure
+    args["b"] = b
+    args["planet"] = atmosphere
+
+    args = checkInput(args)
+
+    # Read and store material information
+    material = AblativeMaterial(args) if args["ablative"] else NonAblativeMaterial(args)
+
+    # Write to .matp file
+    with open(args["output_file"], 'wb') as outfile:
+        # save using dill, recurse=True necessary for enabling pickling lambdify function from sympy
+        dill.dump(material, outfile, recurse=True)
+
+    return material
+
 
 if __name__ == "__main__":
     # Get arguments
     args = handleArguments()
 
     # Read and store material information
-    material = AblativeMaterial() if args["ablative"] else NonAblativeMaterial()
+    material = AblativeMaterial(args) if args["ablative"] else NonAblativeMaterial(args)
 
     # Write to .matp file
     with open(args["output_file"], 'wb') as outfile:

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<input>
+    <layers>
+        <layer number="1">
+            <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Carbon_Phenolic</material>
+            <thickness>0.05</thickness>
+            <firstcell>0.0005</firstcell>
+            <maxgrowth>1.1</maxgrowth>
+            <ablative>True</ablative>
+        </layer>
+        <layer number="2">
+            <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Aluminium</material>
+            <thickness>0.01</thickness>
+        </layer>
+    </layers>
+    <options>
+        <BCs>
+            <front type="heatflux">
+                <value>7.5e6</value>
+            </front>
+            <back type="adibatic"></back>
+        </BCs>
+        <time>
+            <start>0.0</start>
+            <end>50.0</end>
+            <delta>0.03125</delta>
+        </time>
+        <init type="Temperature">
+            <value>300.0</value>
+        </init>
+        <ambient>
+            <pressure>101325</pressure>
+            <atmosphere>Earth</atmosphere>
+        </ambient>
+    </options>
+</input>
