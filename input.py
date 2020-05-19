@@ -24,14 +24,15 @@ class Layer:
                                             atmosphere=root.find("options").find("ambient").find("atmosphere").text)
         else:
             # if no file was specified, generate a material file and store it
-            ablative = True if layerelem.attrib["number"] == "1" and bool(layerelem.find("ablative").text) else False
-            self.material = material.createMaterial(matname, ablative=ablative,
+            ablativeLayer = True if layerelem.attrib["number"] == "1" and self.ablative else False
+            self.material = material.createMaterial(matname, ablative=ablativeLayer,
                                         pressure=float(root.find("options").find("ambient").find("pressure").text),
                                         atmosphere=root.find("options").find("ambient").find("atmosphere").text)
 
         self.thickness = float(layerelem.find("thickness").text)
         self.firstcell = float(layerelem.find("firstcell").text) if layerelem.find("firstcell") is not None else self.thickness/100.0
         self.maxgrowth = float(layerelem.find("maxgrowth").text) if layerelem.find("maxgrowth") is not None else 1.1
+        self.number = int(layerelem.attrib["number"])-1
 
 
 class Input:
@@ -43,6 +44,7 @@ class Input:
         root = tree.getroot()
 
         # Read information layer by layer
+        self.ablative = bool(root.find("layers").findall("layer")[0].find("ablative").text)
         layerelems = root.find("layers")
         numLayers = len(layerelems.findall("layer"))
         if numLayers == 0:
