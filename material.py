@@ -77,7 +77,7 @@ class NonAblativeMaterial(Material):
         Material.__init__(self)
 
         # List of necessary directories
-        self.necessarydirs = [Path(d) for d in ["cp", "eps", "k"]]
+        self.necessarydirs = [Path(d) for d in ["cp", "eps", "k", "rho"]]
 
         self.readData(args)
 
@@ -106,6 +106,9 @@ class NonAblativeMaterial(Material):
         elif iDir == 2:
             self.data.Tfork = data.values[:, 0]
             self.data.k = data.values[:, 1]
+        elif iDir == 3:
+            self.data.Tforrho = data.values[:, 0]
+            self.data.rho = data.values[:, 1]
 
     def calculateVariables(self):
 
@@ -120,6 +123,10 @@ class NonAblativeMaterial(Material):
         # eps
         self.data.epsPiece = constructPiecewise(self.data.Tforeps, self.data.eps, self.T)
         self.eps = lambdify(self.T, self.data.epsPiece, 'numpy')
+
+        # rho
+        self.data.rhoPiece = constructPiecewise(self.data.Tforrho, self.data.rho, self.T)
+        self.rho = lambdify(self.T, self.data.rhoPiece, 'numpy')
 
 
 class AblativeMaterial(Material):
