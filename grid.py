@@ -125,6 +125,21 @@ def plotGrids(*grids):
     plt.show()
 
 
+def generateGrids(layers):
+
+    # Generate DeepGrid for remaining grids
+    for il, layer in enumerate(layers):
+        if il == 0:
+            grid = FrontGrid(length=layer.thickness, l0=layer.firstcell, maxgrowth=layer.maxgrowth)
+        else:
+            lIni = layers[il-1].grid.zjp12[-1] - layers[il-1].grid.zjm12[-1]
+            z0 = layers[il-1].grid.zjp12[-1]
+            grid = DeepGrid(length=layer.thickness, lIni=lIni, z0=z0)
+
+        layers[il].grid = grid
+
+    return layers
+
 if __name__ == "__main__":
 
     lFront = 0.05
