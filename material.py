@@ -114,19 +114,37 @@ class NonAblativeMaterial(Material):
 
         # cp
         self.data.cpPiece = constructPiecewise(self.data.Tforcp, self.data.cp, self.T)
-        self.cp = lambdify(self.T, self.data.cpPiece, 'numpy')
+        self.cpLambdified = lambdify(self.T, self.data.cpPiece, 'numpy')
+        # self.cp = lambda T, **kwargs: self.cpLambdified(T)
 
         # k
         self.data.kPiece = constructPiecewise(self.data.Tfork, self.data.k, self.T)
-        self.k = lambdify(self.T, self.data.kPiece, 'numpy')
+        self.kLambdified = lambdify(self.T, self.data.kPiece, 'numpy')
+        self.data.dkdTPiece = sp.diff(self.data.kPiece, self.T)
+        self.dkdTLambdified = lambdify(self.T, self.data.dkdTPiece, 'numpy')
 
         # eps
         self.data.epsPiece = constructPiecewise(self.data.Tforeps, self.data.eps, self.T)
-        self.eps = lambdify(self.T, self.data.epsPiece, 'numpy')
+        self.epsLambdified = lambdify(self.T, self.data.epsPiece, 'numpy')
 
         # rho
         self.data.rhoPiece = constructPiecewise(self.data.Tforrho, self.data.rho, self.T)
-        self.rho = lambdify(self.T, self.data.rhoPiece, 'numpy')
+        self.rhoLambdified = lambdify(self.T, self.data.rhoPiece, 'numpy')
+
+    def cp(self, T, *ignoreargs):
+        return self.cpLambdified(T)
+
+    def k(self, T, *ignoreargs):
+        return self.kLambdified(T)
+
+    def eps(self, T, *ignoreargs):
+        return self.epsLambdified(T)
+
+    def rho(self, T, *ignoreargs):
+        return self.rhoLambdified(T)
+
+    def dkdT(self, T, *ignoreargs):
+        return self.dkdTLambdified(T)
 
 
 class AblativeMaterial(Material):
@@ -139,7 +157,7 @@ class AblativeMaterial(Material):
         self.char = State()
         self.gas = State()
 
-        self.beta = sp.symbols("beta")
+        self.wv = sp.symbols("wv")
 
         self.necessarydirs = [Path(d) for d in ["Virgin/cp", "Virgin/eps", "Virgin/k", "Virgin/comp",
                                                 "Char/cp", "Char/eps", "Char/k",
@@ -297,20 +315,24 @@ class AblativeMaterial(Material):
 
         ### Combined ###
         # cp
-        self.data.cpPiece = (1 - self.beta) * self.virgin.data.cpPiece + self.beta * self.char.data.cpPiece
-        self.cp = lambdify([self.T, self.beta], self.data.cpPiece, 'numpy')
+        self.data.cpPiece = (1 - self.wv) * self.virgin.data.cpPiece + self.wv * self.char.data.cpPiece
+        self.cp = lambdify([self.T, self.wv], self.data.cpPiece, 'numpy')
 
         # k
-        self.data.kPiece = (1 - self.beta) * self.virgin.data.kPiece + self.beta * self.char.data.kPiece
-        self.k = lambdify([self.T, self.beta], self.data.kPiece, 'numpy')
+        self.data.kPiece = (1 - self.wv) * self.virgin.data.kPiece + self.wv * self.char.data.kPiece
+        self.k = lambdify([self.T, self.wv], self.data.kPiece, 'numpy')
+        self.data.dkdTPiece = sp.diff(self.data.kPiece, self.T)
+        self.dkdT = lambdify([self.T, self.wv], self.data.dkdTPiece, 'numpy')
 
         # eps
-        self.data.epsPiece = (1 - self.beta) * self.virgin.data.epsPiece + self.beta * self.char.data.epsPiece
-        self.eps = lambdify([self.T, self.beta], self.data.epsPiece, 'numpy')
+        self.data.epsPiece = (1 - self.wv) * self.virgin.data.epsPiece + self.wv * self.char.data.epsPiece
+        self.eps = lambdify([self.T, self.wv], self.data.epsPiece, 'numpy')
+        self.data.depsdTPiece = sp.diff(self.data.epsPiece, self.T)
+        self.depsdT = lambdify([self.T, self.wv], self.data.depsdTPiece, 'numpy')
 
         # e
-        self.data.ePiece = (1 - self.beta) * self.virgin.data.ePiece + self.beta * self.char.data.ePiece
-        self.e = lambdify([self.T, self.beta], self.data.ePiece, 'numpy')
+        self.data.ePiece = (1 - self.wv) * self.virgin.data.ePiece + self.wv * self.char.data.ePiece
+        self.e = lambdify([self.T, self.wv], self.data.ePiece, 'numpy')
 
     def calculateAblativeProperties(self, args):
 
