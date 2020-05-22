@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import warnings
 
+p1 = lambda f: np.roll(f, shift=-1)
+m1 = lambda f: np.roll(f, shift=+1)
 
 class Grid:
     def __init__(self):
@@ -17,6 +19,22 @@ class Grid:
 
     def setMaterial(self, mat):
         self.mat = mat
+
+    def calculateProperties(self, length, z0):
+        # Calculate positions at control volume boundaries
+        self.length = length
+        self.etaj = 1 - self.zj/self.length
+        self.zjp12 = np.concatenate(((self.zj[:-1] + self.zj[1:]) / 2, np.array([length + z0])))
+        self.zjm12 = np.concatenate((np.array([z0]), self.zjp12[:-1]))
+        self.dzjp = p1(self.zj) - self.zj
+        self.dzjm = self.zj - m1(self.zj)
+
+    def setXtoZ(self):
+        self.xj = self.zj
+        self.xjp12 = self.zjp12
+        self.xjm12 = self.zjm12
+        self.dxjp = self.dzjp
+        self.dxjm = self.dzjm
 
 
 class FrontGrid(Grid):
@@ -33,8 +51,13 @@ class FrontGrid(Grid):
         # Calculate nodes positions and control volume boundaries
         j = np.arange(self.nC)
         self.zj = np.concatenate((np.array([0]), l0 * (1 - self.growth ** j[1:]) / (1 - self.growth)))
-        self.zjp12 = np.concatenate(((self.zj[:-1] + self.zj[1:]) / 2, np.array([length])))
-        self.zjm12 = np.concatenate((np.array([0]), self.zjp12[:-1]))
+        self.calculateProperties(length, z0=0)
+
+        self.s = 0  # Recession amount
+
+    def updateZ(self, delta_s):
+        self.s += delta_s
+        self.zj = self.length - self.eta * (self.length - self.s)
 
 
 class DeepGrid(Grid):
@@ -77,9 +100,7 @@ class DeepGrid(Grid):
                                       lIni * (0.5 + gr * (1 - gr**(mid-1))/(1-gr) + gr**nC * (gr**(-mid) - gr**(-(j[mid:]+1)))/(1-1/gr))
                                       )) + z0
 
-        # Calculate positions at control volume boundaries
-        self.zjp12 = np.concatenate(((self.zj[:-1] + self.zj[1:]) / 2, np.array([length + z0])))
-        self.zjm12 = np.concatenate((np.array([z0]), self.zjp12[:-1]))
+        self.calculateProperties(length, z0)
 
 
 def plotGrids(*grids):
