@@ -6,7 +6,11 @@ import sys
 
 class Layer:
     def __init__(self, layerelem, root):
-
+        """
+creates a Layer objects that holds various information about the TPS layer
+        :param layerelem: layer element from xml tree
+        :param root: xml root element
+        """
         matname = layerelem.find("material").text
         self.ablative = bool(root.find("layers").findall("layer")[0].find("ablative").text)
         # Read .matp file if it was specified
@@ -38,7 +42,10 @@ class Layer:
 
 class Input:
     def __init__(self, xmlfile):
-
+        """
+reads the input xml file and stores the information
+        :param xmlfile: path to xml file
+        """
         # Read xml file
         tree = ET.parse(xmlfile)
 

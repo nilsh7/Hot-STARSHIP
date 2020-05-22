@@ -18,18 +18,30 @@ class Grid:
         self.mat = None
 
     def setMaterial(self, mat):
+        """
+sets the material property
+        :param mat: material to be set
+        """
         self.mat = mat
 
-    def calculateProperties(self, length, z0):
+    def calculateProperties(self, calceta=False):
+        """
+calculates a few auxiliary properties such as control volume boundary location or constant eta coordinate
+        :param length: length of grid
+        :param z0: initial position of left boundary
+        """
         # Calculate positions at control volume boundaries
-        self.length = length
-        self.etaj = 1 - self.zj/self.length
-        self.zjp12 = np.concatenate(((self.zj[:-1] + self.zj[1:]) / 2, np.array([length + z0])))
-        self.zjm12 = np.concatenate((np.array([z0]), self.zjp12[:-1]))
+        if calceta:
+            self.etaj = 1 - self.zj/self.length
+        self.zjp12 = np.concatenate(((self.zj[:-1] + self.zj[1:]) / 2, np.array([self.length + self.z0])))
+        self.zjm12 = np.concatenate((np.array([self.z0]), self.zjp12[:-1]))
         self.dzjp = p1(self.zj) - self.zj
         self.dzjm = self.zj - m1(self.zj)
 
     def setXtoZ(self):
+        """
+sets moving coordinates x to stationary coordinates z
+        """
         self.xj = self.zj
         self.xjp12 = self.zjp12
         self.xjm12 = self.zjm12
@@ -39,7 +51,15 @@ class Grid:
 
 class FrontGrid(Grid):
 
-    def __init__(self, length, l0, maxgrowth):
+    def __init__(self, length, l0, maxgrowth=1.1):
+        """
+creates grid at front of TPS
+        :param length: thickness of layer
+        :param l0: l0/2 is the thickness of the first volume
+        :param maxgrowth: maximum allowable growth factor
+        """
+        self.length = length
+        self.z0 = 0
 
         # Calculate number of necessary cells based on exponential distribution
         self.nC = int(np.ceil(np.log(2 * (1 - length / l0 * (1 - maxgrowth)) / (1 + 1 / maxgrowth)) / np.log(maxgrowth)))
@@ -51,18 +71,31 @@ class FrontGrid(Grid):
         # Calculate nodes positions and control volume boundaries
         j = np.arange(self.nC)
         self.zj = np.concatenate((np.array([0]), l0 * (1 - self.growth ** j[1:]) / (1 - self.growth)))
-        self.calculateProperties(length, z0=0)
+        self.calculateProperties(calceta=True)
 
         self.s = 0  # Recession amount
 
     def updateZ(self, delta_s):
+        """
+adds recession amount and recalculates nodal positions
+        :param delta_s: difference in recession amount since last update
+        """
         self.s += delta_s
         self.zj = self.length - self.eta * (self.length - self.s)
+        self.calculateProperties(calceta=False)
 
 
 class DeepGrid(Grid):
 
     def __init__(self, length, lIni, z0):
+        """
+creates grid at inside layer of TPS
+        :param length: thickness of layer
+        :param lIni: control volume thickness of previous layer (to avoid large changes in volume)
+        :param z0: coordinate of upper edge
+        """
+        self.length = length
+        self.z0 = z0
 
         # Calculate number of necessary cells
         self.nC = int(np.round(length / lIni))
@@ -100,11 +133,14 @@ class DeepGrid(Grid):
                                       lIni * (0.5 + gr * (1 - gr**(mid-1))/(1-gr) + gr**nC * (gr**(-mid) - gr**(-(j[mid:]+1)))/(1-1/gr))
                                       )) + z0
 
-        self.calculateProperties(length, z0)
+        self.calculateProperties(calceta=True)
 
 
 def plotGrids(*grids):
-
+    """
+plots the passed grids
+    :param grids: variable number of grids
+    """
     # Check types
     for grid in grids:
         if not issubclass(type(grid), Grid):
@@ -147,7 +183,11 @@ def plotGrids(*grids):
 
 
 def generateGrids(layers):
-
+    """
+adds grids based to a list of layers (see input.py)
+    :param layers: list of layers
+    :return: modified list of layers
+    """
     # Generate DeepGrid for remaining grids
     for il, layer in enumerate(layers):
         if il == 0:

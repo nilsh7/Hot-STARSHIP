@@ -1,10 +1,14 @@
 import argparse
 import input
 import numpy as np
-from assemblation import *
+from assembly import *
 import grid
 
 def handleArguments():
+    """
+handles arguments passed to Hot-STARSHIP
+    :return: dictionary of arguments
+    """
     # Create argument paser with respective options
     parser = argparse.ArgumentParser(description='Pass an input.xml file for calculation with Hot-STARSHIP')
 
@@ -40,7 +44,7 @@ if __name__ == "__main__":
         print("+++ New time step: t = %.4f secs +++" % t)
 
         Tn, rhon = Tnu.copy(), rhonu.copy()
-        Tn[1:] += 50  # for debugging
+        Tn[1:] += 50*np.arange(len(Tn)-1)  # for debugging
 
         iteration = 0
 

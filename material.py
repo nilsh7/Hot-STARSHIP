@@ -34,10 +34,16 @@ class Material:
         pass  # to be intitiated in Ablative or NonAblativeMaterial
 
     def calculateVariables(self):
+        """
+creates functions for thermophysical properties
+        """
         pass  # to be intitiated in Ablative or NonAblativeMaterial
 
     def readData(self, args):
-
+        """
+loops over directories to be read and initiates reading procedure
+        :param args: dictionary of arguments
+        """
         # Construct path to current material and check existent
         if not Path.is_dir(args["input_dir"]):
             raise IOError("Could not locate %s" % args["input_dir"])
@@ -84,7 +90,12 @@ class NonAblativeMaterial(Material):
         self.calculateVariables()
 
     def readFile(self, iDir, globdir, csv_files):
-
+        """
+reads csv file and stores data
+        :param iDir: directory number
+        :param globdir: global path to directory
+        :param csv_files: csv files in directory
+        """
         # Determine csv file
         csv_file = Path.joinpath(globdir, csv_files[0])
 
@@ -111,7 +122,6 @@ class NonAblativeMaterial(Material):
             self.data.rho = data.values[:, 1]
 
     def calculateVariables(self):
-
         # cp
         self.data.cpPiece = constructPiecewise(self.data.Tforcp, self.data.cp, self.T)
         self.cpLambdified = lambdify(self.T, self.data.cpPiece, 'numpy')
@@ -174,13 +184,18 @@ class AblativeMaterial(Material):
         self.calculateAblativeProperties(args)
 
     def readFile(self, iDir, globdir, csv_files):
+        """
+reads csv file and stores data
+        :param iDir: directory number
+        :param globdir: global path to directory
+        :param csv_files: csv files in directory
+        """
         # Open files and read data
         global data
         if iDir != 8:
             csv_file = Path.joinpath(globdir, csv_files[0])
 
-            head, index = (None, 0) if iDir==3 else (0, None)
-
+            head, index = (None, 0) if iDir == 3 else (0, None)
 
             # Open file
             with open(csv_file) as f:
@@ -233,7 +248,7 @@ class AblativeMaterial(Material):
         elif iDir == 3:
             # Composition
             self.virgin.data.comp = pd.DataFrame(data=data.values[0:3], index=['C', 'H', 'O'], columns=['initialComp'])
-            #self.virgin.data.comp = {"C": data.values[0],
+            # self.virgin.data.comp = {"C": data.values[0],
             #                         "H": data.values[1],
             #                         "O": data.values[2]}
             self.virgin.data.gyield = data.values[3]
@@ -268,7 +283,6 @@ class AblativeMaterial(Material):
             self.data.frac = dec_data.values[6, :]
 
     def calculateVariables(self):
-
         ### Virgin ###
         # cp
         self.virgin.data.cpPiece = constructPiecewise(self.virgin.data.Tforcp, self.virgin.data.cp, self.T)
@@ -335,13 +349,19 @@ class AblativeMaterial(Material):
         self.e = lambdify([self.T, self.wv], self.data.ePiece, 'numpy')
 
     def calculateAblativeProperties(self, args):
-
+        """
+calculate pyrolysis gas composition and bprime table
+        :param args: dictionary of arguments
+        """
         xmldata, gasname = self.calculatePyroGasComposition(args)
 
-        self.calculateBPrimes(xmldata, gasname, args)
+        self.calculateBPrimes(args)
 
     def calculatePyroGasComposition(self, args):
-
+        """
+calculates pyrolysis gas composition using mppequil
+        :param args: dictionary of arguments
+        """
         a = self.virgin.data.comp  # for easier understanding of code below
 
         # Calculate composition of pyrolysis gas based on char yield
@@ -386,10 +406,11 @@ class AblativeMaterial(Material):
                                self.gas.data.hf
         self.gas.h = lambdify(self.T, self.gas.data.hPiece, 'numpy')
 
-        return xmldata, gasname
-
-    def calculateBPrimes(self, xmldata, gasname, args):
-
+    def calculateBPrimes(self, args):
+        """
+calculates bprime tables using bprime executable provided by mutation++
+        :param args: dictionary of arguments
+        """
         # Construct Mutation++ mixture file
         xmldata = Path("Templates/mutationpp_mixtures_surface.xml").read_text()
         gasname = args["input_dir"].name + "_Gas"
@@ -405,27 +426,29 @@ class AblativeMaterial(Material):
             xmlfile.write(xmldata)
 
         # Determine b range
-        b_low, b_high = (float(args["b"].split(":")[0]), float(args["b"].split(":")[2]))
+        b_low, b_high = (float(args["bg"].split(":")[0]), float(args["bg"].split(":")[2]))
         explow, exphigh = (np.log10(b_low), np.log10(b_high))
-        expstep = float(args["b"].split(":")[1])
-        nums = int(round((exphigh - explow) / expstep) + 1) # Calculate number of values
-        b_vals = 10**np.linspace(start=explow, stop=exphigh, num=nums)
+        expstep = float(args["bg"].split(":")[1])
+        nums = int(round((exphigh - explow) / expstep) + 1)  # Calculate number of values
+        b_vals = 10 ** np.linspace(start=explow, stop=exphigh, num=nums)
 
         # Add fine region where high precision is necessary
         b_fine = np.array([0.3, 0.35, 0.4, 0.41, 0.42, 0.43, 0.44, 0.45, 0.46, 0.48, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-        b_vals = b_vals[np.logical_not(np.logical_and(min(b_fine)-1.0e-6 < b_vals, b_vals < max(b_fine)+1.0e-6))]  # Delete b values in this region
+        b_vals = b_vals[np.logical_not(np.logical_and(min(b_fine) - 1.0e-6 < b_vals,
+                                                      b_vals < max(b_fine) + 1.0e-6))]  # Delete b values in this region
         b_vals = np.concatenate((b_vals, b_fine))
         b_vals.sort()
 
         # Construct empty numpy arrays for bc and hw
         T_low, T_step, T_high = [float(T) for T in args["temprange"].split(":")]
-        numTs = int(np.floor((T_high-T_low)/T_step)) + 1
+        numTs = int(np.floor((T_high - T_low) / T_step)) + 1
         self.data.bc = np.empty((numTs, b_vals.size))
         self.data.hw = np.empty((numTs, b_vals.size))
 
         # Execute code and fill bc and hw consecutively
         for ib, bg in enumerate(b_vals):
-            bprimecmd = "bprime -T " + args["temprange"] + " -P " + str(args["p"]) + " -b " + str(bg) + " -m " + str(xmlfilename) + " -bl " +\
+            bprimecmd = "bprime -T " + args["temprange"] + " -P " + str(args["p"]) + " -b " + str(bg) + " -m " + str(
+                xmlfilename) + " -bl " + \
                         str(args["planet"]) + " -py " + str(gasname)
 
             expDYLD = 'export DYLD_LIBRARY_PATH=$MPP_DIRECTORY/install/lib:$DYLD_LIBRARY_PATH\n'
@@ -445,13 +468,15 @@ class AblativeMaterial(Material):
         self.hw = interpolate.interp2d(self.data.bg, self.data.Tforbprime, self.data.hw)
 
         # Calculate gradient functions
-        self.dbcdT  = lambda bg, T, tol: (self.bc(bg, T+tol) - self.bc(bg, T-tol)) / (2*tol)
-        self.dbcdbg = lambda bg, T, tol: (self.bc(bg+tol, T) - self.bc(bg-tol, T)) / (2*tol)
-        self.dhwdT  = lambda bg, T, tol: (self.hw(bg, T+tol) - self.hw(bg, T-tol)) / (2*tol)
-        self.dhwdbg = lambda bg, T, tol: (self.hw(bg+tol, T) - self.hw(bg-tol, T)) / (2*tol)
+        self.dbcdT = lambda bg, T, tol: (self.bc(bg, T + tol) - self.bc(bg, T - tol)) / (2 * tol)
+        self.dbcdbg = lambda bg, T, tol: (self.bc(bg + tol, T) - self.bc(bg - tol, T)) / (2 * tol)
+        self.dhwdT = lambda bg, T, tol: (self.hw(bg, T + tol) - self.hw(bg, T - tol)) / (2 * tol)
+        self.dhwdbg = lambda bg, T, tol: (self.hw(bg + tol, T) - self.hw(bg - tol, T)) / (2 * tol)
 
     def plotBc(self):
-
+        """
+plots Bc over T table with Bg as parameter
+        """
         for ib, bg in enumerate(self.data.bg):
             plt.semilogy(self.data.Tforbprime, self.data.bc[:, ib], label='%.2g' % bg)
 
@@ -464,10 +489,22 @@ class AblativeMaterial(Material):
         plt.show()
 
     def storeVariables(self, args):
+        """
+stores pressure and atmosphere values
+        :param args: dictionary of arguments
+        """
         self.pressure = float(args["p"])
         self.atmosphere = args["planet"]
 
+
 def constructPiecewise(x, y, symbol):
+    """
+constructs a piecewise linear function
+    :param x: x data
+    :param y: y data (dependent data)
+    :param symbol: sympy symbol
+    :return: symbolic interpolated function
+    """
     sorted_order = np.argsort(x)
     x = x[sorted_order]
     y = y[sorted_order]
@@ -482,7 +519,13 @@ def constructPiecewise(x, y, symbol):
 
     return Piecewise(*piecewisef)
 
+
 def dropnafromboth(x):
+    """
+removes NaN rows and columns from pandas DataFrame
+    :param x:
+    :return: cleared DataFrame
+    """
     if type(x) is pd.DataFrame:
         x = x.dropna(how='all', axis=0)
         x = x.dropna(how='all', axis=1)
@@ -490,7 +533,16 @@ def dropnafromboth(x):
     else:
         raise TypeError
 
+
 def createPoly(x, y, polydeg, symbol):
+    """
+creates a polynomial of a given degree
+    :param x: x-data
+    :param y: y-data (dependent data)
+    :param polydeg: degree of polynomial
+    :param symbol: symbol to be used
+    :return: sympy polynomial
+    """
     # Calculate maximum possible degree if specified
     if polydeg == "max":
         polydeg = len(x) - 1
@@ -501,6 +553,12 @@ def createPoly(x, y, polydeg, symbol):
 
 
 def checkForNonSI(data, file):
+    """
+checks whether the user provided data might contain any non-SI units (safety measure)
+    :param data: numpy dataframe to be checked
+    :param file: file name used to issue warning
+    :return:
+    """
     # Concat row and column names
     names = '\t'.join(data.columns.values.astype(str)).upper() + '\t' + '\t'.join(data.index.values.astype(str)).upper()
 
@@ -536,6 +594,10 @@ def checkForNonSI(data, file):
 
 
 def handleArguments():
+    """
+adds an argument parser and stores passed information
+    :return: dictionary of arguments
+    """
     # Create argument paser with respective options
     parser = argparse.ArgumentParser(description='Create material properties file (.matp) '
                                                  'for material calculation.')
@@ -554,7 +616,7 @@ def handleArguments():
                         default='300:100:6000')
     parser.add_argument('-p', '--pressure', action='store', dest='p',
                         help="pressure in Pa for bprime determination (default = 101325 Pa (1 atm))", default='101325')
-    parser.add_argument('-b', '--gasblow', action='store', dest='b',
+    parser.add_argument('-bg', '--gasblow', action='store', dest='bg',
                         help="pyrolysis gas blowing rate in \"b1:dB_order:b2\" (default 0.01:0.3333:100)",
                         default='0.01:0.3333:100')
     parser.add_argument('--planet', action='store', dest='planet',
@@ -565,7 +627,13 @@ def handleArguments():
 
     return args
 
+
 def checkInput(args):
+    """
+checks and corrects the input to material creation
+    :param args: dictionary of arguments
+    :return: corrected dictionary of arguments
+    """
     # Construct input directory path
     if not args["input_dir"]:
         args["input_dir"] = Path.cwd()
@@ -590,16 +658,27 @@ def checkInput(args):
 
     return args
 
-def createMaterial(inputdir, outfile=None, ablative=True, Trange="300:100:6000", pressure=101325, b="0.01:0.3333:100",
-                   atmosphere="Earth"):
 
+def createMaterial(inputdir, outfile=None, ablative=True, Trange="300:100:6000", pressure=101325, bg="0.01:0.3333:100",
+                   atmosphere="Earth"):
+    """
+creates a Material class object that holds various thermophysical properties
+    :param inputdir: input directory
+    :param outfile: output file
+    :param ablative: ablative material flag
+    :param Trange: range of temperature for bprime calculation in K (format: min:step:max)
+    :param pressure: pressure for bprime calculation in Pa
+    :param bg: range of non-dimensional gas-blowing rate (format: min:orderOfMagnitudePerStep:max)
+    :param atmosphere: string that specifies the atmosphere
+    :return: Material instance
+    """
     args = {}
     args["input_dir"] = inputdir
     args["output_file"] = outfile
     args["ablative"] = ablative
     args["temprange"] = Trange
     args["p"] = pressure
-    args["b"] = b
+    args["bg"] = bg
     args["planet"] = atmosphere
 
     args = checkInput(args)
