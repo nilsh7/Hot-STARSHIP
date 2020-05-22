@@ -27,18 +27,27 @@ if __name__ == "__main__":
     # Generate grids
     layers = grid.generateGrids(layers)
 
+    # Add variables
+    layers = addVariables(layers)
+
     # Create vectors to store unknowns in and dictionary from layer to indices
-    Tn, rhon, Tmap, rhomap = createUnknownVectors(layers, inputvars.ablative)
+    Tnu, rhonu, Tmap, rhomap = createUnknownVectors(layers)
 
     # Initialize variables to be solved
-    Tn, rhon = init_T_rho(Tn, rhon, Tmap, rhomap, layers, inputvars)
+    Tnu, rhonu = init_T_rho(Tnu, rhonu, Tmap, rhomap, layers, inputvars)
 
     for it, t in enumerate(np.arange(inputvars.tStart, inputvars.tEnd + 1e-5, inputvars.tDelta)):
         print("+++ New time step: t = %.4f secs +++" % t)
 
+        Tn, rhon = Tnu.copy(), rhonu.copy()
+        Tn[1:] += 50  # for debugging
+
         iteration = 0
 
         while True:
+
+            J, f = assembleT(layers, Tmap, Tnu, Tn, inputvars.tDelta, inputvars)
+
             iteration += 1
 
     aaa = 1
