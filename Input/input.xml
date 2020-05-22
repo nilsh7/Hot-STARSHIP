@@ -2,14 +2,14 @@
 <input>
     <layers>
         <layer number="1">
-            <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Carbon_Phenolic</material>
+            <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Carbon_Phenolic/Carbon_Phenolic.matp</material>
             <thickness>0.05</thickness>
             <firstcell>0.0005</firstcell>
             <maxgrowth>1.1</maxgrowth>
             <ablative>True</ablative>
         </layer>
         <layer number="2">
-            <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Aluminium</material>
+            <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Aluminium/Aluminium.matp</material>
             <thickness>0.01</thickness>
         </layer>
     </layers>
@@ -18,7 +18,7 @@
             <front type="heatflux">
                 <value>7.5e6</value>
             </front>
-            <back type="adibatic"></back>
+            <back type="adiabatic"></back>
         </BCs>
         <time>
             <start>0.0</start>

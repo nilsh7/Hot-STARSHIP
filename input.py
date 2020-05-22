@@ -8,6 +8,7 @@ class Layer:
     def __init__(self, layerelem, root):
 
         matname = layerelem.find("material").text
+        self.ablative = bool(root.find("layers").findall("layer")[0].find("ablative").text)
         # Read .matp file if it was specified
         if matname[-5:] == ".matp":
             with open(matname, 'rb') as matpfile:
@@ -44,7 +45,6 @@ class Input:
         root = tree.getroot()
 
         # Read information layer by layer
-        self.ablative = bool(root.find("layers").findall("layer")[0].find("ablative").text)
         layerelems = root.find("layers")
         numLayers = len(layerelems.findall("layer"))
         if numLayers == 0:
@@ -59,6 +59,11 @@ class Input:
         self.BCfrontType = root.find("options").find("BCs").find("front").attrib["type"]
         if self.BCfrontType in ("heatflux",):
             self.BCfrontValue = float(root.find("options").find("BCs").find("front").find("value").text)
+        else:
+            raise ValueError("Unsupported front BC %s" % self.BCfrontType)
+        self.BCbackType = root.find("options").find("BCs").find("back").attrib["type"]
+        if self.BCbackType != "adiabatic":
+            raise ValueError("Unsupported back BC %s" % self.BCbackType)
 
         # Time stepping
         self.tStart = float(root.find("options").find("time").find("start").text)
