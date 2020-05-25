@@ -85,6 +85,8 @@ class NonAblativeMaterial(Material):
         # List of necessary directories
         self.necessarydirs = [Path(d) for d in ["cp", "eps", "k", "rho"]]
 
+        self.data.Tref = 298.15
+
         self.readData(args)
 
         self.calculateVariables()
@@ -141,6 +143,10 @@ reads csv file and stores data
         self.data.rhoPiece = constructPiecewise(self.data.Tforrho, self.data.rho, self.T)
         self.rhoLambdified = lambdify(self.T, self.data.rhoPiece, 'numpy')
 
+        # e
+        self.data.ePiece = integrate(self.data.cpPiece, (self.T, self.data.Tref, self.T))
+        self.eLambdified = lambdify(self.T, self.data.ePiece, 'numpy')
+
     def cp(self, T, *ignoreargs):
         return self.cpLambdified(T)
 
@@ -155,6 +161,9 @@ reads csv file and stores data
 
     def dkdT(self, T, *ignoreargs):
         return self.dkdTLambdified(T)
+
+    def e(self, T, *ignoreargs):
+        return self.eLambdified(T)
 
 
 class AblativeMaterial(Material):
