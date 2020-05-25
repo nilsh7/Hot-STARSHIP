@@ -74,14 +74,14 @@ def init_T_rho(T, rho, Tmap, rhomap, layers, inputvars):
 
 def assembleT(layers, Tmap, Tnu, Tn, rhomap, rhonu, rhon, tDelta, inputvars):
 
-    J = assembleTMatrix(layers, Tmap, Tnu, rhonu, tDelta)
+    J = assembleTMatrix(layers, Tmap, Tnu, rhonu, tDelta, inputvars)
 
     fnu = assembleTVector(layers, Tmap, Tnu, Tn, rhonu, rhon, tDelta)
 
     return J, fnu
 
 
-def assembleTMatrix(layers, Tmap, Tnu, rhonu, tDelta):
+def assembleTMatrix(layers, Tmap, Tnu, rhonu, tDelta, inputvars):
 
     J = dia_matrix((len(Tnu), len(Tnu)))
     first_col = np.zeros(len(Tnu))
@@ -244,7 +244,7 @@ def addConductionVectorOuter(fnu, Tnu, Tmap, layers, key):
     dz_left = (lay_left.grid.zjp12[-1] - lay_left.grid.zj[-1])
     Cl = lay_left.material.k(T_int, wv) / dz_left * (T_left - T_int)
 
-    # Left side conduction flux
+    # Right side conduction flux
     dz_right = lay_right.grid.zj[0] - lay_right.grid.zjm12[0]
     Cr = lay_right.material.k(T_int, wv) / dz_right * (T_int - T_right)
 
@@ -255,7 +255,7 @@ def addConductionVectorOuter(fnu, Tnu, Tmap, layers, key):
 
     return fnu
 
-def addEnergyMatrixInner(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta):
+def addEnergyMatrixInner(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta, inputvars):
 
     # Store some variables
     iStart = Tmap[key][0]
@@ -298,7 +298,11 @@ def addEnergyMatrixInner(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tD
         dzint = gr.zj[0] - gr.zjm12[0]
         dzp = gr.dzjp[0]
 
-        dEj_dTj[0] = rhoj[0] * mat.cp(Tj[0], lay.wv[0])
+        dEj_dTj[0] = rhoj[0] * mat.cp(Tj[0], lay.wv[0]) * (1/2 * dzint + 3/8 * dzp)
+        dEj_dTjm1[0] = rhoj[0] * mat.cp(Tint, lay.wv[0]) * 1/2 * dzint
+        dEj_dTjp1[0] = rhoj[1] * mat.cp(Tj[1], lay.wv[1]) * 1/8 * dzp
+        if lay.ablative:
+            raise UserWarning("DeepGrid at front is not supported yet.")
 
     else:
         raise UserWarning("DeepGrid at front is not supported yet.")
@@ -320,6 +324,11 @@ def addEnergyMatrixInner(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tD
             dEj_dsdot[-1] = ((rhoj[-1] * (mat.e(Tint, lay.wv[-1]) + mat.e(Tj[-1], lay.wv[-1]))/2) * (-gr.etaj[-1]) * tDelta +
                              (gr.etaj[-1] - gr.etaj[-2]) * tDelta * (3/8 * rhoj[-1] * mat.e(rhoj[-1], lay.wv[-1]) +
                                                                      1/8 * rhoj[-2] * mat.e(rhoj[-2], lay.wv[-2])))
+    else:
+        if inputvars.BCbackType == "adiabatic":
+            pass
+        else:
+            raise UserWarning("Back BC %s not implemented yet." % inputvars.BCbackType)
 
     # Assemble Jacobian matrix
     fluxes = (dEj_dTj, dEj_dTjm1, dEj_dTjp1)
