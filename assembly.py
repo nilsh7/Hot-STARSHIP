@@ -1,6 +1,7 @@
 import material
 import numpy as np
 from scipy.sparse import dia_matrix, lil_matrix
+import grid
 
 p1 = lambda f: np.roll(f, shift=-1)
 m1 = lambda f: np.roll(f, shift=+1)
@@ -13,6 +14,7 @@ def addVariables(layers):
         layer.wv = np.ones(layer.grid.nC)
 
     return layers
+
 
 def createUnknownVectors(layers):
 
@@ -69,16 +71,17 @@ def init_T_rho(T, rho, Tmap, rhomap, layers, inputvars):
 
     return T, rho
 
-def assembleT(layers, Tmap, Tnu, Tn, tDelta, inputvars):
 
-    J = assembleTMatrix(layers, Tmap, Tnu, tDelta)
+def assembleT(layers, Tmap, Tnu, Tn, rhomap, rhonu, rhon, tDelta, inputvars):
 
-    fnu = assembleTVector(layers, Tmap, Tnu, Tn, tDelta)
+    J = assembleTMatrix(layers, Tmap, Tnu, rhonu, tDelta)
+
+    fnu = assembleTVector(layers, Tmap, Tnu, Tn, rhonu, rhon, tDelta)
 
     return J, fnu
 
 
-def assembleTMatrix(layers, Tmap, Tnu, tDelta):
+def assembleTMatrix(layers, Tmap, Tnu, rhonu, tDelta):
 
     J = dia_matrix((len(Tnu), len(Tnu)))
     first_col = np.zeros(len(Tnu))
@@ -95,8 +98,7 @@ def assembleTMatrix(layers, Tmap, Tnu, tDelta):
     return J
 
 
-
-def assembleTVector(layers, Tmap, Tnu, Tn, tDelta):
+def assembleTVector(layers, Tmap, Tnu, Tn, rhonu, rhon, tDelta):
 
     fnu = np.zeros(len(Tnu))
 
@@ -112,6 +114,7 @@ def assembleTVector(layers, Tmap, Tnu, Tn, tDelta):
             fnu = addConductionVectorOuter(fnu, Tnu, Tmap, layers, key)
 
     return fnu
+
 
 def addConductionMatrixInner(J, first_col, Tnu, Tmap, layers, key, tDelta):
 
@@ -155,6 +158,7 @@ def addConductionMatrixInner(J, first_col, Tnu, Tmap, layers, key, tDelta):
     first_col[iStart:iEnd + 1] += dCjp12_dsdot + dCjm12_dsdot
 
     return J, first_col
+
 
 def addConductionMatrixOuter(J, first_col, Tnu, Tmap, layers, key, tDelta):
 
@@ -201,6 +205,7 @@ def addConductionMatrixOuter(J, first_col, Tnu, Tmap, layers, key, tDelta):
 
     return J, first_col
 
+
 def addConductionVectorInner(fnu, Tnu, Tmap, layers, key):
 
     # Store some variables
@@ -221,6 +226,7 @@ def addConductionVectorInner(fnu, Tnu, Tmap, layers, key):
     fnu[iStart:iEnd+1] += -Cjm12 + Cjp12
 
     return fnu
+
 
 def addConductionVectorOuter(fnu, Tnu, Tmap, layers, key):
 
@@ -248,3 +254,86 @@ def addConductionVectorOuter(fnu, Tnu, Tmap, layers, key):
     fnu[iInt+1] += -Cr  # Energy balance of next volume
 
     return fnu
+
+def addEnergyMatrixInner(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta):
+
+    # Store some variables
+    iStart = Tmap[key][0]
+    iEnd = Tmap[key][-1]
+    lay = layers[int(key[3:])]
+    mat = lay.material
+    gr = lay.grid
+    Tj = Tnu[Tmap[key]]
+    rhoj = rhonu[rhomap[key]]
+
+    # Derivatives
+    if lay.ablative:
+        dEj_dsdot = ((gr.etaj - m1(gr.etaj)) * tDelta * (3/8 * rhoj * mat.e(Tj, lay.wv) + 1/8 * m1(rhoj) * m1(mat.e(Tj, lay.wv))) +
+                     (p1(gr.etaj) - gr.etaj) * tDelta * (3/8 * rhoj * mat.e(Tj, lay.wv) + 1/8 * p1(rhoj) * p1(mat.e(Tj, lay.wv))))
+    else:
+        dEj_dsdot = np.zeros(len(rhoj))
+
+    dEj_dTj = (gr.dzjm + gr.dzjp) * 3/8 * rhoj * mat.cp(Tj, lay.wv)
+    dEj_dTjm1 = gr.dzjm * 1/8 * m1(rhoj) * m1(mat.cp(Tj, lay.wv))
+    dEj_dTjp1 = gr.dzjp * 1/8 * p1(rhoj) * p1(mat.cp(Tj, lay.wv))
+
+    ### Calculate fluxes at boundaries ###
+    if type(grid) == grid.FrontGrid:
+        # Interface at minus side
+        # Half cell has nothing in negative direction
+        if lay.ablative:
+            dEj_dsdot[0] = (gr.etaj[1]-gr.etaj[0]) * tDelta * (3/8 * rhoj[0] * mat.e(Tj[0], lay.wv[0]) +
+                                                               1/8 * rhoj[1] * mat.e(Tj[1], lay.wv[1]))
+        dEj_dTj[0] = gr.dzjp * 3/8 * rhoj[0] * mat.cp(Tj[0], lay.wv[0])
+        dEj_dTjm1[0] = 0
+        dEj_dTjp1[0] = gr.dzjp * 1/8 * rhoj[1] * mat.cp(Tj[1], lay.wv[1])
+    elif type(grid) == grid.DeepGrid and int(key[3:]) != 0:
+
+        # Get previous interface
+        intkey = "int" + str(int(key[3:])-1)
+
+        # Interface at minus side
+        # Assign some values
+        Tint = Tnu[Tmap[intkey]]
+        dzint = gr.zj[0] - gr.zjm12[0]
+        dzp = gr.dzjp[0]
+
+        dEj_dTj[0] = rhoj[0] * mat.cp(Tj[0], lay.wv[0])
+
+    else:
+        raise UserWarning("DeepGrid at front is not supported yet.")
+
+
+    intkey = "int" + key[3:]
+    if intkey in Tmap:
+        # Interface at plus side
+        # Assign some values
+        Tint = Tnu[Tmap[intkey]]
+        dzint = gr.zjp12[-1] - gr.zj[-1]
+        dzm = gr.dzjm[-1]
+
+        # Calculate derivatives
+        dEj_dTj[-1] = rhoj[-1] * mat.cp(Tj[-1], lay.wv[-1]) * dzint/2 + dzm * 3/8 * rhoj[-1] * mat.cp(Tj[-1], lay.wv[-1])
+        dEj_dTjm1[-1] = dzm * 1/8 * rhoj[-2] * mat.cp(Tj[-2], lay.wv[-2])
+        dEj_dTjp1[-1] = rhoj[-1] * mat.cp(Tint, lay.wv[-1]) * dzint/2
+        if lay.ablative:
+            dEj_dsdot[-1] = ((rhoj[-1] * (mat.e(Tint, lay.wv[-1]) + mat.e(Tj[-1], lay.wv[-1]))/2) * (-gr.etaj[-1]) * tDelta +
+                             (gr.etaj[-1] - gr.etaj[-2]) * tDelta * (3/8 * rhoj[-1] * mat.e(rhoj[-1], lay.wv[-1]) +
+                                                                     1/8 * rhoj[-2] * mat.e(rhoj[-2], lay.wv[-2])))
+
+    # Assemble Jacobian matrix
+    fluxes = (dEj_dTj, dEj_dTjm1, dEj_dTjp1)
+    signs = (+1, +1, +1)
+    offsets = (0, -1, +1)
+    for flux, sign, offset in zip(fluxes, signs, offsets):
+        globflux = np.zeros(len(Tnu))
+        globflux[iStart:iEnd + 1] = flux
+        J += dia_matrix((sign * globflux, offset), shape=(len(Tnu), len(Tnu)))
+
+    # Store first column in separate vector
+    first_col[iStart:iEnd + 1] += dEj_dsdot
+
+    return J, first_col
+
+def addEnergyMatrixOuter(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta):
+    pass

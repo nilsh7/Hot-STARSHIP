@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
         while True:
 
-            J, f = assembleT(layers, Tmap, Tnu, Tn, inputvars.tDelta, inputvars)
+            J, f = assembleT(layers, Tmap, Tnu, Tn, rhomap, rhonu, rhon, inputvars.tDelta, inputvars)
 
             iteration += 1
 
