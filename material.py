@@ -362,7 +362,7 @@ reads csv file and stores data
 calculate pyrolysis gas composition and bprime table
         :param args: dictionary of arguments
         """
-        xmldata, gasname = self.calculatePyroGasComposition(args)
+        self.calculatePyroGasComposition(args)
 
         self.calculateBPrimes(args)
 
