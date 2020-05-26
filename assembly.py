@@ -74,14 +74,14 @@ def init_T_rho(T, rho, Tmap, rhomap, layers, inputvars):
 
 def assembleT(layers, Tmap, Tnu, Tn, rhomap, rhonu, rhon, tDelta, inputvars):
 
-    J = assembleTMatrix(layers, Tmap, Tnu, rhonu, tDelta, inputvars)
+    J = assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, tDelta, inputvars)
 
     fnu = assembleTVector(layers, Tmap, Tnu, Tn, rhonu, rhon, tDelta)
 
     return J, fnu
 
 
-def assembleTMatrix(layers, Tmap, Tnu, rhonu, tDelta, inputvars):
+def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, tDelta, inputvars):
 
     J = dia_matrix((len(Tnu), len(Tnu)))
     first_col = np.zeros(len(Tnu))
@@ -91,6 +91,8 @@ def assembleTMatrix(layers, Tmap, Tnu, rhonu, tDelta, inputvars):
             pass
         elif key[0:3] == "lay":
             J, first_col = addConductionMatrixInner(J, first_col, Tnu, Tmap, layers, key, tDelta)
+
+            J, first_col = addEnergyMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta, inputvars)
 
         elif key[0:3] == "int":
             J, first_col = addConductionMatrixOuter(J, first_col, Tnu, Tmap, layers, key, tDelta)
@@ -255,7 +257,7 @@ def addConductionVectorOuter(fnu, Tnu, Tmap, layers, key):
 
     return fnu
 
-def addEnergyMatrixInner(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta, inputvars):
+def addEnergyMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta, inputvars):
 
     # Store some variables
     iStart = Tmap[key][0]
@@ -278,6 +280,7 @@ def addEnergyMatrixInner(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tD
     dEj_dTjp1 = gr.dzjp * 1/8 * p1(rhoj) * p1(mat.cp(Tj, lay.wv))
 
     ### Calculate fluxes at boundaries ###
+    # Minus side
     if type(grid) == grid.FrontGrid:
         # Interface at minus side
         # Half cell has nothing in negative direction
@@ -303,13 +306,13 @@ def addEnergyMatrixInner(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tD
         dEj_dTjp1[0] = rhoj[1] * mat.cp(Tj[1], lay.wv[1]) * 1/8 * dzp
         if lay.ablative:
             raise UserWarning("DeepGrid at front is not supported yet.")
-
     else:
         raise UserWarning("DeepGrid at front is not supported yet.")
 
-
+    # Plus side
     intkey = "int" + key[3:]
     if intkey in Tmap:
+        # Boundary in middle of material
         # Interface at plus side
         # Assign some values
         Tint = Tnu[Tmap[intkey]]
@@ -325,8 +328,21 @@ def addEnergyMatrixInner(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tD
                              (gr.etaj[-1] - gr.etaj[-2]) * tDelta * (3/8 * rhoj[-1] * mat.e(rhoj[-1], lay.wv[-1]) +
                                                                      1/8 * rhoj[-2] * mat.e(rhoj[-2], lay.wv[-2])))
     else:
+        # Boundary at back of material
         if inputvars.BCbackType == "adiabatic":
-            pass
+            dzp12 = gr.zjp12[-1] - gr.zj[-1]
+            dzm = gr.dzjm[-1]
+
+            dEj_dTj[-1] = (dzm * 3/8 + dzp12) * rhoj[-1] * mat.cp(Tj[-1], lay.wv[-1])
+            dEj_dTjm1[-1] = dzm * 1/8 * rhoj[-2] * mat.cp(Tj[-2], lay.wv[-2])
+            dEj_dTjp1[-1] = 0
+
+            if lay.ablative:
+                dEj_dsdot[-1] = ((gr.etaj[-1] - gr.etaj[-2]) * tDelta * (3/8 * rhoj[-1] * mat.e(Tj[-1], lay.wv[-1]) +
+                                                                        1/8 * rhoj[-2] * mat.e(Tj[-2], lay.wv[-2])) +
+                                 (0 - gr.etaj[-1]) * tDelta * rhoj[-1] * mat.e(Tj[-1], lay.wv[-1]))
+            else:
+                dEj_dsdot[-1] = 0
         else:
             raise UserWarning("Back BC %s not implemented yet." % inputvars.BCbackType)
 
