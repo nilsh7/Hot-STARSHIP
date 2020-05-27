@@ -1,11 +1,7 @@
 from pathlib import Path
 import pandas as pd
 import warnings
-from numpy.polynomial.polynomial import Polynomial
 import numpy as np
-import sympy as sp
-from sympy import Piecewise, integrate
-from sympy.utilities.lambdify import lambdify
 import argparse
 import re
 from itertools import compress
@@ -13,9 +9,10 @@ import dill  # for pickling lambdas
 import os
 from io import StringIO
 import matplotlib.pyplot as plt
-from scipy import interpolate
+from scipy import interpolate as ip
+from scipy.integrate import cumtrapz
 
-# previously used packages: csv, os, glob, plt, json, jsonpickle, pickle
+# previously used packages: csv, os, glob, plt, json, jsonpickle, pickle, sympy
 
 nonsiunits = [unit.upper() for unit in ("ft", "°R", "BTU", "lb", "°F", "°C", "cal", "hr")]
 whitelist = [word.upper() for word in ("Scaled",)]
@@ -28,7 +25,6 @@ convertf = lambda st: "0,0" if st in ("-", "#WERT!") else st
 class Material:
     def __init__(self):
         self.data = Data()
-        self.T = sp.symbols("T")
 
     def readFile(self):
         pass  # to be intitiated in Ablative or NonAblativeMaterial
@@ -80,6 +76,8 @@ class Data:
 class NonAblativeMaterial(Material):
     def __init__(self, args):
 
+        print("Constructing non-ablative material \"%s\"..." % args["input_dir"].name)
+
         Material.__init__(self)
 
         # List of necessary directories
@@ -124,50 +122,48 @@ reads csv file and stores data
             self.data.rho = data.values[:, 1]
 
     def calculateVariables(self):
+
         # cp
-        self.data.cpPiece = constructPiecewise(self.data.Tforcp, self.data.cp, self.T)
-        self.cpLambdified = lambdify(self.T, self.data.cpPiece, 'numpy')
-        # self.cp = lambda T, **kwargs: self.cpLambdified(T)
+        self.data.cpLin = constructLinearSpline(self.data.Tforcp, self.data.cp)
 
         # k
-        self.data.kPiece = constructPiecewise(self.data.Tfork, self.data.k, self.T)
-        self.kLambdified = lambdify(self.T, self.data.kPiece, 'numpy')
-        self.data.dkdTPiece = sp.diff(self.data.kPiece, self.T)
-        self.dkdTLambdified = lambdify(self.T, self.data.dkdTPiece, 'numpy')
+        self.data.kLin = constructLinearSpline(self.data.Tfork, self.data.k)
+        self.data.dkdTLin = self.data.kLin.derivative(1)
 
         # eps
-        self.data.epsPiece = constructPiecewise(self.data.Tforeps, self.data.eps, self.T)
-        self.epsLambdified = lambdify(self.T, self.data.epsPiece, 'numpy')
+        self.data.epsLin = constructLinearSpline(self.data.Tforeps, self.data.eps)
 
         # rho
-        self.data.rhoPiece = constructPiecewise(self.data.Tforrho, self.data.rho, self.T)
-        self.rhoLambdified = lambdify(self.T, self.data.rhoPiece, 'numpy')
+        self.data.rhoLin = constructLinearSpline(self.data.Tforrho, self.data.rho)
 
         # e
-        self.data.ePiece = integrate(self.data.cpPiece, (self.T, self.data.Tref, self.T))
-        self.eLambdified = lambdify(self.T, self.data.ePiece, 'numpy')
+        self.data.e = cumtrapz(y=self.data.cp, x=self.data.Tforcp, initial=0)
+        self.data.eQuad = ip.UnivariateSpline(x=self.data.Tforcp, y=self.data.e, k=2, ext='extrapolate')
+        #self.data.eInterp = ip.interp1d(x=self.data.Tforcp, y=self.data.e, kind='quadratic', fill_value='extrapolate')
 
     def cp(self, T, *ignoreargs):
-        return self.cpLambdified(T)
+        return self.data.cpLin(T)
 
     def k(self, T, *ignoreargs):
-        return self.kLambdified(T)
+        return self.data.kLin(T)
 
     def eps(self, T, *ignoreargs):
-        return self.epsLambdified(T)
+        return self.data.epsLin(T)
 
     def rho(self, T, *ignoreargs):
-        return self.rhoLambdified(T)
+        return self.data.rhoLin(T)
 
     def dkdT(self, T, *ignoreargs):
-        return self.dkdTLambdified(T)
+        return self.data.dkdTLin(T)
 
     def e(self, T, *ignoreargs):
-        return self.eLambdified(T)
+        return self.data.eQuad(T)
 
 
 class AblativeMaterial(Material):
     def __init__(self, args):
+
+        print("Constructing ablative material \"%s\"..." % args["input_dir"].name)
 
         self.storeVariables(args)
 
@@ -176,11 +172,8 @@ class AblativeMaterial(Material):
         self.char = State()
         self.gas = State()
 
-        self.wv = sp.symbols("wv")
-
         self.necessarydirs = [Path(d) for d in ["Virgin/cp", "Virgin/eps", "Virgin/k", "Virgin/comp",
                                                 "Char/cp", "Char/eps", "Char/k",
-                                                "Gas/h",
                                                 "Combined"]]
 
         self.pyroelems = '{gases with C, H, O, e-}'
@@ -200,8 +193,7 @@ reads csv file and stores data
         :param csv_files: csv files in directory
         """
         # Open files and read data
-        global data
-        if iDir != 8:
+        if iDir != 7:
             csv_file = Path.joinpath(globdir, csv_files[0])
 
             head, index = (None, 0) if iDir == 3 else (0, None)
@@ -271,9 +263,6 @@ reads csv file and stores data
             self.char.data.Tfork = data.values[:, 0]
             self.char.data.k = data.values[:, 1]
         elif iDir == 7:
-            self.gas.data.Tforh = data.values[:, 0]
-            self.gas.data.h = data.values[:, 1]
-        elif iDir == 8:
 
             # Heats of formation
             self.data.Tref = hof_data.values[0, 1]
@@ -294,68 +283,56 @@ reads csv file and stores data
     def calculateVariables(self):
         ### Virgin ###
         # cp
-        self.virgin.data.cpPiece = constructPiecewise(self.virgin.data.Tforcp, self.virgin.data.cp, self.T)
-        self.virgin.cp = lambdify(self.T, self.virgin.data.cpPiece, 'numpy')
+        self.virgin.cp = constructLinearSpline(self.virgin.data.Tforcp, self.virgin.data.cp)
 
         # k
-        self.virgin.data.kPiece = constructPiecewise(self.virgin.data.Tfork, self.virgin.data.k, self.T)
-        self.virgin.k = lambdify(self.T, self.virgin.data.kPiece, 'numpy')
+        self.virgin.k = constructLinearSpline(self.virgin.data.Tfork, self.virgin.data.k)
+        self.virgin.dkdT = self.virgin.k.derivative(1)
 
         # eps
-        self.virgin.data.epsPiece = constructPiecewise(self.virgin.data.Tforeps, self.virgin.data.eps, self.T)
-        self.virgin.data.eps = lambdify(self.T, self.virgin.data.epsPiece, 'numpy')
+        self.virgin.eps = constructLinearSpline(self.virgin.data.Tforeps, self.virgin.data.eps)
 
         # e
-        self.virgin.data.ePiece = self.virgin.data.hf + integrate(self.virgin.data.cpPiece,
-                                                                  (self.T, self.data.Tref, self.T))
-        self.virgin.data.eLam = lambdify(self.T, self.virgin.data.ePiece, 'numpy')
-        self.virgin.e = lambda Ts: [self.virgin.data.eLam(T) for T in Ts]
+        self.virgin.data.e = cumtrapz(y=self.virgin.data.cp, x=self.virgin.data.Tforcp, initial=0)
+        ePreliminary = ip.UnivariateSpline(x=self.virgin.data.Tforcp, y=self.virgin.data.e, k=2, ext='extrapolate')
+        shift = self.virgin.data.hf - ePreliminary(self.data.Tref)
+        self.virgin.e = ip.UnivariateSpline(x=self.virgin.data.Tforcp, y=self.virgin.data.e + shift, k=2, ext='extrapolate')
 
         ### Char ###
         # cp
-        self.char.data.cpPiece = constructPiecewise(self.char.data.Tforcp, self.char.data.cp, self.T)
-        self.char.cp = lambdify(self.T, self.char.data.cpPiece, 'numpy')
+        self.char.cp = constructLinearSpline(self.char.data.Tforcp, self.char.data.cp)
 
         # k
-        self.char.data.kPiece = constructPiecewise(self.char.data.Tfork, self.char.data.k, self.T)
-        self.char.k = lambdify(self.T, self.char.data.kPiece, 'numpy')
+        self.char.k = constructLinearSpline(self.char.data.Tfork, self.char.data.k)
+        self.char.dkdT = self.char.k.derivative(1)
 
         # eps
-        self.char.data.epsPiece = constructPiecewise(self.char.data.Tforeps, self.char.data.eps, self.T)
-        self.char.data.eps = lambdify(self.T, self.char.data.epsPiece, 'numpy')
+        self.char.eps = constructLinearSpline(self.char.data.Tforeps, self.char.data.eps)
 
         # e
-        self.char.data.ePiece = self.char.data.hf + integrate(self.char.data.cpPiece,
-                                                              (self.T, self.data.Tref, self.T))
-        self.char.data.eLam = lambdify(self.T, self.char.data.ePiece, 'numpy')
-        self.char.e = lambda Ts: [self.char.data.eLam(T) for T in Ts]
+        self.char.data.e = cumtrapz(y=self.char.data.cp, x=self.char.data.Tforcp, initial=0)
+        ePreliminary = ip.UnivariateSpline(x=self.char.data.Tforcp, y=self.char.data.e, k=2, ext='extrapolate')
+        shift = self.char.data.hf - ePreliminary(self.data.Tref)
+        self.char.e = ip.UnivariateSpline(x=self.char.data.Tforcp, y=self.char.data.e + shift, k=2,
+                                            ext='extrapolate')
 
         ### Gas ###
-        self.gas.data.hPiece = constructPiecewise(self.gas.data.Tforh, self.gas.data.h, self.T)
-        self.gas.data.hPiece = self.gas.data.hPiece - self.gas.data.hPiece.evalf(subs={self.T: self.data.Tref}) + \
-                               self.gas.data.hf
-        self.gas.h = lambdify(self.T, self.gas.data.hPiece, 'numpy')
+        # Gas enthalpy to be determined using mppequil (see calculatePyroGasComposition)
 
         ### Combined ###
         # cp
-        self.data.cpPiece = (1 - self.wv) * self.virgin.data.cpPiece + self.wv * self.char.data.cpPiece
-        self.cp = lambdify([self.T, self.wv], self.data.cpPiece, 'numpy')
+        self.cp = lambda T, wv: wv * self.virgin.cp(T) + (1-wv) * self.char.cp(T)
 
         # k
-        self.data.kPiece = (1 - self.wv) * self.virgin.data.kPiece + self.wv * self.char.data.kPiece
-        self.k = lambdify([self.T, self.wv], self.data.kPiece, 'numpy')
-        self.data.dkdTPiece = sp.diff(self.data.kPiece, self.T)
-        self.dkdT = lambdify([self.T, self.wv], self.data.dkdTPiece, 'numpy')
+        self.k = lambda T, wv: wv * self.virgin.k(T) + (1-wv) * self.char.k(T)
+        self.dkdT = lambda T, wv: wv * self.virgin.dkdT(T) + (1 - wv) * self.char.dkdT(T)
 
         # eps
-        self.data.epsPiece = (1 - self.wv) * self.virgin.data.epsPiece + self.wv * self.char.data.epsPiece
-        self.eps = lambdify([self.T, self.wv], self.data.epsPiece, 'numpy')
-        self.data.depsdTPiece = sp.diff(self.data.epsPiece, self.T)
-        self.depsdT = lambdify([self.T, self.wv], self.data.depsdTPiece, 'numpy')
+        self.eps = lambda T, wv: wv * self.virgin.eps(T) + (1-wv) * self.char.eps(T)
 
         # e
-        self.data.ePiece = (1 - self.wv) * self.virgin.data.ePiece + self.wv * self.char.data.ePiece
-        self.e = lambdify([self.T, self.wv], self.data.ePiece, 'numpy')
+        self.e = lambda T, wv: wv * self.virgin.e(T) + (1-wv) * self.char.e(T)
+
 
     def calculateAblativeProperties(self, args):
         """
@@ -371,6 +348,9 @@ calculate pyrolysis gas composition and bprime table
 calculates pyrolysis gas composition using mppequil
         :param args: dictionary of arguments
         """
+
+        print("Calculating pyrolysis gas composition using mppequil...")
+
         a = self.virgin.data.comp  # for easier understanding of code below
 
         # Calculate composition of pyrolysis gas based on char yield
@@ -410,16 +390,19 @@ calculates pyrolysis gas composition using mppequil
         htab = pd.read_table(h, header=0, delim_whitespace=True)
 
         # Calculate enthalpy
-        self.gas.data.hPiece = constructPiecewise(htab.values[:, 0], htab.values[:, 1], self.T)
-        self.gas.data.hPiece = self.gas.data.hPiece - self.gas.data.hPiece.evalf(subs={self.T: self.data.Tref}) + \
-                               self.gas.data.hf
-        self.gas.h = lambdify(self.T, self.gas.data.hPiece, 'numpy')
+        hPreliminary = constructLinearSpline(x=htab.values[:, 0], y=htab.values[:, 1])
+        shift = self.gas.data.hf - hPreliminary(self.data.Tref)
+        self.gas.h = constructLinearSpline(x=htab.values[:, 0], y=htab.values[:, 1] + shift)
+
 
     def calculateBPrimes(self, args):
         """
 calculates bprime tables using bprime executable provided by mutation++
         :param args: dictionary of arguments
         """
+
+        print("Calculating wall gas composition using bprime (from Mutation++ library)...")
+
         # Construct Mutation++ mixture file
         xmldata = Path("Templates/mutationpp_mixtures_surface.xml").read_text()
         gasname = args["input_dir"].name + "_Gas"
@@ -473,8 +456,8 @@ calculates bprime tables using bprime executable provided by mutation++
         self.data.bg = b_vals
 
         # Calculate interpolation functions
-        self.bc = interpolate.interp2d(self.data.bg, self.data.Tforbprime, self.data.bc)
-        self.hw = interpolate.interp2d(self.data.bg, self.data.Tforbprime, self.data.hw)
+        self.bc = ip.interp2d(self.data.bg, self.data.Tforbprime, self.data.bc)
+        self.hw = ip.interp2d(self.data.bg, self.data.Tforbprime, self.data.hw)
 
         # Calculate gradient functions
         self.dbcdT = lambda bg, T, tol: (self.bc(bg, T + tol) - self.bc(bg, T - tol)) / (2 * tol)
@@ -506,27 +489,20 @@ stores pressure and atmosphere values
         self.atmosphere = args["planet"]
 
 
-def constructPiecewise(x, y, symbol):
+def constructLinearSpline(x, y):
     """
-constructs a piecewise linear function
-    :param x: x data
-    :param y: y data (dependent data)
-    :param symbol: sympy symbol
-    :return: symbolic interpolated function
+constructs a piecewise linear spline through data
+    :param x: x data as array (variable)
+    :param y: y data as array (dependent)
+    :return: spline
     """
-    sorted_order = np.argsort(x)
-    x = x[sorted_order]
-    y = y[sorted_order]
-
-    start = ((y[+0], symbol < x[+0]),)
-    end = ((y[-1], symbol >= x[-1]),)
-    mid = ()
-    for i in np.arange(np.size(x) - 1):
-        mid += (((y[i + 1] - y[i]) / (x[i + 1] - x[i]) * (symbol - x[i]) + y[i], symbol <= x[i + 1]),)
-
-    piecewisef = start + mid + end
-
-    return Piecewise(*piecewisef)
+    if len(x) != len(y):
+        raise ValueError("Arrays should have same length.")
+    if len(x) > 1:
+        spline = ip.UnivariateSpline(x=x, y=y, k=1, ext='const')
+    else:
+        spline = lambda v: np.repeat(y, len(v)) if type(v) is not float else y
+    return spline
 
 
 def dropnafromboth(x):
@@ -541,24 +517,6 @@ removes NaN rows and columns from pandas DataFrame
         return x
     else:
         raise TypeError
-
-
-def createPoly(x, y, polydeg, symbol):
-    """
-creates a polynomial of a given degree
-    :param x: x-data
-    :param y: y-data (dependent data)
-    :param polydeg: degree of polynomial
-    :param symbol: symbol to be used
-    :return: sympy polynomial
-    """
-    # Calculate maximum possible degree if specified
-    if polydeg == "max":
-        polydeg = len(x) - 1
-
-    coeffs = Polynomial.fit(x=x, y=y, deg=min(len(x) - 1, polydeg), window=np.array([np.min(x), np.max(x)]))
-    poly = sp.Poly(np.flip(coeffs.coef), symbol)
-    return poly
 
 
 def checkForNonSI(data, file):

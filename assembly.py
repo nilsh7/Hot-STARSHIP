@@ -62,10 +62,11 @@ def init_T_rho(T, rho, Tmap, rhomap, layers, inputvars):
         raise ValueError("Unimplemented initialization type %s", inputvars.initType)
     for layerKey, layer in zip(rhomap, layers):
         if type(layer.material) is material.AblativeMaterial:
-            rho[rhomap[layerKey]] = np.array([np.dot(layer.material.data.virginRho0, layer.material.data.frac)]*len(rhomap[layerKey]))
+            rho[rhomap[layerKey]] = np.repeat(np.dot(layer.material.data.virginRho0, layer.material.data.frac),
+                                              len(rhomap[layerKey]))
         else:
             if inputvars.initType == "Temperature":
-                rho[rhomap[layerKey]] = np.array([layer.material.rho(inputvars.initValue)]*len(rhomap[layerKey]))
+                rho[rhomap[layerKey]] = np.repeat(layer.material.rho(inputvars.initValue), len(rhomap[layerKey]))
             else:
                 raise ValueError("Unimplemented initialization type %s", inputvars.initType)
 
