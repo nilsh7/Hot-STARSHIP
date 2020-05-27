@@ -13,7 +13,8 @@ import dill  # for pickling lambdas
 import os
 from io import StringIO
 import matplotlib.pyplot as plt
-from scipy import interpolate
+from scipy import interpolate as ip
+from scipy.integrate import cumtrapz
 
 # previously used packages: csv, os, glob, plt, json, jsonpickle, pickle
 
@@ -124,46 +125,42 @@ reads csv file and stores data
             self.data.rho = data.values[:, 1]
 
     def calculateVariables(self):
+
         # cp
-        self.data.cpPiece = constructPiecewise(self.data.Tforcp, self.data.cp, self.T)
-        self.cpLambdified = lambdify(self.T, self.data.cpPiece, 'numpy')
-        # self.cp = lambda T, **kwargs: self.cpLambdified(T)
+        self.data.cpLin = constructLinearSpline(self.data.Tforcp, self.data.cp)
 
         # k
-        self.data.kPiece = constructPiecewise(self.data.Tfork, self.data.k, self.T)
-        self.kLambdified = lambdify(self.T, self.data.kPiece, 'numpy')
-        self.data.dkdTPiece = sp.diff(self.data.kPiece, self.T)
-        self.dkdTLambdified = lambdify(self.T, self.data.dkdTPiece, 'numpy')
+        self.data.kLin = constructLinearSpline(self.data.Tfork, self.data.k)
+        self.data.dkdTLin = self.data.kLin.derivative(1)
 
         # eps
-        self.data.epsPiece = constructPiecewise(self.data.Tforeps, self.data.eps, self.T)
-        self.epsLambdified = lambdify(self.T, self.data.epsPiece, 'numpy')
+        self.data.epsLin = constructLinearSpline(self.data.Tforeps, self.data.eps)
 
         # rho
-        self.data.rhoPiece = constructPiecewise(self.data.Tforrho, self.data.rho, self.T)
-        self.rhoLambdified = lambdify(self.T, self.data.rhoPiece, 'numpy')
+        self.data.rhoLin = constructLinearSpline(self.data.Tforrho, self.data.rho)
 
         # e
-        self.data.ePiece = integrate(self.data.cpPiece, (self.T, self.data.Tref, self.T))
-        self.eLambdified = lambdify(self.T, self.data.ePiece, 'numpy')
+        self.data.e = cumtrapz(y=self.data.cp, x=self.data.Tforcp, initial=0)
+        self.data.eQuad = ip.UnivariateSpline(x=self.data.Tforcp, y=self.data.e, k=2, ext='extrapolate')
+        #self.data.eInterp = ip.interp1d(x=self.data.Tforcp, y=self.data.e, kind='quadratic', fill_value='extrapolate')
 
     def cp(self, T, *ignoreargs):
-        return self.cpLambdified(T)
+        return self.data.cpLin(T)
 
     def k(self, T, *ignoreargs):
-        return self.kLambdified(T)
+        return self.data.kLin(T)
 
     def eps(self, T, *ignoreargs):
-        return self.epsLambdified(T)
+        return self.data.epsLin(T)
 
     def rho(self, T, *ignoreargs):
-        return self.rhoLambdified(T)
+        return self.data.rhoLin(T)
 
     def dkdT(self, T, *ignoreargs):
-        return self.dkdTLambdified(T)
+        return self.data.dkdTLin(T)
 
     def e(self, T, *ignoreargs):
-        return self.eLambdified(T)
+        return self.data.eQuad(T)
 
 
 class AblativeMaterial(Material):
@@ -527,6 +524,22 @@ constructs a piecewise linear function
     piecewisef = start + mid + end
 
     return Piecewise(*piecewisef)
+
+
+def constructLinearSpline(x, y):
+    """
+constructs a piecewise linear spline through data
+    :param x: x data as array (variable)
+    :param y: y data as array (dependent)
+    :return: spline
+    """
+    if len(x) != len(y):
+        raise ValueError("Arrays should have same length.")
+    if len(x) > 1:
+        spline = ip.UnivariateSpline(x=x, y=y, k=1, ext='const')
+    else:
+        spline = lambda v: np.repeat(y, len(v)) if type(v) is not float else y
+    return spline
 
 
 def dropnafromboth(x):
