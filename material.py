@@ -269,7 +269,7 @@ reads csv file and stores data
             self.char.data.eps = data.values[:, 1]
         elif iDir == 6:
             self.char.data.Tfork = data.values[:, 0]
-            self.char.data.k = data.values[:, 0]
+            self.char.data.k = data.values[:, 1]
         elif iDir == 7:
             self.gas.data.Tforh = data.values[:, 0]
             self.gas.data.h = data.values[:, 1]
