@@ -7,6 +7,7 @@ p1 = lambda f: np.roll(f, shift=-1)
 m1 = lambda f: np.roll(f, shift=+1)
 p12 = lambda f: (p1(f) + f)/2
 m12 = lambda f: (m1(f) + f)/2
+sw = 1  # stencil width
 
 def addVariables(layers):
 
@@ -146,15 +147,15 @@ def addConductionMatrixInner(J, first_col, Tnu, Tmap, layers, key, tDelta):
         dCjm12_dsdot = -mat.k(m12(Tj), m12(lay.wv)) * (m1(Tj) - Tj) / (gr.dzjm ** 2) * (gr.etaj - m1(gr.etaj)) * tDelta
     else:
         dCjm12_dsdot = np.zeros(len(Tj))
-    dCjm12_dTj[0], dCjm12_dTjm1[-1], dCjm12_dsdot[-1] = (0, 0, 0)
+    dCjm12_dTj[0], dCjm12_dTjm1[0], dCjm12_dsdot[0] = (0, 0, 0)
 
     # Assemble Jacobian matrix
     fluxes = (dCjp12_dTj, dCjp12_dTjp1, dCjm12_dTj, dCjm12_dTjm1)
     signs = (+1, +1, -1, -1)
     offsets = (0, +1, 0, -1)
     for flux, sign, offset in zip(fluxes, signs, offsets):
-        globflux = np.zeros(len(Tnu))
-        globflux[iStart:iEnd + 1] = flux
+        globflux = np.zeros(len(Tnu)+sw)
+        globflux[iStart+offset :iEnd+offset + 1] = flux
         J += dia_matrix((sign * globflux, offset), shape=(len(Tnu), len(Tnu)))
 
     # Store first column in separate vector
@@ -282,16 +283,16 @@ def addEnergyMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta,
 
     ### Calculate fluxes at boundaries ###
     # Minus side
-    if type(grid) == grid.FrontGrid:
+    if type(gr) == grid.FrontGrid:
         # Interface at minus side
         # Half cell has nothing in negative direction
         if lay.ablative:
             dEj_dsdot[0] = (gr.etaj[1]-gr.etaj[0]) * tDelta * (3/8 * rhoj[0] * mat.e(Tj[0], lay.wv[0]) +
                                                                1/8 * rhoj[1] * mat.e(Tj[1], lay.wv[1]))
-        dEj_dTj[0] = gr.dzjp * 3/8 * rhoj[0] * mat.cp(Tj[0], lay.wv[0])
+        dEj_dTj[0] = gr.dzjp[0] * 3/8 * rhoj[0] * mat.cp(Tj[0], lay.wv[0])
         dEj_dTjm1[0] = 0
-        dEj_dTjp1[0] = gr.dzjp * 1/8 * rhoj[1] * mat.cp(Tj[1], lay.wv[1])
-    elif type(grid) == grid.DeepGrid and int(key[3:]) != 0:
+        dEj_dTjp1[0] = gr.dzjp[0] * 1/8 * rhoj[1] * mat.cp(Tj[1], lay.wv[1])
+    elif type(gr) == grid.DeepGrid and int(key[3:]) != 0:
 
         # Get previous interface
         intkey = "int" + str(int(key[3:])-1)
@@ -352,8 +353,8 @@ def addEnergyMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta,
     signs = (+1, +1, +1)
     offsets = (0, -1, +1)
     for flux, sign, offset in zip(fluxes, signs, offsets):
-        globflux = np.zeros(len(Tnu))
-        globflux[iStart:iEnd + 1] = flux
+        globflux = np.zeros(len(Tnu)+sw)
+        globflux[iStart+offset : iEnd+offset+1] = flux
         J += dia_matrix((sign * globflux, offset), shape=(len(Tnu), len(Tnu)))
 
     # Store first column in separate vector
