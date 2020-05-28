@@ -3,6 +3,7 @@ import input
 import numpy as np
 from assembly import *
 import grid
+import dill
 
 def handleArguments():
     """
@@ -17,6 +18,11 @@ handles arguments passed to Hot-STARSHIP
     args = vars(parser.parse_args())
 
     return args
+
+
+def savePreValues(layers):
+    for lay in layers:
+        lay.pre = dill.copy(lay)
 
 
 if __name__ == "__main__":
@@ -40,6 +46,8 @@ if __name__ == "__main__":
     # Initialize variables to be solved
     Tnu, rhonu = init_T_rho(Tnu, rhonu, Tmap, rhomap, layers, inputvars)
 
+    Tnu = np.linspace(250, 750, len(Tnu))  # for debugging purposes
+
     for it, t in enumerate(np.arange(inputvars.tStart, inputvars.tEnd + 1e-5, inputvars.tDelta)):
         print("+++ New time step: t = %.4f secs +++" % t)
 
@@ -47,6 +55,8 @@ if __name__ == "__main__":
         Tn[1:] += 50*np.arange(len(Tn)-1)  # for debugging
 
         iteration = 0
+
+        savePreValues(layers)
 
         while True:
 

@@ -78,7 +78,7 @@ def assembleT(layers, Tmap, Tnu, Tn, rhomap, rhonu, rhon, tDelta, inputvars):
 
     J = assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, tDelta, inputvars)
 
-    fnu = assembleTVector(layers, Tmap, Tnu, Tn, rhonu, rhon, tDelta)
+    fnu = assembleTVector(layers, Tnu, Tn, Tmap, rhonu, rhon, rhomap, tDelta, inputvars)
 
     return J, fnu
 
@@ -102,7 +102,7 @@ def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, tDelta, inputvars):
     return J
 
 
-def assembleTVector(layers, Tmap, Tnu, Tn, rhonu, rhon, tDelta):
+def assembleTVector(layers, Tnu, Tn, Tmap, rhonu, rhon, rhomap, tDelta, inputvars):
 
     fnu = np.zeros(len(Tnu))
 
@@ -112,6 +112,8 @@ def assembleTVector(layers, Tmap, Tnu, Tn, rhonu, rhon, tDelta):
         elif key[0:3] == "lay":
 
             fnu = addConductionVectorInner(fnu, Tnu, Tmap, layers, key)
+
+            fnu = addEnergyVector(fnu, Tnu, Tn, Tmap, rhonu, rhon, rhomap, layers, key, tDelta, inputvars)
 
         elif key[0:3] == "int":
 
@@ -223,8 +225,9 @@ def addConductionVectorInner(fnu, Tnu, Tmap, layers, key):
     ### Conduction ###
     # Flux at plus side
     Cjp12 = mat.k(p12(Tj), p12(lay.wv)) / gr.dzjp * (Tj - p1(Tj))
+    # Flux at minus side
     Cjm12 = mat.k(m12(Tj), m12(lay.wv)) / gr.dzjm * (m1(Tj) - Tj)
-    Cjp12[-1], Cjm12[0] = (0, 0)  # Account for boundaries
+    Cjp12[-1], Cjm12[0] = (0, 0)  # Account for boundaries, will be added in addConductionVectorOuter
 
     # Assemble vector
     fnu[iStart:iEnd+1] += -Cjm12 + Cjp12
@@ -259,6 +262,7 @@ def addConductionVectorOuter(fnu, Tnu, Tmap, layers, key):
 
     return fnu
 
+
 def addEnergyMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta, inputvars):
 
     # Store some variables
@@ -280,6 +284,7 @@ def addEnergyMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta,
     dEj_dTj = (gr.dzjm + gr.dzjp) * 3/8 * rhoj * mat.cp(Tj, lay.wv)
     dEj_dTjm1 = gr.dzjm * 1/8 * m1(rhoj) * m1(mat.cp(Tj, lay.wv))
     dEj_dTjp1 = gr.dzjp * 1/8 * p1(rhoj) * p1(mat.cp(Tj, lay.wv))
+    # Note: values at index 0 and -1 have no physical meaning!
 
     ### Calculate fluxes at boundaries ###
     # Minus side
@@ -307,7 +312,7 @@ def addEnergyMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta,
         dEj_dTjm1[0] = rhoj[0] * mat.cp(Tint, lay.wv[0]) * 1/2 * dzint
         dEj_dTjp1[0] = rhoj[1] * mat.cp(Tj[1], lay.wv[1]) * 1/8 * dzp
         if lay.ablative:
-            raise UserWarning("DeepGrid at front is not supported yet.")
+            raise UserWarning("Deeper layers cannot be ablative.")
     else:
         raise UserWarning("DeepGrid at front is not supported yet.")
 
@@ -362,5 +367,93 @@ def addEnergyMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta,
 
     return J, first_col
 
-def addEnergyMatrixOuter(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta):
-    pass
+def addEnergyVector(fnu, Tnu, Tn, Tmap, rhonu, rhon, rhomap, layers, key, tDelta, inputvars):
+
+    # Store some variables
+    iStart = Tmap[key][0]
+    iEnd = Tmap[key][-1]
+    lay = layers[int(key[3:])]
+    mat = lay.material
+    gr = lay.grid
+    grpre = lay.pre.grid
+    Tjnu = Tnu[Tmap[key]]
+    Tjn = Tn[Tmap[key]]
+    rhojnu = rhonu[rhomap[key]]
+    rhojn = rhon[rhomap[key]]
+
+    # Values
+    Ej = 1/tDelta * (+gr.dzjm    * (+3/8 * rhojnu * mat.e(Tjnu, lay.wv)
+                                    +1/8 * m1(rhojnu) * mat.e(m1(Tjnu), m1(lay.wv)))
+                     -grpre.dzjm * (-3/8 * rhojn * mat.e(Tjn, lay.pre.wv)
+                                    -1/8 * m1(rhojn) * mat.e(m1(Tjn), m1(lay.pre.wv)))
+                     +gr.dzjp    * (+3/8 * rhojnu * mat.e(Tjnu, lay.wv)
+                                    +1/8 * p1(rhojnu) * mat.e(p1(Tjnu), p1(lay.wv)))
+                     -grpre.dzjp * (-3/8 * rhojn * mat.e(Tjn, lay.pre.wv)
+                                    -1/8 * p1(rhojn) * mat.e(p1(Tjn), p1(lay.pre.wv))))
+    # Note: values at index 0 and -1 have no physical meaning!
+
+    ### Calculate fluxes at boundaries ###
+    # Minus side
+    if type(gr) == grid.FrontGrid:
+        Ej[0] = 1/tDelta * (+gr.dzjp[0]    * (+3/8 * rhojnu[0] * mat.e(Tjnu[0], lay.wv[0])
+                                              +1/8 * rhojnu[1] * mat.e(Tjnu[1], lay.wv[1]))
+                            -grpre.dzjp[0] * (+3/8 * rhojn[0] * mat.e(Tjn[0], lay.pre.wv[0])
+                                              +1/8 * rhojn[1] * mat.e(Tjn[1], lay.pre.wv[1])))
+    elif type(gr) == grid.DeepGrid and int(key[3:]) != 0:
+
+        # Get previous interface
+        intkey = "int" + str(int(key[3:]) - 1)
+
+        # Interface at minus side
+        # Assign some values
+        Tintnu = Tnu[Tmap[intkey]]
+        Tintn = Tn[Tmap[intkey]]
+        dzintnu = gr.zj[0] - gr.zjm12[0]
+        dzintn = grpre.zj[0] - grpre.zjm12[0]
+
+        Ej[0] = 1/tDelta * (+ rhojnu[0] * (mat.e(Tintnu, lay.wv[0])+mat.e(Tjnu[0], lay.wv[0]))/2 * dzintnu
+                            + (gr.dzjp[0] * (3/8 * rhojnu[0] * mat.e(Tjnu[0], lay.wv[0]) +
+                                             1/8 * rhojnu[1] * mat.e(Tjnu[1], lay.wv[1])))
+                            - rhon[0] * (mat.e(Tintn, lay.pre.wv[0])+mat.e(Tjn[0], lay.pre.wv[0]))/2 * dzintn
+                            - (grpre.dzjp[0] * (3/8 * rhojn[0] * mat.e(Tjn[0], lay.pre.wv[0]) +
+                                                1/8 * rhojn[1] * mat.e(Tjn[1], lay.pre.wv[1]))))
+    else:
+        raise UserWarning("DeepGrid at front is not supported yet.")
+
+    # Plus side
+    intkey = "int" + key[3:]
+    if intkey in Tmap:
+        # Boundary in middle of material
+        # Interface at plus side
+        # Assign some values
+        Tintnu = Tnu[Tmap[intkey]]
+        Tintn = Tn[Tmap[intkey]]
+        dzintnu = gr.zjp12[-1] - gr.zj[-1]
+        dzintn = grpre.zjp12[-1] - grpre.zj[-1]
+
+        # Calculate derivatives
+        Ej[-1] = 1/tDelta * (+ rhojnu[-1] * (mat.e(Tintnu, lay.wv[-1])+mat.e(Tjnu[-1], lay.wv[-1]))/2 * dzintnu
+                             + (gr.dzjm[-1] * (3/8 * rhojnu[-1] * mat.e(Tjnu[-1], lay.wv[-1]) +
+                                               1/8 * rhojnu[-2] * mat.e(Tjnu[-2], lay.wv[-2])))
+                             - rhon[-1] * (mat.e(Tintn, lay.pre.wv[-1])+mat.e(Tjn[-1], lay.pre.wv[-1]))/2 * dzintn
+                             - (grpre.dzjm[-1] * (3/8 * rhojn[-1] * mat.e(Tjn[-1], lay.pre.wv[-1]) +
+                                                  1/8 * rhojn[-2] * mat.e(Tjn[-2], lay.pre.wv[-2]))))
+    else:
+        # Boundary at back of material
+        if inputvars.BCbackType == "adiabatic":
+            dzp12nu = gr.zjp12[-1] - gr.zj[-1]
+            dzp12n = grpre.zjp12[-1] - grpre.zj[-1]
+
+            Ej[-1] = 1/tDelta * (+ gr.dzjm[-1] * (3/8 * rhojnu[-1] * mat.e(Tjnu[-1], lay.wv[-1]) +
+                                                  1/8 * rhojnu[-2] * mat.e(Tjnu[-2], lay.wv[-2]))
+                                 + rhojnu[-1] * mat.e(Tjnu[-1], lay.wv[-1]) * 1/2 * dzp12nu
+                                 - grpre.dzjm[-1] * (3/8 * rhojn[-1] * mat.e(Tjn[-1], lay.pre.wv[-1]) +
+                                                     1/8 * rhojn[-2] * mat.e(Tjn[-2], lay.pre.wv[-2]))
+                                 - rhojn[-1] * mat.e(Tjn[-1], lay.wv[-1]) * 1/2 * dzp12n)
+        else:
+            raise UserWarning("Back BC %s not implemented yet." % inputvars.BCbackType)
+
+    # Assemble vector
+    fnu[iStart:iEnd + 1] += +Ej
+
+    return fnu
