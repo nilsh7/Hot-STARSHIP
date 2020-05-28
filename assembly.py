@@ -52,6 +52,21 @@ def createUnknownVectors(layers):
     return T, rho, Tmap, rhomap
 
 
+def createGlobFlux(flux, length, iStart, iEnd, offset):
+
+    globflux = np.zeros(length + sw)
+    if iStart+offset < 0:
+        st = 0
+        trunc = -(iStart+offset)
+    else:
+        st = iStart + offset
+        trunc = 0
+
+    globflux[st:iEnd + offset + 1] = flux[trunc:]
+
+    return globflux
+
+
 def init_T_rho(T, rho, Tmap, rhomap, layers, inputvars):
     if inputvars.initType == "Temperature":
         if "sdot" in Tmap:
@@ -156,8 +171,7 @@ def addConductionMatrixInner(J, first_col, Tnu, Tmap, layers, key, tDelta):
     signs = (+1, +1, -1, -1)
     offsets = (0, +1, 0, -1)
     for flux, sign, offset in zip(fluxes, signs, offsets):
-        globflux = np.zeros(len(Tnu)+sw)
-        globflux[iStart+offset :iEnd+offset + 1] = flux
+        globflux = createGlobFlux(flux, len(Tnu), iStart, iEnd, offset)
         J += dia_matrix((sign * globflux, offset), shape=(len(Tnu), len(Tnu)))
 
     # Store first column in separate vector
@@ -358,8 +372,7 @@ def addEnergyMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta,
     signs = (+1, +1, +1)
     offsets = (0, -1, +1)
     for flux, sign, offset in zip(fluxes, signs, offsets):
-        globflux = np.zeros(len(Tnu)+sw)
-        globflux[iStart+offset : iEnd+offset+1] = flux
+        globflux = createGlobFlux(flux, len(Tnu), iStart, iEnd, offset)
         J += dia_matrix((sign * globflux, offset), shape=(len(Tnu), len(Tnu)))
 
     # Store first column in separate vector
