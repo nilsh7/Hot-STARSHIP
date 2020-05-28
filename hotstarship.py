@@ -4,6 +4,7 @@ import numpy as np
 from assembly import *
 import grid
 import dill
+from scipy.sparse.linalg import spsolve
 
 def handleArguments():
     """
@@ -46,22 +47,35 @@ if __name__ == "__main__":
     # Initialize variables to be solved
     Tnu, rhonu = init_T_rho(Tnu, rhonu, Tmap, rhomap, layers, inputvars)
 
-    Tnu = np.linspace(250, 750, len(Tnu))  # for debugging purposes
+    #Tnu = np.linspace(250, 750, len(Tnu))  # for debugging purposes
+    deltaTn = np.linspace(1.0, 0, len(Tnu))
 
     for it, t in enumerate(np.arange(inputvars.tStart, inputvars.tEnd + 1e-5, inputvars.tDelta)):
         print("+++ New time step: t = %.4f secs +++" % t)
 
         Tn, rhon = Tnu.copy(), rhonu.copy()
-        Tn[1:] += 50*np.arange(len(Tn)-1)  # for debugging
+        #Tn[1:] += 50*np.arange(len(Tn)-1)  # for debugging
 
         iteration = 0
 
         savePreValues(layers)
+        Tnu += deltaTn  # Initial guess based on previous difference
 
         while True:
 
+            iteration += 1
+
             J, f = assembleT(layers, Tmap, Tnu, Tn, rhomap, rhonu, rhon, inputvars.tDelta, inputvars)
 
-            iteration += 1
+            f[0] += 0
+
+            dT = spsolve(J, -f)
+
+            Tnu += dT
+
+            if np.linalg.norm(dT/Tnu) < 1.0e-6:
+                print("Completed after %i iterations." % iteration)
+                deltaTn = Tnu - Tn
+                break
 
     aaa = 1
