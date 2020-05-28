@@ -12,7 +12,12 @@ creates a Layer objects that holds various information about the TPS layer
         :param root: xml root element
         """
         matname = layerelem.find("material").text
-        self.ablative = bool(root.find("layers").findall("layer")[0].find("ablative").text)
+        self.ablative = True if layerelem.attrib["number"] == "1" and layerelem.find("ablative").text == "True" \
+            else False
+        if layerelem.find("ablative") is not None:
+            if int(layerelem.attrib["number"]) > 1 and layerelem.find("ablative").text == "True":
+                raise ValueError("Material at layer no. %i cannot be ablative. Only the first layer can."
+                                 % int(layerelem.attrib["number"]))
         # Read .matp file if it was specified
         if matname[-5:] == ".matp":
             with open(matname, 'rb') as matpfile:
@@ -21,12 +26,14 @@ creates a Layer objects that holds various information about the TPS layer
             if type(self.material) is material.AblativeMaterial:
                 if self.material.pressure == float(root.find("options").find("ambient").find("pressure").text) and \
                         self.material.atmosphere == root.find("options").find("ambient").find("atmosphere").text:
-                    pass  # nothing has changed, continue
+                    print("Using %s" % matname)  # nothing has changed, continue
                 else:
                     # if not, run material generation again
                     self.material = material.createMaterial(matname, ablative=True,
                                             pressure=float(root.find("options").find("ambient").find("pressure").text),
                                             atmosphere=root.find("options").find("ambient").find("atmosphere").text)
+            else:
+                print("Using %s" % matname)  # non-ablative material has no problem specific options, continue
         else:
             # if no file was specified, generate a material file and store it
             ablativeLayer = True if layerelem.attrib["number"] == "1" and self.ablative else False
