@@ -5,6 +5,7 @@ from assembly import *
 import grid
 import dill
 from scipy.sparse.linalg import spsolve
+import matplotlib.pyplot as plt
 
 def handleArguments():
     """
@@ -22,8 +23,8 @@ handles arguments passed to Hot-STARSHIP
 
 
 def savePreValues(layers):
-    for lay in layers:
-        lay.pre = dill.copy(lay)
+    layerspre = dill.copy(layers)
+    return layerspre
 
 
 if __name__ == "__main__":
@@ -48,7 +49,7 @@ if __name__ == "__main__":
     Tnu, rhonu = init_T_rho(Tnu, rhonu, Tmap, rhomap, layers, inputvars)
 
     #Tnu = np.linspace(250, 750, len(Tnu))  # for debugging purposes
-    deltaTn = np.linspace(1.0, 0, len(Tnu))
+    deltaTn = np.linspace(0.0, 0.0, len(Tnu))
 
     for it, t in enumerate(np.arange(inputvars.tStart, inputvars.tEnd + 1e-5, inputvars.tDelta)):
         print("+++ New time step: t = %.4f secs +++" % t)
@@ -58,16 +59,16 @@ if __name__ == "__main__":
 
         iteration = 0
 
-        savePreValues(layers)
+        layerspre = savePreValues(layers)
         Tnu += deltaTn  # Initial guess based on previous difference
 
         while True:
 
             iteration += 1
 
-            J, f = assembleT(layers, Tmap, Tnu, Tn, rhomap, rhonu, rhon, inputvars.tDelta, inputvars)
+            J, f = assembleT(layers, layerspre, Tmap, Tnu, Tn, rhomap, rhonu, rhon, inputvars.tDelta, inputvars)
 
-            f[0] += 0
+            f[0] += -7.5e5
 
             dT = spsolve(J, -f)
 
@@ -78,4 +79,5 @@ if __name__ == "__main__":
                 deltaTn = Tnu - Tn
                 break
 
-    aaa = 1
+    #plt.scatter(layers[0].grid.zj, Tnu)
+    #plt.show()
