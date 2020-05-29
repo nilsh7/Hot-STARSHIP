@@ -372,7 +372,7 @@ def addEnergyMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta,
     signs = (+1, +1, +1)
     offsets = (0, -1, +1)
     for flux, sign, offset in zip(fluxes, signs, offsets):
-        globflux = createGlobFlux(flux, len(Tnu), iStart, iEnd, offset)
+        globflux = createGlobFlux(flux, len(Tnu), iStart, iEnd, offset) / tDelta
         J += dia_matrix((sign * globflux, offset), shape=(len(Tnu), len(Tnu)))
 
     # Store first column in separate vector
@@ -397,12 +397,12 @@ def addEnergyVector(fnu, Tnu, Tn, Tmap, rhonu, rhon, rhomap, layers, key, tDelta
     # Values
     Ej = 1/tDelta * (+gr.dzjm    * (+3/8 * rhojnu * mat.e(Tjnu, lay.wv)
                                     +1/8 * m1(rhojnu) * mat.e(m1(Tjnu), m1(lay.wv)))
-                     -grpre.dzjm * (-3/8 * rhojn * mat.e(Tjn, lay.pre.wv)
-                                    -1/8 * m1(rhojn) * mat.e(m1(Tjn), m1(lay.pre.wv)))
+                     -grpre.dzjm * (+3/8 * rhojn * mat.e(Tjn, lay.pre.wv)
+                                    +1/8 * m1(rhojn) * mat.e(m1(Tjn), m1(lay.pre.wv)))
                      +gr.dzjp    * (+3/8 * rhojnu * mat.e(Tjnu, lay.wv)
                                     +1/8 * p1(rhojnu) * mat.e(p1(Tjnu), p1(lay.wv)))
-                     -grpre.dzjp * (-3/8 * rhojn * mat.e(Tjn, lay.pre.wv)
-                                    -1/8 * p1(rhojn) * mat.e(p1(Tjn), p1(lay.pre.wv))))
+                     -grpre.dzjp * (+3/8 * rhojn * mat.e(Tjn, lay.pre.wv)
+                                    +1/8 * p1(rhojn) * mat.e(p1(Tjn), p1(lay.pre.wv))))
     # Note: values at index 0 and -1 have no physical meaning!
 
     ### Calculate fluxes at boundaries ###
