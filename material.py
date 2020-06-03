@@ -137,9 +137,9 @@ reads csv file and stores data
         self.data.rhoLin = constructLinearSpline(self.data.Tforrho, self.data.rho)
 
         # e
-        self.data.e = cumtrapz(y=self.data.cp, x=self.data.Tforcp, initial=0)
-        self.data.eQuad = ip.UnivariateSpline(x=self.data.Tforcp, y=self.data.e, k=2, ext='extrapolate')
+        self.data.e, self.data.eQuad = constructE(self.data.Tforcp, self.data.cp)
         #self.data.eInterp = ip.interp1d(x=self.data.Tforcp, y=self.data.e, kind='quadratic', fill_value='extrapolate')
+
 
     def cp(self, T, *ignoreargs):
         return self.data.cpLin(T)
@@ -293,10 +293,9 @@ reads csv file and stores data
         self.virgin.eps = constructLinearSpline(self.virgin.data.Tforeps, self.virgin.data.eps)
 
         # e
-        self.virgin.data.e = cumtrapz(y=self.virgin.data.cp, x=self.virgin.data.Tforcp, initial=0)
-        ePreliminary = ip.UnivariateSpline(x=self.virgin.data.Tforcp, y=self.virgin.data.e, k=2, ext='extrapolate')
+        self.virgin.data.e, ePreliminary = constructE(self.virgin.data.Tforcp, self.virgin.data.cp)
         shift = self.virgin.data.hf - ePreliminary(self.data.Tref)
-        self.virgin.e = ip.UnivariateSpline(x=self.virgin.data.Tforcp, y=self.virgin.data.e + shift, k=2, ext='extrapolate')
+        self.virgin.e = constructE(self.virgin.data.Tforcp, self.virgin.data.cp, shift)[1]
 
         ### Char ###
         # cp
@@ -310,11 +309,9 @@ reads csv file and stores data
         self.char.eps = constructLinearSpline(self.char.data.Tforeps, self.char.data.eps)
 
         # e
-        self.char.data.e = cumtrapz(y=self.char.data.cp, x=self.char.data.Tforcp, initial=0)
-        ePreliminary = ip.UnivariateSpline(x=self.char.data.Tforcp, y=self.char.data.e, k=2, ext='extrapolate')
+        self.char.data.e, ePreliminary = constructE(self.char.data.Tforcp, self.char.data.cp)
         shift = self.char.data.hf - ePreliminary(self.data.Tref)
-        self.char.e = ip.UnivariateSpline(x=self.char.data.Tforcp, y=self.char.data.e + shift, k=2,
-                                            ext='extrapolate')
+        self.char.e = constructE(self.char.data.Tforcp, self.char.data.cp, shift)[1]
 
         ### Gas ###
         # Gas enthalpy to be determined using mppequil (see calculatePyroGasComposition)
@@ -498,11 +495,22 @@ constructs a piecewise linear spline through data
     """
     if len(x) != len(y):
         raise ValueError("Arrays should have same length.")
-    if len(x) > 1:
-        spline = ip.UnivariateSpline(x=x, y=y, k=1, ext='const')
-    else:
-        spline = lambda v: np.repeat(y, len(v)) if type(v) is not float else y
+    if len(x) == 1:
+        x = np.concatenate((x, x*1.01))
+        y = np.repeat(y, 2)
+    spline = ip.UnivariateSpline(x=x, y=y, k=1, ext='const')
     return spline
+
+
+def constructE(Tforcp, cp, shift=0):
+    if len(cp) == 1:
+        cp = np.repeat(cp, 2)
+        Tforcp = np.hstack((Tforcp, Tforcp*2))
+
+    e = cumtrapz(y=cp, x=Tforcp, initial=0)
+    k = 1 if len(e) == 2 else 2
+    eQuad = ip.UnivariateSpline(x=Tforcp, y=e + shift, k=k, ext='extrapolate')
+    return e, eQuad
 
 
 def dropnafromboth(x):
