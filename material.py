@@ -137,7 +137,9 @@ reads csv file and stores data
         self.data.rhoLin = constructLinearSpline(self.data.Tforrho, self.data.rho)
 
         # e
-        self.data.e, self.data.eQuad = constructE(self.data.Tforcp, self.data.cp)
+        self.data.e = lambda T: np.array([self.data.cpLin.integral(0, Tval) for Tval in T]) if type(T) is np.ndarray\
+            else self.data.cpLin.integral(0, T)
+        #self.data.e, self.data.eQuad = constructE(self.data.Tforcp, self.data.cp)
         #self.data.eInterp = ip.interp1d(x=self.data.Tforcp, y=self.data.e, kind='quadratic', fill_value='extrapolate')
 
 
@@ -157,7 +159,7 @@ reads csv file and stores data
         return self.data.dkdTLin(T)
 
     def e(self, T, *ignoreargs):
-        return self.data.eQuad(T)
+        return self.data.e(T)
 
 
 class AblativeMaterial(Material):
@@ -293,9 +295,9 @@ reads csv file and stores data
         self.virgin.eps = constructLinearSpline(self.virgin.data.Tforeps, self.virgin.data.eps)
 
         # e
-        self.virgin.data.e, ePreliminary = constructE(self.virgin.data.Tforcp, self.virgin.data.cp)
-        shift = self.virgin.data.hf - ePreliminary(self.data.Tref)
-        self.virgin.e = constructE(self.virgin.data.Tforcp, self.virgin.data.cp, shift)[1]
+        shift = self.virgin.data.hf - self.virgin.cp.integral(0, self.data.Tref)
+        self.virgin.e = lambda T: np.array([self.virgin.cp.integral(0, Tval) + shift for Tval in T])\
+            if type(T) is np.ndarray else self.virgin.cp.integral(0, T) + shift
 
         ### Char ###
         # cp
@@ -309,9 +311,9 @@ reads csv file and stores data
         self.char.eps = constructLinearSpline(self.char.data.Tforeps, self.char.data.eps)
 
         # e
-        self.char.data.e, ePreliminary = constructE(self.char.data.Tforcp, self.char.data.cp)
-        shift = self.char.data.hf - ePreliminary(self.data.Tref)
-        self.char.e = constructE(self.char.data.Tforcp, self.char.data.cp, shift)[1]
+        shift = self.char.data.hf - self.char.cp.integral(0, self.data.Tref)
+        self.char.e = lambda T: np.array([self.char.cp.integral(0, Tval) + shift for Tval in T]) \
+            if type(T) is np.ndarray else self.char.cp.integral(0, T) + shift
 
         ### Gas ###
         # Gas enthalpy to be determined using mppequil (see calculatePyroGasComposition)
@@ -498,6 +500,10 @@ constructs a piecewise linear spline through data
     if len(x) == 1:
         x = np.concatenate((x, x*1.01))
         y = np.repeat(y, 2)
+
+    y = np.hstack((y[0], y, y[-1]))
+    x = np.hstack((0, x, 1e4))
+
     spline = ip.UnivariateSpline(x=x, y=y, k=1, ext='const')
     return spline
 
@@ -506,6 +512,12 @@ def constructE(Tforcp, cp, shift=0):
     if len(cp) == 1:
         cp = np.repeat(cp, 2)
         Tforcp = np.hstack((Tforcp, Tforcp*2))
+    elif len(cp) == 2:
+        cp = np.array((cp[0], np.mean(cp), cp[1]))
+        Tforcp = np.array((Tforcp[0], np.mean(Tforcp), Tforcp[1]))
+
+    cp = np.hstack((cp[0], cp, cp[-1]))
+    Tforcp = np.hstack((0, Tforcp, 1e4))
 
     e = cumtrapz(y=cp, x=Tforcp, initial=0)
     k = 1 if len(e) == 2 else 2
