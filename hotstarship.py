@@ -6,6 +6,8 @@ import grid
 import dill
 from scipy.sparse.linalg import spsolve
 import matplotlib.pyplot as plt
+import Testing.comparison as comp
+import output
 
 def handleArguments():
     """
@@ -46,7 +48,7 @@ if __name__ == "__main__":
     Tnu, rhonu, Tmap, rhomap = createUnknownVectors(layers)
 
     # Initialize variables to be solved
-    Tnu, rhonu = init_T_rho(Tnu, rhonu, Tmap, rhomap, layers, inputvars)
+    Tnu, rhonu, rhoimu = init_T_rho(Tnu, rhonu, Tmap, rhomap, layers, inputvars)
 
     #Tnu = np.linspace(250, 750, len(Tnu))  # for debugging purposes
     deltaTn = np.linspace(0.0, 0.0, len(Tnu))
@@ -54,30 +56,56 @@ if __name__ == "__main__":
     for it, t in enumerate(np.arange(inputvars.tStart, inputvars.tEnd + 1e-5, inputvars.tDelta)):
         print("+++ New time step: t = %.4f secs +++" % t)
 
-        Tn, rhon = Tnu.copy(), rhonu.copy()
+        Tn, rhon, rhoin = Tnu.copy(), rhonu.copy(), rhoimu.copy()
         #Tn[1:] += 50*np.arange(len(Tn)-1)  # for debugging
 
-        iteration = 0
+        globiteration = 0
 
         layerspre = savePreValues(layers)
-        Tnu += deltaTn  # Initial guess based on previous difference
 
         while True:
 
-            iteration += 1
+            globiteration += 1
+            iteration = 0
+            Tnu += deltaTn  # Initial guess based on previous difference
 
-            J, f = assembleT(layers, layerspre, Tmap, Tnu, Tn, rhomap, rhonu, rhon, inputvars.tDelta, inputvars)
+            while True:
 
-            f[0] += -7.5e5
+                break  # TODO: for debugging purposes with ablative material
 
-            dT = spsolve(J, -f)
+                iteration += 1
 
-            Tnu += dT
+                J, f = assembleT(layers, layerspre, Tmap, Tnu, Tn, rhomap, rhonu, rhon, inputvars.tDelta, inputvars)
 
-            if np.linalg.norm(dT/Tnu) < 1.0e-6:
-                print("Completed after %i iterations." % iteration)
-                deltaTn = Tnu - Tn
+                f[0] += -7.5e5
+
+                #f[1] += -7.5e5
+                #Jd = J.toarray()
+                #dT = np.zeros(f.shape)
+                #dT[1:] = np.linalg.solve(Jd[1:, 1:], -f[1:])
+
+                dT = spsolve(J, -f)
+
+                Tnu += dT
+
+                if np.linalg.norm(dT/Tnu) < 1.0e-8: #and iteration > 2:
+                    print("T determination completed after %i iterations." % iteration)
+                    deltaTn = Tnu - Tn
+                    break
+
+            if not layers[0].ablative:
                 break
+            else:
+                rhonu, rhoimup1, mgas = updateRho(layers[0], rhoimu, rhoin, Tnu, Tmap, inputvars.tDelta)
+                if np.linalg.norm((rhoimup1-rhoimu)/rhoimu) < 1.0e-8:
+                    print("Time step completed after %i iterations" % globiteration)
+                    break
 
-    #plt.scatter(layers[0].grid.zj, Tnu)
+    #comp.compareToAnalytical(t, Tnu, inputvars)
+
+    output.plotT(layers, Tnu, Tmap, t)
+
+    #plt.plot(layers[0].grid.zj, Tnu)
     #plt.show()
+
+    aaa = 1
