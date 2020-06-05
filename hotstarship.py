@@ -48,7 +48,7 @@ if __name__ == "__main__":
     Tnu, rhonu, Tmap, rhomap = createUnknownVectors(layers)
 
     # Initialize variables to be solved
-    Tnu, rhonu, rhoimu = init_T_rho(Tnu, rhonu, Tmap, rhomap, layers, inputvars)
+    Tnu, rhonu, rhoimu, mgas = init_T_rho(Tnu, rhonu, Tmap, rhomap, layers, inputvars)
 
     #Tnu = np.linspace(250, 750, len(Tnu))  # for debugging purposes
     deltaTn = np.linspace(0.0, 0.0, len(Tnu))
@@ -71,11 +71,12 @@ if __name__ == "__main__":
 
             while True:
 
-                break  # TODO: for debugging purposes with ablative material
+                #break  # TODO: for debugging purposes with ablative material
+                rhonu, rhoimup1, mgas = updateRho(layers[0], rhoimu, rhoin, Tnu, Tmap, inputvars.tDelta)  # TODO: for debugging purposes with ablative material
 
                 iteration += 1
 
-                J, f = assembleT(layers, layerspre, Tmap, Tnu, Tn, rhomap, rhonu, rhon, inputvars.tDelta, inputvars)
+                J, f = assembleT(layers, layerspre, Tmap, Tnu, Tn, rhomap, rhonu, rhon, mgas, inputvars.tDelta, inputvars)
 
                 f[0] += -7.5e5
 

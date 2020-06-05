@@ -81,6 +81,7 @@ def init_T_rho(T, rho, Tmap, rhomap, layers, inputvars):
             rho[rhomap[layerKey]] = np.repeat(np.dot(layer.material.data.virginRho0, layer.material.data.frac),
                                               len(rhomap[layerKey]))
             rhoi = np.repeat(layer.material.data.virginRho0.reshape(1, -1), repeats=len(rhomap[layerKey]), axis=0)
+            mgas = np.zeros(len(rhomap[layerKey]))
         else:
             if inputvars.initType == "Temperature":
                 rho[rhomap[layerKey]] = np.repeat(layer.material.rho(inputvars.initValue), len(rhomap[layerKey]))
@@ -88,19 +89,19 @@ def init_T_rho(T, rho, Tmap, rhomap, layers, inputvars):
             else:
                 raise ValueError("Unimplemented initialization type %s", inputvars.initType)
 
-    return T, rho, rhoi
+    return T, rho, rhoi, mgas
 
 
-def assembleT(layers, layerspre, Tmap, Tnu, Tn, rhomap, rhonu, rhon, tDelta, inputvars):
+def assembleT(layers, layerspre, Tmap, Tnu, Tn, rhomap, rhonu, rhon, mgas, tDelta, inputvars):
 
-    J = assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, tDelta, inputvars)
+    J = assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars)
 
-    fnu = assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, tDelta, inputvars)
+    fnu = assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas, tDelta, inputvars)
 
     return J, fnu
 
 
-def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, tDelta, inputvars):
+def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars):
 
     J = dia_matrix((len(Tnu), len(Tnu)))
     first_col = np.zeros(len(Tnu))
@@ -115,13 +116,15 @@ def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, tDelta, inputvars):
 
             J, first_col = addGridMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key)
 
+            J = addPyroMatrix(J, Tnu, Tmap, mgas, layers, key)
+
         elif key[0:3] == "int":
             J, first_col = addConductionMatrixOuter(J, first_col, Tnu, Tmap, layers, key, tDelta)
 
     return J
 
 
-def assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, tDelta, inputvars):
+def assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas, tDelta, inputvars):
 
     fnu = np.zeros(len(Tnu))
 
@@ -565,59 +568,44 @@ def addGridVector(fnu, Tnu, Tmap, rhonu, rhomap, layers, key):
     return fnu
 
 
-# def addPyroMatrix(J, Tnu, Tmap, mgas, layers, key):
-#
-#     lay = layers[int(key[3:])]
-#     # The deeper layers are not pyrolyzing, nor is the front layer if we don't have an ablative case
-#     # Thus we don't have any convection due to pyrolysis gas
-#     if int(key[3:]) != 0 and not lay.ablative:
-#         return J
-#
-#     # Store some variables
-#     iStart = Tmap[key][0]
-#     iEnd = Tmap[key][-1]
-#     mat = lay.material
-#     gr = lay.grid
-#     Tj = Tnu[Tmap[key]]
-#
-#     ### Grid movement ###
-#     # Flux at plus side
-#     dPjp12_dTj = 1/2 * mgas
-#
-#     dGjp12_dTj = 1 / 2 * rhoj * mat.cp(Tj, lay.wv) * gr.etajp12 * sdot
-#     dGjp12_dTjp1 = 1 / 2 * p1(rhoj) * p1(mat.cp(Tj, lay.wv)) * gr.etajp12 * sdot
-#     if lay.ablative:
-#         dGjp12_dsdot = 1 / 2 * (rhoj * mat.e(Tj, lay.wv) + p1(rhoj) * p1(mat.e(Tj, lay.wv))) * gr.etajp12
-#     else:
-#         dGjp12_dsdot = np.zeros(len(Tj))
-#
-#     # Value at index -1 should naturally be zero due to gr.etajp12[-1] = 0
-#
-#     # Flux at minus side
-#     dGjm12_dTj = 1 / 2 * rhoj * mat.cp(Tj, lay.wv) * gr.etajm12 * sdot
-#     dGjm12_dTjm1 = 1 / 2 * m1(rhoj) * m1(mat.cp(Tj, lay.wv)) * gr.etajm12 * sdot
-#     if lay.ablative:
-#         dGjm12_dsdot = 1 / 2 * (rhoj * mat.e(Tj, lay.wv) + m1(rhoj) * m1(mat.e(Tj, lay.wv))) * gr.etajm12
-#     else:
-#         dGjm12_dsdot = np.zeros(len(Tj))
-#
-#     dGjm12_dTj[0] = rhoj[0] * mat.cp(Tj[0], lay.wv[0]) * sdot
-#     dGjm12_dTjm1[0] = 0
-#     if lay.ablative:
-#         dGjm12_dsdot[0] = rhoj[0] * mat.e(Tj[0], lay.wv[0])
-#
-#     # Assemble Jacobian matrix
-#     fluxes = (dGjp12_dTj, dGjp12_dTjp1, dGjm12_dTj, dGjm12_dTjm1)
-#     signs = (-1, -1, +1, +1)
-#     offsets = (0, +1, 0, -1)
-#     for flux, sign, offset in zip(fluxes, signs, offsets):
-#         globflux = createGlobFlux(flux, len(Tnu), iStart, iEnd, offset)
-#         J += dia_matrix((sign * globflux, offset), shape=(len(Tnu), len(Tnu)))
-#
-#     # Store first column in separate vector
-#     first_col[iStart:iEnd + 1] += -dGjp12_dsdot + dGjm12_dsdot
-#
-#     return J, first_col
+def addPyroMatrix(J, Tnu, Tmap, mgas, layers, key):
+
+    lay = layers[int(key[3:])]
+    # The deeper layers are not pyrolyzing, nor is the front layer if we don't have an ablative case
+    # Thus we don't have any convection due to pyrolysis gas
+    if int(key[3:]) != 0 and not lay.ablative:
+        return J
+
+    # Store some variables
+    iStart = Tmap[key][0]
+    iEnd = Tmap[key][-1]
+    mat = lay.material
+    #gr = lay.grid
+    Tj = Tnu[Tmap[key]]
+
+    ### Pyrolysis gas convection ###
+    # Flux at plus side
+    mgasm12 = mgas[::-1].cumsum()[::-1]
+    mgasp12 = np.hstack((mgasm12[1:], 0))
+    dPjp12_dTj = 1/2 * mgasp12 * mat.gas.cp(Tj)
+    dPjp12_dTjp1 = 1/2 * mgasp12 * p1(mat.gas.cp(Tj))
+    # sensitivity to sdot is zero
+    dPjp12_dTj[-1], dPjp12_dTjp1[-1] = (0, 0)  # impermeable back side
+
+    # Flux at minus side
+    dPjm12_dTj = 1/2 * mgasm12 * mat.gas.cp(Tj)
+    dPjm12_dTjm1 = 1/2 * mgasm12 * m1(mat.gas.cp(Tj))
+    dPjm12_dTj[0], dPjm12_dTjm1[0] = (mgasm12[0] * mat.gas.cp(Tj[0]), 0)
+
+    # Assemble Jacobian matrix
+    fluxes = (dPjp12_dTj, dPjp12_dTjp1, dPjm12_dTj, dPjm12_dTjm1)
+    signs = (-1, -1, +1, +1)
+    offsets = (0, +1, 0, -1)
+    for flux, sign, offset in zip(fluxes, signs, offsets):
+        globflux = createGlobFlux(flux, len(Tnu), iStart, iEnd, offset)
+        J += dia_matrix((sign * globflux, offset), shape=(len(Tnu), len(Tnu)))
+
+    return J
 
 def updateRho(lay, rhoimu, rhoin, Tnu, Tmap, tDelta):
 
