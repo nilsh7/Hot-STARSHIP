@@ -31,10 +31,12 @@ calculates a few auxiliary properties such as control volume boundary location o
         :param z0: initial position of left boundary
         """
         # Calculate positions at control volume boundaries
-        if calceta:
-            self.etaj = 1 - self.zj/self.length
         self.zjp12 = np.concatenate(((self.zj[:-1] + self.zj[1:]) / 2, np.array([self.length + self.z0])))
         self.zjm12 = np.concatenate((np.array([self.z0]), self.zjp12[:-1]))
+        if calceta:
+            self.etaj = 1 - self.zj/self.length
+            self.etajp12 = 1 - self.zjp12/self.length
+            self.etajm12 = 1 - self.zjm12/self.length
         self.dzjp = p1(self.zj) - self.zj
         self.dzjm = self.zj - m1(self.zj)
 
