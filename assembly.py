@@ -80,13 +80,15 @@ def init_T_rho(T, rho, Tmap, rhomap, layers, inputvars):
         if type(layer.material) is material.AblativeMaterial:
             rho[rhomap[layerKey]] = np.repeat(np.dot(layer.material.data.virginRho0, layer.material.data.frac),
                                               len(rhomap[layerKey]))
+            rhoi = np.repeat(layer.material.data.virginRho0.reshape(1, -1), repeats=len(rhomap[layerKey]), axis=0)
         else:
             if inputvars.initType == "Temperature":
                 rho[rhomap[layerKey]] = np.repeat(layer.material.rho(inputvars.initValue), len(rhomap[layerKey]))
+                rhoi = np.zeros(len(rhomap[layerKey]))
             else:
                 raise ValueError("Unimplemented initialization type %s", inputvars.initType)
 
-    return T, rho
+    return T, rho, rhoi
 
 
 def assembleT(layers, layerspre, Tmap, Tnu, Tn, rhomap, rhonu, rhon, tDelta, inputvars):
@@ -561,3 +563,114 @@ def addGridVector(fnu, Tnu, Tmap, rhonu, rhomap, layers, key):
     fnu[iStart:iEnd + 1] += -Gjp12 + Gjm12
 
     return fnu
+
+
+# def addPyroMatrix(J, Tnu, Tmap, mgas, layers, key):
+#
+#     lay = layers[int(key[3:])]
+#     # The deeper layers are not pyrolyzing, nor is the front layer if we don't have an ablative case
+#     # Thus we don't have any convection due to pyrolysis gas
+#     if int(key[3:]) != 0 and not lay.ablative:
+#         return J
+#
+#     # Store some variables
+#     iStart = Tmap[key][0]
+#     iEnd = Tmap[key][-1]
+#     mat = lay.material
+#     gr = lay.grid
+#     Tj = Tnu[Tmap[key]]
+#
+#     ### Grid movement ###
+#     # Flux at plus side
+#     dPjp12_dTj = 1/2 * mgas
+#
+#     dGjp12_dTj = 1 / 2 * rhoj * mat.cp(Tj, lay.wv) * gr.etajp12 * sdot
+#     dGjp12_dTjp1 = 1 / 2 * p1(rhoj) * p1(mat.cp(Tj, lay.wv)) * gr.etajp12 * sdot
+#     if lay.ablative:
+#         dGjp12_dsdot = 1 / 2 * (rhoj * mat.e(Tj, lay.wv) + p1(rhoj) * p1(mat.e(Tj, lay.wv))) * gr.etajp12
+#     else:
+#         dGjp12_dsdot = np.zeros(len(Tj))
+#
+#     # Value at index -1 should naturally be zero due to gr.etajp12[-1] = 0
+#
+#     # Flux at minus side
+#     dGjm12_dTj = 1 / 2 * rhoj * mat.cp(Tj, lay.wv) * gr.etajm12 * sdot
+#     dGjm12_dTjm1 = 1 / 2 * m1(rhoj) * m1(mat.cp(Tj, lay.wv)) * gr.etajm12 * sdot
+#     if lay.ablative:
+#         dGjm12_dsdot = 1 / 2 * (rhoj * mat.e(Tj, lay.wv) + m1(rhoj) * m1(mat.e(Tj, lay.wv))) * gr.etajm12
+#     else:
+#         dGjm12_dsdot = np.zeros(len(Tj))
+#
+#     dGjm12_dTj[0] = rhoj[0] * mat.cp(Tj[0], lay.wv[0]) * sdot
+#     dGjm12_dTjm1[0] = 0
+#     if lay.ablative:
+#         dGjm12_dsdot[0] = rhoj[0] * mat.e(Tj[0], lay.wv[0])
+#
+#     # Assemble Jacobian matrix
+#     fluxes = (dGjp12_dTj, dGjp12_dTjp1, dGjm12_dTj, dGjm12_dTjm1)
+#     signs = (-1, -1, +1, +1)
+#     offsets = (0, +1, 0, -1)
+#     for flux, sign, offset in zip(fluxes, signs, offsets):
+#         globflux = createGlobFlux(flux, len(Tnu), iStart, iEnd, offset)
+#         J += dia_matrix((sign * globflux, offset), shape=(len(Tnu), len(Tnu)))
+#
+#     # Store first column in separate vector
+#     first_col[iStart:iEnd + 1] += -dGjp12_dsdot + dGjm12_dsdot
+#
+#     return J, first_col
+
+def updateRho(lay, rhoimu, rhoin, Tnu, Tmap, tDelta):
+
+    key = "lay0"
+    Tj = Tnu[Tmap[key]]
+    mat = lay.material
+    gr = lay.grid
+
+    Tj = np.linspace(100, 900, len(Tj))  # TODO: remove later, only for debugging purposes
+
+    iteration = 0
+
+    while True:
+
+        iteration += 1
+
+        deltaRhoimu = ((rhoimu - rhoin - tDelta * drhodt(mat, rhoimu, Tj)) /
+                       (tDelta * ddrhodt_drho(mat, rhoimu, Tj) - np.ones(rhoimu.shape)))
+        rhoimu += deltaRhoimu
+        if np.linalg.norm(deltaRhoimu/rhoimu) < 1.0e-8:
+            print("Rho determination completed after %i iterations." % iteration)
+            break
+
+    frac = np.repeat(mat.data.frac.reshape(1, -1), repeats=len(Tj), axis=0)
+    rhonu = np.sum(frac*rhoimu, axis=1)
+
+    mgas = -np.sum(frac*drhodt(mat, rhoimu, Tj), axis=1) * (gr.zjp12-gr.zjm12)
+
+    return rhonu, rhoimu, mgas
+
+def drhodt(mat, rhoi, Tj):
+    rhoc = np.repeat(mat.data.charRho0.reshape(1, -1), repeats=len(Tj), axis=0)
+    rhov = np.repeat(mat.data.virginRho0.reshape(1, -1), repeats=len(Tj), axis=0)
+    kr = np.repeat(mat.data.kr.reshape(1, -1), repeats=len(Tj), axis=0)
+    nr = np.repeat(mat.data.nr.reshape(1, -1), repeats=len(Tj), axis=0)
+    Ei = np.repeat(mat.data.Ei.reshape(1, -1), repeats=len(Tj), axis=0)
+    T = np.repeat(Tj.reshape(-1,1), repeats=len(mat.data.charRho0), axis=1)
+    decomp = rhoc != rhov
+    val = np.zeros(rhoi.shape)
+    val[decomp] = -kr[decomp] * ((rhoi[decomp] - rhoc[decomp]) / (rhov[decomp] - rhoc[decomp])) ** nr[decomp] \
+                  * np.exp(-Ei[decomp] / T[decomp])
+    return val
+
+def ddrhodt_drho(mat, rhoi, Tj):
+    rhoc = np.repeat(mat.data.charRho0.reshape(1, -1), repeats=len(Tj), axis=0)
+    rhov = np.repeat(mat.data.virginRho0.reshape(1, -1), repeats=len(Tj), axis=0)
+    kr = np.repeat(mat.data.kr.reshape(1, -1), repeats=len(Tj), axis=0)
+    nr = np.repeat(mat.data.nr.reshape(1, -1), repeats=len(Tj), axis=0)
+    Ei = np.repeat(mat.data.Ei.reshape(1, -1), repeats=len(Tj), axis=0)
+    T = np.repeat(Tj.reshape(-1, 1), repeats=len(mat.data.charRho0), axis=1)
+    decomp = rhoc != rhov
+    val = np.zeros(rhoi.shape)
+    val[decomp] = -kr[decomp] * nr[decomp] / (rhov[decomp] - rhoc[decomp]) *\
+                  ((rhoi[decomp] - rhoc[decomp]) / (rhov[decomp] - rhoc[decomp])) ** (nr[decomp] - 1) \
+                  * np.exp(-Ei[decomp] / T[decomp])
+    return val
