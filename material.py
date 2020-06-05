@@ -392,6 +392,7 @@ calculates pyrolysis gas composition using mppequil
         hPreliminary = constructLinearSpline(x=htab.values[:, 0], y=htab.values[:, 1])
         shift = self.gas.data.hf - hPreliminary(self.data.Tref)
         self.gas.h = constructLinearSpline(x=htab.values[:, 0], y=htab.values[:, 1] + shift)
+        self.gas.cp = self.gas.h.derivative()
 
 
     def calculateBPrimes(self, args):
