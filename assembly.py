@@ -111,6 +111,8 @@ def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, tDelta, inputvars):
 
             J, first_col = addEnergyMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta, inputvars)
 
+            J, first_col = addGridMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key)
+
         elif key[0:3] == "int":
             J, first_col = addConductionMatrixOuter(J, first_col, Tnu, Tmap, layers, key, tDelta)
 
@@ -129,6 +131,8 @@ def assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, tDelt
             fnu = addConductionVectorInner(fnu, Tnu, Tmap, layers, key)
 
             fnu = addEnergyVector(fnu, Tnu, Tn, Tmap, rhonu, rhon, rhomap, layers, layerspre, key, tDelta, inputvars)
+
+            fnu = addGridVector(fnu, Tnu, Tmap, rhonu, rhomap, layers, key)
 
         elif key[0:3] == "int":
 
@@ -175,7 +179,7 @@ def addConductionMatrixInner(J, first_col, Tnu, Tmap, layers, key, tDelta):
         J += dia_matrix((sign * globflux, offset), shape=(len(Tnu), len(Tnu)))
 
     # Store first column in separate vector
-    first_col[iStart:iEnd + 1] += dCjp12_dsdot + dCjm12_dsdot
+    first_col[iStart:iEnd + 1] += dCjp12_dsdot - dCjm12_dsdot
 
     return J, first_col
 
@@ -470,5 +474,90 @@ def addEnergyVector(fnu, Tnu, Tn, Tmap, rhonu, rhon, rhomap, layers, layerspre, 
 
     # Assemble vector
     fnu[iStart:iEnd + 1] += +Ej
+
+    return fnu
+
+
+def addGridMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key):
+
+    lay = layers[int(key[3:])]
+    # The deeper layers are not moving, nor is the front layer if we don't have an ablative case
+    # Thus we don't have any convection due to grid movement
+    if int(key[3:]) != 0 and not lay.ablative:
+        return J, first_col
+
+    # Store some variables
+    iStart = Tmap[key][0]
+    iEnd = Tmap[key][-1]
+    mat = lay.material
+    gr = lay.grid
+    sdot = Tnu[Tmap["sdot"]]
+    Tj = Tnu[Tmap[key]]
+    rhoj = rhonu[rhomap[key]]
+
+    ### Grid movement ###
+    # Flux at plus side
+    dGjp12_dTj = 1/2 * rhoj * mat.cp(Tj, lay.wv) * gr.etajp12 * sdot
+    dGjp12_dTjp1 = 1 / 2 * p1(rhoj) * p1(mat.cp(Tj, lay.wv)) * gr.etajp12 * sdot
+    if lay.ablative:
+        dGjp12_dsdot = 1/2 * (rhoj * mat.e(Tj, lay.wv) + p1(rhoj) * p1(mat.e(Tj, lay.wv))) * gr.etajp12
+    else:
+        dGjp12_dsdot = np.zeros(len(Tj))
+
+    # Value at index -1 should naturally be zero due to gr.etajp12[-1] = 0
+
+    # Flux at minus side
+    dGjm12_dTj = 1 / 2 * rhoj * mat.cp(Tj, lay.wv) * gr.etajm12 * sdot
+    dGjm12_dTjm1 = 1 / 2 * m1(rhoj) * m1(mat.cp(Tj, lay.wv)) * gr.etajm12 * sdot
+    if lay.ablative:
+        dGjm12_dsdot = 1 / 2 * (rhoj * mat.e(Tj, lay.wv) + m1(rhoj) * m1(mat.e(Tj, lay.wv))) * gr.etajm12
+    else:
+        dGjm12_dsdot = np.zeros(len(Tj))
+
+    dGjm12_dTj[0] = rhoj[0] * mat.cp(Tj[0], lay.wv[0]) * sdot
+    dGjm12_dTjm1[0] = 0
+    if lay.ablative:
+        dGjm12_dsdot[0] = rhoj[0] * mat.e(Tj[0], lay.wv[0])
+
+    # Assemble Jacobian matrix
+    fluxes = (dGjp12_dTj, dGjp12_dTjp1, dGjm12_dTj, dGjm12_dTjm1)
+    signs = (-1, -1, +1, +1)
+    offsets = (0, +1, 0, -1)
+    for flux, sign, offset in zip(fluxes, signs, offsets):
+        globflux = createGlobFlux(flux, len(Tnu), iStart, iEnd, offset)
+        J += dia_matrix((sign * globflux, offset), shape=(len(Tnu), len(Tnu)))
+
+    # Store first column in separate vector
+    first_col[iStart:iEnd + 1] += -dGjp12_dsdot + dGjm12_dsdot
+
+    return J, first_col
+
+
+def addGridVector(fnu, Tnu, Tmap, rhonu, rhomap, layers, key):
+
+    lay = layers[int(key[3:])]
+    # The deeper layers are not moving, nor is the front layer if we don't have an ablative case
+    # Thus we don't have any convection due to grid movement
+    if int(key[3:]) != 0 and not lay.ablative:
+        return fnu
+
+    # Store some variables
+    iStart = Tmap[key][0]
+    iEnd = Tmap[key][-1]
+    mat = lay.material
+    gr = lay.grid
+    sdot = Tnu[Tmap["sdot"]]
+    Tj = Tnu[Tmap[key]]
+    rhoj = rhonu[rhomap[key]]
+
+    ### Grid movement ###
+    # Flux at plus side
+    Gjp12 = p12(rhoj * mat.e(Tj, lay.wv)) * gr.etajp12 * sdot
+    # Flux at minus side
+    Gjm12 = m12(rhoj * mat.e(Tj, lay.wv)) * gr.etajm12 * sdot
+    Gjm12[0] = rhoj[0] * mat.e(Tj[0], lay.wv[0]) * sdot  # Account for boundaries
+
+    # Assemble vector
+    fnu[iStart:iEnd + 1] += -Gjp12 + Gjm12
 
     return fnu
