@@ -108,8 +108,11 @@ def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars):
 
     for key in Tmap:
         if key == "sdot":
-            pass
+
+            J, first_col = addWallBlowMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
+
         elif key[0:3] == "lay":
+
             J, first_col = addConductionMatrixInner(J, first_col, Tnu, Tmap, layers, key, tDelta)
 
             J, first_col = addEnergyMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta, inputvars)
@@ -138,6 +141,8 @@ def assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas,
             fnu = addEnergyVector(fnu, Tnu, Tn, Tmap, rhonu, rhon, rhomap, layers, layerspre, key, tDelta, inputvars)
 
             fnu = addGridVector(fnu, Tnu, Tmap, rhonu, rhomap, layers, key)
+
+            fnu = addPyroVector(fnu, Tnu, Tmap, mgas, layers, key)
 
         elif key[0:3] == "int":
 
@@ -583,10 +588,12 @@ def addPyroMatrix(J, Tnu, Tmap, mgas, layers, key):
     #gr = lay.grid
     Tj = Tnu[Tmap[key]]
 
-    ### Pyrolysis gas convection ###
-    # Flux at plus side
+    # Calculate mass fluxes
     mgasm12 = mgas[::-1].cumsum()[::-1]
     mgasp12 = np.hstack((mgasm12[1:], 0))
+
+    ### Pyrolysis gas convection ###
+    # Flux at plus side
     dPjp12_dTj = 1/2 * mgasp12 * mat.gas.cp(Tj)
     dPjp12_dTjp1 = 1/2 * mgasp12 * p1(mat.gas.cp(Tj))
     # sensitivity to sdot is zero
@@ -606,6 +613,101 @@ def addPyroMatrix(J, Tnu, Tmap, mgas, layers, key):
         J += dia_matrix((sign * globflux, offset), shape=(len(Tnu), len(Tnu)))
 
     return J
+
+
+def addPyroVector(fnu, Tnu, Tmap, mgas, layers, key):
+
+    lay = layers[int(key[3:])]
+    # The deeper layers are not pyrolyzing, nor is the front layer if we don't have an ablative case
+    # Thus we don't have any convection due to pyrolysis gas
+    if int(key[3:]) != 0 and not lay.ablative:
+        return fnu
+
+    # Store some variables
+    iStart = Tmap[key][0]
+    iEnd = Tmap[key][-1]
+    mat = lay.material
+    # gr = lay.grid
+    Tj = Tnu[Tmap[key]]
+
+    # Calculate mass fluxes
+    mgasm12 = mgas[::-1].cumsum()[::-1]
+    mgasp12 = np.hstack((mgasm12[1:], 0))
+
+    ### Pyrolysis gas convection ###
+    # Flux at plus side
+    Pjp12 = mgasp12 * p12(mat.gas.h(Tj))
+    Pjp12[-1] = 0  # impermeable back side
+
+    # Flux at minus side
+    Pjm12 = mgasm12 * m12(mat.gas.h(Tj))
+    Pjm12[0] = mgasm12[0] * mat.gas.h(Tj[0])
+
+    # Assemble Jacobian matrix
+    fnu[iStart:iEnd + 1] += Pjp12 - Pjm12
+
+    return fnu
+
+
+def addWallBlowMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
+
+    # Store some variables
+    iStart = Tmap["lay0"][0]
+    lay = layers[0]
+    mat = lay.material
+    # gr = lay.grid
+    sdot = Tnu[Tmap["sdot"]]
+    Tw = Tnu[iStart]
+    wvw = lay.wv[0]
+    rhow = rhonu[rhomap["lay0"][0]]
+    mg = np.sum(mgas)
+    mc = rhow * sdot
+
+    # Calculate corrected bg
+    lam = 0.4 if inputvars.turbflow else 0.5
+    phi = 2 * lam * (mg+mc) / inputvars.aerocoef
+    blowcor = blowFromPhi(phi)
+    bg = mg/(inputvars.aerocoef*blowcor)
+
+    # Calculate sensitivity w.r.t. sdot
+    dblowcor_dsdot = dblowdsdotFromPhi(phi, rhow, lam, inputvars.aerocoef)
+    dhw_dsdot = mat.dhwdbg(bg, Tw) * mg/inputvars.aerocoef * dblowcor_dsdot
+    dPw_dsdot = rhow * mat.hw(bg, Tw) + (mc + mg) * dhw_dsdot
+
+    # Calculate sensitivity w.r.t. Tw
+    dPw_dTw = (mc + mg) * mat.dhwdT(bg, Tw)
+
+    # Assemble Jacobian matrix
+    globflux = createGlobFlux(dPw_dTw, length=len(Tnu), iStart=iStart, iEnd=iStart, offset=0)
+    J += dia_matrix((+1 * globflux, 0), shape=(len(Tnu), len(Tnu)))
+
+    first_col[iStart] += dPw_dsdot
+
+    return J, first_col
+
+
+def blowFromPhi(phi):
+    if phi < 1.0e-7:
+        return 1 - phi/2 + (phi**2)/12
+    elif phi < 20:
+        return phi/(np.e**phi-1)
+    elif phi < 100:
+        return phi * np.e**(-phi)
+    else:
+        return 1.0e-8
+
+
+def dblowdsdotFromPhi(phi, rhow, lam, aerocoef):
+    dphi_dsdot = 2 * lam * rhow / aerocoef
+
+    if phi < 1.0e-7:
+        return 0.5 * (phi/3 - 1) * dphi_dsdot
+    elif phi < 20:
+        return (((np.e**phi) * (1-phi) -1)/((np.e**phi)-1)**2) * dphi_dsdot
+    elif phi < 100:
+        return (np.e**(-phi)) * (1-phi) * dphi_dsdot
+    else:
+        return 0
 
 def updateRho(lay, rhoimu, rhoin, Tnu, Tmap, tDelta):
 
