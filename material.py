@@ -468,10 +468,10 @@ calculates bprime tables using bprime executable provided by mutation++
         self.hw = ip.interp2d(self.data.bg[:-1], self.data.Tforbprime, self.data.hw[:, :-1])
 
         # Calculate gradient functions
-        self.dbcdT = lambda bg, T, tol: (self.bc(bg, T + tol) - self.bc(bg, T - tol)) / (2 * tol)
-        self.dbcdbg = lambda bg, T, tol: (self.bc(bg + tol, T) - self.bc(bg - tol, T)) / (2 * tol)
-        self.dhwdT = lambda bg, T, tol: (self.hw(bg, T + tol) - self.hw(bg, T - tol)) / (2 * tol)
-        self.dhwdbg = lambda bg, T, tol: (self.hw(bg + tol, T) - self.hw(bg - tol, T)) / (2 * tol)
+        self.dbcdT  = lambda bg, T, tol=1.0e-8: (self.bc(bg, T + tol) - self.bc(bg, T - tol)) / (2 * tol)
+        self.dbcdbg = lambda bg, T, tol=1.0e-8: (self.bc(bg + tol, T) - self.bc(bg - tol, T)) / (2 * tol)
+        self.dhwdT  = lambda bg, T, tol=1.0e-8: (self.hw(bg, T + tol) - self.hw(bg, T - tol)) / (2 * tol)
+        self.dhwdbg = lambda bg, T, tol=1.0e-8: (self.hw(bg + tol, T) - self.hw(bg - tol, T)) / (2 * tol)
 
     def plotBc(self):
         """
