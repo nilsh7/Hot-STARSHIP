@@ -2,6 +2,8 @@ import xml.etree.ElementTree as ET
 import dill
 import material
 import sys
+from scipy.interpolate import interp1d
+import pandas as pd
 
 
 class Layer:
@@ -72,7 +74,30 @@ reads the input xml file and stores the information
         # Boundary conditions
         self.BCfrontType = root.find("options").find("BCs").find("front").attrib["type"]
         if self.BCfrontType in ("heatflux",):
-            self.BCfrontValue = float(root.find("options").find("BCs").find("front").find("value").text)
+            try:
+                value = float(root.find("options").find("BCs").find("front").find("value").text)
+                self.BCfrontValue = lambda t: value
+            except ValueError:
+                # Open file
+                csv_file = root.find("options").find("BCs").find("front").find("value").text
+                with open(csv_file) as f:
+                    data = pd.read_csv(f, sep=';', decimal=',', header=0)
+                self.BCfrontValue = interp1d(data.values[:, 0], data.values[:, 1], kind='linear')
+        elif self.BCfrontType in ("aerodynamic",):
+            try:
+                value = float(root.find("options").find("BCs").find("front").find("value").text)
+                self.BCfrontValue = lambda t: value
+            except ValueError:
+                # Open file
+                csv_file = root.find("options").find("BCs").find("front").find("value").text
+                with open(csv_file) as f:
+                    data = pd.read_csv(f, sep=';', decimal=',', header=0)
+                self.BCfrontValue = interp1d(data.values[:, 0], data.values[:, 1], kind='linear')
+            self.BLEdgeT = float(root.find("options").find("BCs").find("front").find("BL_Edge_Temperature").text)
+            self.SurfT = float(root.find("options").find("BCs").find("front").find("Surface_Temperature").text)
+            self.tforT = float(root.find("options").find("BCs").find("front").find("Time_of_Temperature").text)
+            mat = self.layers[0].material
+            self.aerocoef = self.BCfrontValue(self.tforT)/(mat.hatmo(self.BLEdgeT)-mat.hatmo(self.SurfT))
         else:
             raise ValueError("Unsupported front BC %s" % self.BCfrontType)
         self.BCbackType = root.find("options").find("BCs").find("back").attrib["type"]
