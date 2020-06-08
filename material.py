@@ -180,6 +180,7 @@ class AblativeMaterial(Material):
 
         self.pyroelems = '{gases with C, H, O, e-}'
         self.surfelems = '{gases with C, H, N, O, e-, Ar} C(gr)'
+        self.atmoelems = '{gases with C, H, N, O, e-, Ar}'
 
         self.readData(args)
 
@@ -342,6 +343,8 @@ calculate pyrolysis gas composition and bprime table
 
         self.calculateBPrimes(args)
 
+        self.calculateHatmo(args)
+
     def calculatePyroGasComposition(self, args):
         """
 calculates pyrolysis gas composition using mppequil
@@ -426,9 +429,10 @@ calculates bprime tables using bprime executable provided by mutation++
 
         # Add fine region where high precision is necessary
         b_fine = np.array([0.3, 0.35, 0.4, 0.41, 0.42, 0.43, 0.44, 0.45, 0.46, 0.48, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+        b_onlygas = np.array([1.0e4])
         b_vals = b_vals[np.logical_not(np.logical_and(min(b_fine) - 1.0e-6 < b_vals,
                                                       b_vals < max(b_fine) + 1.0e-6))]  # Delete b values in this region
-        b_vals = np.concatenate((b_vals, b_fine))
+        b_vals = np.concatenate((b_vals, b_fine, b_onlygas))
         b_vals.sort()
 
         # Construct empty numpy arrays for bc and hw
@@ -455,9 +459,13 @@ calculates bprime tables using bprime executable provided by mutation++
         self.data.Tforbprime = bhtab['Tw[K]'].values
         self.data.bg = b_vals
 
+        # Calculate formation enthalpy
+        self.data.hw_shift = self.gas.data.hf - ip.interp1d(self.data.Tforbprime, self.data.hw[:, -1], fill_value='extrapolate')(self.data.Tref)
+        self.data.hw += self.data.hw_shift
+
         # Calculate interpolation functions
-        self.bc = ip.interp2d(self.data.bg, self.data.Tforbprime, self.data.bc)
-        self.hw = ip.interp2d(self.data.bg, self.data.Tforbprime, self.data.hw)
+        self.bc = ip.interp2d(self.data.bg[:-1], self.data.Tforbprime, self.data.bc[:, :-1])
+        self.hw = ip.interp2d(self.data.bg[:-1], self.data.Tforbprime, self.data.hw[:, :-1])
 
         # Calculate gradient functions
         self.dbcdT = lambda bg, T, tol: (self.bc(bg, T + tol) - self.bc(bg, T - tol)) / (2 * tol)
@@ -487,6 +495,31 @@ stores pressure and atmosphere values
         """
         self.pressure = float(args["p"])
         self.atmosphere = args["planet"]
+
+
+    def calculateHatmo(self, args):
+
+        print("Calculating enthalpy of atmosphere...")
+
+        # Construct Mutation++ mixture file
+        xmldata = Path("Templates/mutationpp_mixtures_atmosphere.xml").read_text()
+        xmldata = xmldata.replace("!elems", self.atmoelems)
+        xmldata = xmldata.replace("!planet", self.atmosphere)
+        xmlfilename = Path(args["input_dir"], "mutationpp_atmo_" + args["input_dir"].name + ".xml")
+        with open(xmlfilename, 'w') as xmlfile:
+            xmlfile.write(xmldata)
+
+        # Construct mppequil command
+        mppcmd = "mppequil -T " + args["temprange"] + " -P " + str(args["p"]) + " -m 0,10 " + str(xmlfilename)
+
+        expDYLD = 'export DYLD_LIBRARY_PATH=$MPP_DIRECTORY/install/lib:$DYLD_LIBRARY_PATH\n'
+        h = StringIO(os.popen(expDYLD + mppcmd).read())  # Execute mppequil command
+
+        # Read table
+        htab = pd.read_table(h, header=0, delim_whitespace=True)
+
+        # Calculate enthalpy
+        self.hatmo = constructLinearSpline(x=htab.values[:, 0], y=htab.values[:, 1])
 
 
 def constructLinearSpline(x, y):
