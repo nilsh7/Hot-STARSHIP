@@ -37,6 +37,7 @@
         <ambient>
             <pressure>101325</pressure>
             <atmosphere>Earth</atmosphere>
+            <turbulent_flow>True</turbulent_flow>
         </ambient>
     </options>
 </input>

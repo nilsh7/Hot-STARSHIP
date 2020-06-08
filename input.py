@@ -113,6 +113,9 @@ reads the input xml file and stores the information
         self.initType = root.find("options").find("init").attrib["type"]
         self.initValue = float(root.find("options").find("init").find("value").text)
 
+        # Turbulent flow
+        self.turbflow = bool(root.find("options").find("ambient").find("turbulent_flow").text)
+
 
 if __name__ == "__main__":
 
