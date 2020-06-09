@@ -92,11 +92,11 @@ def init_T_rho(T, rho, Tmap, rhomap, layers, inputvars):
     return T, rho, rhoi, mgas
 
 
-def assembleT(layers, layerspre, Tmap, Tnu, Tn, rhomap, rhonu, rhon, mgas, tDelta, inputvars):
+def assembleT(layers, layerspre, Tmap, Tnu, Tn, rhomap, rhonu, rhon, mgas, t, tDelta, inputvars):
 
     J = assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars)
 
-    fnu = assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas, tDelta, inputvars)
+    fnu = assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas, t, tDelta, inputvars)
 
     return J, fnu
 
@@ -107,9 +107,12 @@ def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars):
     first_col = np.zeros(len(Tnu))
 
     for key in Tmap:
+
         if key == "sdot":
 
-            J, first_col = addWallBlowMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
+            if inputvars.BCfrontType == "aerodynamic":
+
+                J, first_col = addWallBlowMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
 
         elif key[0:3] == "lay":
 
@@ -119,21 +122,41 @@ def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars):
 
             J, first_col = addGridMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key)
 
-            J = addPyroMatrix(J, Tnu, Tmap, mgas, layers, key)
+            J = addPyroMatrix(J, Tnu, Tmap, mgas, layers, key, inputvars)
 
         elif key[0:3] == "int":
+
             J, first_col = addConductionMatrixOuter(J, first_col, Tnu, Tmap, layers, key, tDelta)
 
-    return J
+    # Add BC
+    if inputvars.BCfrontType == "aerodynamic":
+
+        J, first_col = addAerodynamicMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
+
+        J, first_col = addBcMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
+
+    elif inputvars.BCfrontType == "heatflux":
+        pass  # No sensitivity of heat flux
+    else:
+        raise ValueError("Unimplemented front BC %s" % inputvars.BCfrontType)
+
+    Jlil = J.tolil()
+    Jlil[:, 0] += first_col.reshape(-1, 1)
+
+    return Jlil
 
 
-def assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas, tDelta, inputvars):
+def assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas, t, tDelta, inputvars):
 
     fnu = np.zeros(len(Tnu))
 
     for key in Tmap:
+
         if key == "sdot":
-            pass
+
+            if inputvars.BCfrontType == "aerodynamic":
+                fnu = addWallBlowVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
+
         elif key[0:3] == "lay":
 
             fnu = addConductionVectorInner(fnu, Tnu, Tmap, layers, key)
@@ -142,11 +165,23 @@ def assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas,
 
             fnu = addGridVector(fnu, Tnu, Tmap, rhonu, rhomap, layers, key)
 
-            fnu = addPyroVector(fnu, Tnu, Tmap, mgas, layers, key)
+            fnu = addPyroVector(fnu, Tnu, Tmap, mgas, layers, key, inputvars)
 
         elif key[0:3] == "int":
 
             fnu = addConductionVectorOuter(fnu, Tnu, Tmap, layers, key)
+
+    # Add BC
+    if inputvars.BCfrontType == "aerodynamic":
+
+        fnu = addAerodynamicVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
+
+        fnu = addBcVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
+
+    elif inputvars.BCfrontType == "heatflux":
+        fnu = addHeatFluxVector(fnu, Tmap, inputvars, t)
+    else:
+        raise ValueError("Unimplemented front BC %s" % inputvars.BCfrontType)
 
     return fnu
 
@@ -573,7 +608,7 @@ def addGridVector(fnu, Tnu, Tmap, rhonu, rhomap, layers, key):
     return fnu
 
 
-def addPyroMatrix(J, Tnu, Tmap, mgas, layers, key):
+def addPyroMatrix(J, Tnu, Tmap, mgas, layers, key, inputvars):
 
     lay = layers[int(key[3:])]
     # The deeper layers are not pyrolyzing, nor is the front layer if we don't have an ablative case
@@ -602,7 +637,12 @@ def addPyroMatrix(J, Tnu, Tmap, mgas, layers, key):
     # Flux at minus side
     dPjm12_dTj = 1/2 * mgasm12 * mat.gas.cp(Tj)
     dPjm12_dTjm1 = 1/2 * mgasm12 * m1(mat.gas.cp(Tj))
-    dPjm12_dTj[0], dPjm12_dTjm1[0] = (mgasm12[0] * mat.gas.cp(Tj[0]), 0)
+    if inputvars.BCfrontType == "heatflux":
+        dPjm12_dTj[0], dPjm12_dTjm1[0] = (mgasm12[0] * mat.gas.cp(Tj[0]), 0)
+    elif inputvars.BCfrontType == "aerodynamic":
+        dPjm12_dTj[0], dPjm12_dTjm1[0] = (0, 0)  # Implemented in WallBlowMatrix
+    else:
+        raise ValueError("Unimplemented front BC %s" % inputvars.BCfrontType)
 
     # Assemble Jacobian matrix
     fluxes = (dPjp12_dTj, dPjp12_dTjp1, dPjm12_dTj, dPjm12_dTjm1)
@@ -615,7 +655,7 @@ def addPyroMatrix(J, Tnu, Tmap, mgas, layers, key):
     return J
 
 
-def addPyroVector(fnu, Tnu, Tmap, mgas, layers, key):
+def addPyroVector(fnu, Tnu, Tmap, mgas, layers, key, inputvars):
 
     lay = layers[int(key[3:])]
     # The deeper layers are not pyrolyzing, nor is the front layer if we don't have an ablative case
@@ -642,6 +682,12 @@ def addPyroVector(fnu, Tnu, Tmap, mgas, layers, key):
     # Flux at minus side
     Pjm12 = mgasm12 * m12(mat.gas.h(Tj))
     Pjm12[0] = mgasm12[0] * mat.gas.h(Tj[0])
+    if inputvars.BCfrontType == "heatflux":
+        Pjm12[0] = mgasm12[0] * mat.gas.h(Tj[0])
+    elif inputvars.BCfrontType == "aerodynamic":
+        Pjm12[0] = 0  # Implemented in WallBlowVector
+    else:
+        raise ValueError("Unimplemented front BC %s" % inputvars.BCfrontType)
 
     # Assemble Jacobian matrix
     fnu[iStart:iEnd + 1] += Pjp12 - Pjm12
@@ -671,7 +717,7 @@ def addWallBlowMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inpu
 
     # Calculate sensitivity w.r.t. sdot
     dblowcor_dsdot = dblowdsdotFromPhi(phi, rhow, lam, inputvars.aerocoef)
-    dhw_dsdot = mat.dhwdbg(bg, Tw) * mg/inputvars.aerocoef * dblowcor_dsdot
+    dhw_dsdot = mat.dhwdbg(bg, Tw) * mg/inputvars.aerocoef * dblowcor_dsdot / (-blowcor ** 2)
     dPw_dsdot = rhow * mat.hw(bg, Tw) + (mc + mg) * dhw_dsdot
 
     # Calculate sensitivity w.r.t. Tw
@@ -684,6 +730,179 @@ def addWallBlowMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inpu
     first_col[iStart] += dPw_dsdot
 
     return J, first_col
+
+
+def addWallBlowVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
+
+    # Store some variables
+    iStart = Tmap["lay0"][0]
+    lay = layers[0]
+    mat = lay.material
+    # gr = lay.grid
+    sdot = Tnu[Tmap["sdot"]]
+    Tw = Tnu[iStart]
+    # wvw = lay.wv[0]
+    rhow = rhonu[rhomap["lay0"][0]]
+    mg = np.sum(mgas)
+    mc = rhow * sdot
+
+    # Calculate corrected bg
+    lam = 0.4 if inputvars.turbflow else 0.5
+    phi = 2 * lam * (mg + mc) / inputvars.aerocoef
+    blowcor = blowFromPhi(phi)
+    bg = mg / (inputvars.aerocoef * blowcor)
+
+    # Calculate wall blow flux
+    Pw = (mc + mg) * mat.hw(bg, Tw)
+
+    fnu[iStart] += Pw
+
+    return fnu
+
+
+def addHeatFluxVector(fnu, Tmap, inputvars, t):
+
+    # Determine first cell
+    iStart = Tmap["lay0"][0]
+    fnu[iStart] += -inputvars.BCfrontValue(t)
+
+    return fnu
+
+
+def addAerodynamicMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
+
+    # Store some variables
+    iStart = Tmap["lay0"][0]
+    lay = layers[0]
+    mat = lay.material
+    # gr = lay.grid
+    sdot = Tnu[Tmap["sdot"]]
+    Tw = Tnu[iStart]
+    # wvw = lay.wv[0]
+    rhow = rhonu[rhomap["lay0"][0]]
+    mg = np.sum(mgas)
+    mc = rhow * sdot
+
+    # Calculate corrected bg
+    lam = 0.4 if inputvars.turbflow else 0.5
+    phi = 2 * lam * (mg + mc) / inputvars.aerocoef
+    blowcor = blowFromPhi(phi)
+    bg = mg / (inputvars.aerocoef * blowcor)
+
+    # Sensitivity to wall temperature
+    dQw_dTw = inputvars.aerocoef * blowcor * (-mat.hw(bg, Tw))
+
+    # Sensitivity to recession rate
+    dblowcor_dsdot = dblowdsdotFromPhi(phi, rhow, lam, inputvars.aerocoef)
+    dhw_dsdot = mat.dhwdbg(bg, Tw) * mg / inputvars.aerocoef * dblowcor_dsdot / (-blowcor ** 2)
+    dQw_dsdot = inputvars.aerocoef * (mat.hatmo(inputvars.BLEdgeT) - mat.hw(bg, Tw)) * dblowcor_dsdot + \
+                inputvars.aerocoef * blowcor * (-dhw_dsdot)
+
+    # Assemble Jacobian matrix
+    globflux = createGlobFlux(dQw_dTw, length=len(Tnu), iStart=iStart, iEnd=iStart, offset=0)
+    J += dia_matrix((-1 * globflux, 0), shape=(len(Tnu), len(Tnu)))
+
+    first_col[iStart] += -dQw_dsdot
+
+    return J, first_col
+
+
+def addAerodynamicVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
+
+    # Store some variables
+    iStart = Tmap["lay0"][0]
+    lay = layers[0]
+    mat = lay.material
+    # gr = lay.grid
+    sdot = Tnu[Tmap["sdot"]]
+    Tw = Tnu[iStart]
+    # wvw = lay.wv[0]
+    rhow = rhonu[rhomap["lay0"][0]]
+    mg = np.sum(mgas)
+    mc = rhow * sdot
+
+    # Calculate corrected bg
+    lam = 0.4 if inputvars.turbflow else 0.5
+    phi = 2 * lam * (mg + mc) / inputvars.aerocoef
+    blowcor = blowFromPhi(phi)
+    bg = mg / (inputvars.aerocoef * blowcor)
+
+    # Calculate wall heat flux
+    Qw = inputvars.aerocoef * blowcor * (mat.hatmo(inputvars.BLEdgeT) - mat.hw(bg, Tw))
+
+    fnu[iStart] += -Qw
+
+    return fnu
+
+
+def addBcMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
+
+    # Store some variables
+    isdot = Tmap["sdot"]
+    iStart = Tmap["lay0"][0]
+    lay = layers[0]
+    mat = lay.material
+    # gr = lay.grid
+    sdot = Tnu[Tmap["sdot"]]
+    Tw = Tnu[iStart]
+    # wvw = lay.wv[0]
+    rhow = rhonu[rhomap["lay0"][0]]
+    mg = np.sum(mgas)
+    mc = rhow * sdot
+
+    # Calculate corrected bg
+    lam = 0.4 if inputvars.turbflow else 0.5
+    phi = 2 * lam * (mg + mc) / inputvars.aerocoef
+    blowcor = blowFromPhi(phi)
+    bg = mg / (inputvars.aerocoef * blowcor)
+
+    # Sensitivity to recession rate
+    dblowcor_dsdot = dblowdsdotFromPhi(phi, rhow, lam, inputvars.aerocoef)
+    dbg_dsdot = mg / inputvars.aerocoef * dblowcor_dsdot / (-blowcor ** 2)
+    dR0_dsdot = rhow / (inputvars.aerocoef * blowcor) + \
+                rhow * sdot / (inputvars.aerocoef * (-blowcor**2)) * dblowcor_dsdot - \
+                mat.dbcdbg(bg, Tw) * dbg_dsdot
+
+    # Sensitivity to temperature
+    dR0_dTw = -mat.dbcdT(bg, Tw)
+
+    # Assemble Jacobian matrix
+    globflux = np.zeros(len(Tnu))
+    globflux[iStart] = dR0_dTw
+    J += dia_matrix((+1 * globflux, +1), shape=(len(Tnu), len(Tnu)))
+
+    first_col[isdot] += dR0_dsdot
+
+    return J, first_col
+
+
+def addBcVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
+
+    # Store some variables
+    isdot = Tmap["sdot"]
+    iStart = Tmap["lay0"][0]
+    lay = layers[0]
+    mat = lay.material
+    # gr = lay.grid
+    sdot = Tnu[Tmap["sdot"]]
+    Tw = Tnu[iStart]
+    # wvw = lay.wv[0]
+    rhow = rhonu[rhomap["lay0"][0]]
+    mg = np.sum(mgas)
+    mc = rhow * sdot
+
+    # Calculate corrected bg
+    lam = 0.4 if inputvars.turbflow else 0.5
+    phi = 2 * lam * (mg + mc) / inputvars.aerocoef
+    blowcor = blowFromPhi(phi)
+    bg = mg / (inputvars.aerocoef * blowcor)
+
+    # Calculate aerodynamic heating flux
+    R0 = rhow * sdot / (inputvars.aerocoef * blowcor) - mat.bc(bg, Tw)
+
+    fnu[isdot] += R0
+
+    return fnu
 
 
 def blowFromPhi(phi):
@@ -716,7 +935,7 @@ def updateRho(lay, rhoimu, rhoin, Tnu, Tmap, tDelta):
     mat = lay.material
     gr = lay.grid
 
-    Tj = np.linspace(100, 900, len(Tj))  # TODO: remove later, only for debugging purposes
+    #Tj = np.linspace(100, 900, len(Tj))  # TODO: remove later, only for debugging purposes
 
     iteration = 0
 
