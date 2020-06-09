@@ -296,9 +296,9 @@ reads csv file and stores data
         self.virgin.eps = constructLinearSpline(self.virgin.data.Tforeps, self.virgin.data.eps)
 
         # e
-        shift = self.virgin.data.hf - self.virgin.cp.integral(0, self.data.Tref)
-        self.virgin.e = lambda T: np.array([self.virgin.cp.integral(0, Tval) + shift for Tval in T])\
-            if type(T) is np.ndarray else self.virgin.cp.integral(0, T) + shift
+        self.virgin.eshift = self.virgin.data.hf - self.virgin.cp.integral(0, self.data.Tref)
+        self.virgin.e = lambda T: np.array([self.virgin.cp.integral(0, Tval) + self.virgin.eshift for Tval in T])\
+            if type(T) is np.ndarray else self.virgin.cp.integral(0, T) + self.virgin.eshift
 
         ### Char ###
         # cp
@@ -312,9 +312,9 @@ reads csv file and stores data
         self.char.eps = constructLinearSpline(self.char.data.Tforeps, self.char.data.eps)
 
         # e
-        shift = self.char.data.hf - self.char.cp.integral(0, self.data.Tref)
-        self.char.e = lambda T: np.array([self.char.cp.integral(0, Tval) + shift for Tval in T]) \
-            if type(T) is np.ndarray else self.char.cp.integral(0, T) + shift
+        self.char.eshift = self.char.data.hf - self.char.cp.integral(0, self.data.Tref)
+        self.char.e = lambda T: np.array([self.char.cp.integral(0, Tval) + self.char.eshift for Tval in T]) \
+            if type(T) is np.ndarray else self.char.cp.integral(0, T) + self.char.eshift
 
         ### Gas ###
         # Gas enthalpy to be determined using mppequil (see calculatePyroGasComposition)
