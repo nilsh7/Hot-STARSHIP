@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import Testing.comparison as comp
 import output
 
+
 def handleArguments():
     """
 handles arguments passed to Hot-STARSHIP
@@ -30,6 +31,7 @@ def savePreValues(layers):
 
 
 if __name__ == "__main__":
+
     # Save input arguments
     args = handleArguments()
 
@@ -50,66 +52,81 @@ if __name__ == "__main__":
     # Initialize variables to be solved
     Tnu, rhonu, rhoimu, mgas = init_T_rho(Tnu, rhonu, Tmap, rhomap, layers, inputvars)
 
-    #Tnu = np.linspace(250, 750, len(Tnu))  # for debugging purposes
-    deltaTn = np.linspace(0.0, 0.0, len(Tnu))
+    # Initialize deltaTn guess with zero change
+    deltaTn = np.zeros(len(Tnu))
 
     for it, t in enumerate(np.arange(inputvars.tStart, inputvars.tEnd + 1e-5, inputvars.tDelta)):
+
+        # Print some information about current time step
         print("+++ New time step: t = %.4f secs +++" % t)
 
+        # Copy values of previous time step for time dependent function values
         Tn, rhon, rhoin = Tnu.copy(), rhonu.copy(), rhoimu.copy()
-        #Tn[1:] += 50*np.arange(len(Tn)-1)  # for debugging
 
-        globiteration = 0
-
+        # Save information about grid of previous time step
         layerspre = savePreValues(layers)
 
-        Tnu += deltaTn  # Initial guess based on previous difference
+        # Set global iteration counter
+        globiteration = 0
+
+        # Initial guess based on difference at previous time step
+        Tnu += deltaTn
 
         while True:
 
+            # Increment higher level iteration counter, initialize lower level iteration counter
             globiteration += 1
             iteration = 0
 
             while True:
 
-                #break  # TODO: for debugging purposes with ablative material
-                #rhonu, rhoimup1, mgas = updateRho(layers[0], rhoimu, rhoin, Tnu, Tmap, inputvars.tDelta)  # TODO: for debugging purposes with ablative material
-
+                # Increment lower level iteration counter
                 iteration += 1
 
+                # Assemble Jacobian and function vector
                 J, f = assembleT(layers, layerspre, Tmap, Tnu, Tn, rhomap, rhonu, rhon, mgas, t, inputvars.tDelta, inputvars)
 
-                #f[0] += -7.5e5
-
-                #f[1] += -7.5e5
-                #Jd = J.toarray()
-                #dT = np.zeros(f.shape)
-                #dT[1:] = np.linalg.solve(Jd[1:, 1:], -f[1:])
-
+                # Solve for difference
                 dT = spsolve(J, -f)
 
+                # Apply difference
                 Tnu += dT
-                delta_sdot = dT[0]
-                layers[0].grid.updateZ(delta_sdot)
 
-                if np.linalg.norm(dT/Tnu) < 1.0e-8: #and iteration > 2:
+                # Update grid when using ablative calculation
+                if layers[0].ablative:
+                    # On very first iteration, update using actual sdot value
+                    if globiteration == 1 and iteration == 1:
+                        sdot = Tnu[Tmap["sdot"]]
+                        layers[0].grid.updateZ(delta_s=sdot * inputvars.tDelta)
+                    # otherwise, update using difference between current and last iteration
+                    else:
+                        delta_sdot = dT[0]
+                        layers[0].grid.updateZ(delta_s=delta_sdot * inputvars.tDelta)
+
+                # Stop iterating if convergence in T (and possibly sdot) has been reached
+                if np.linalg.norm(dT/Tnu) < 1.0e-3: #and iteration > 2:
                     print("T determination completed after %i iterations." % iteration)
                     deltaTn = Tnu - Tn
                     break
 
+            # If not dealing with an ablative case, go to next time step
             if not layers[0].ablative:
                 break
+            # else update nodal densities
             else:
                 rhonu, rhoimup1, mgas = updateRho(layers[0], rhoimu, rhoin, Tnu, Tmap, inputvars.tDelta)
                 if np.linalg.norm((rhoimup1-rhoimu)/rhoimu) < 1.0e-8:
-                    print("Time step completed after %i iterations" % globiteration)
+                    print("Time step completed after %i iterations." % globiteration)
                     break
 
-    #comp.compareToAnalytical(t, Tnu, inputvars)
+    # Option to compare test case to analytical profile
+    # comp.compareToAnalytical(t, Tnu, inputvars)
 
-    output.plotT(layers, Tnu, Tmap, t)
+    # Plot output
+    output.plotT(layers, Tnu, Tmap, t, inputvars)
+    output.plotBeta(layers, rhonu, rhomap, t)
 
-    #plt.plot(layers[0].grid.zj, Tnu)
-    #plt.show()
+    # End has been reached (final statement for debugging purposes)
+    end = True
 
     aaa = 1
