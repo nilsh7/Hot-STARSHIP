@@ -63,22 +63,23 @@ if __name__ == "__main__":
 
         layerspre = savePreValues(layers)
 
+        Tnu += deltaTn  # Initial guess based on previous difference
+
         while True:
 
             globiteration += 1
             iteration = 0
-            Tnu += deltaTn  # Initial guess based on previous difference
 
             while True:
 
                 #break  # TODO: for debugging purposes with ablative material
-                rhonu, rhoimup1, mgas = updateRho(layers[0], rhoimu, rhoin, Tnu, Tmap, inputvars.tDelta)  # TODO: for debugging purposes with ablative material
+                #rhonu, rhoimup1, mgas = updateRho(layers[0], rhoimu, rhoin, Tnu, Tmap, inputvars.tDelta)  # TODO: for debugging purposes with ablative material
 
                 iteration += 1
 
-                J, f = assembleT(layers, layerspre, Tmap, Tnu, Tn, rhomap, rhonu, rhon, mgas, inputvars.tDelta, inputvars)
+                J, f = assembleT(layers, layerspre, Tmap, Tnu, Tn, rhomap, rhonu, rhon, mgas, t, inputvars.tDelta, inputvars)
 
-                f[0] += -7.5e5
+                #f[0] += -7.5e5
 
                 #f[1] += -7.5e5
                 #Jd = J.toarray()
@@ -88,6 +89,8 @@ if __name__ == "__main__":
                 dT = spsolve(J, -f)
 
                 Tnu += dT
+                delta_sdot = dT[0]
+                layers[0].grid.updateZ(delta_sdot)
 
                 if np.linalg.norm(dT/Tnu) < 1.0e-8: #and iteration > 2:
                     print("T determination completed after %i iterations." % iteration)
