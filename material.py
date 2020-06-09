@@ -393,8 +393,8 @@ calculates pyrolysis gas composition using mppequil
 
         # Calculate enthalpy
         hPreliminary = constructLinearSpline(x=htab.values[:, 0], y=htab.values[:, 1])
-        shift = self.gas.data.hf - hPreliminary(self.data.Tref)
-        self.gas.h = constructLinearSpline(x=htab.values[:, 0], y=htab.values[:, 1] + shift)
+        self.gas.data.hshift = self.gas.data.hf - hPreliminary(self.data.Tref)
+        self.gas.h = constructLinearSpline(x=htab.values[:, 0], y=htab.values[:, 1] + self.gas.data.hshift)
         self.gas.cp = self.gas.h.derivative()
 
 
@@ -519,7 +519,7 @@ stores pressure and atmosphere values
         htab = pd.read_table(h, header=0, delim_whitespace=True)
 
         # Calculate enthalpy
-        self.hatmo = constructLinearSpline(x=htab.values[:, 0], y=htab.values[:, 1])
+        self.hatmo = constructLinearSpline(x=htab.values[:, 0], y=htab.values[:, 1] + self.data.hw_shift)
 
 
 def constructLinearSpline(x, y):
