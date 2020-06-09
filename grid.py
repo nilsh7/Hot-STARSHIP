@@ -60,6 +60,7 @@ creates grid at front of TPS
         :param l0: l0/2 is the thickness of the first volume
         :param maxgrowth: maximum allowable growth factor
         """
+        self.length0 = length
         self.length = length
         self.z0 = 0
 
@@ -84,7 +85,8 @@ adds recession amount and recalculates nodal positions
         """
         self.s += delta_s
         self.z0 += delta_s
-        self.zj = self.length - self.etaj * (self.length - self.s)
+        self.length += -delta_s
+        self.zj = self.length0 - self.etaj * (self.length0 - self.s)
         self.calculateProperties(calceta=False)
 
 
