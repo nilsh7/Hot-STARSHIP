@@ -78,9 +78,9 @@ def init_T_rho(T, rho, Tmap, rhomap, layers, inputvars):
         raise ValueError("Unimplemented initialization type %s", inputvars.initType)
     for layerKey, layer in zip(rhomap, layers):
         if type(layer.material) is material.AblativeMaterial:
-            rho[rhomap[layerKey]] = np.repeat(np.dot(layer.material.data.virginRho0, layer.material.data.frac),
+            rho[rhomap[layerKey]] = np.repeat(np.dot(layer.material.data.virginRhoFrac0, layer.material.data.frac),
                                               len(rhomap[layerKey]))
-            rhoi = np.repeat(layer.material.data.virginRho0.reshape(1, -1), repeats=len(rhomap[layerKey]), axis=0)
+            rhoi = np.repeat(layer.material.data.virginRhoFrac0.reshape(1, -1), repeats=len(rhomap[layerKey]), axis=0)
             mgas = np.zeros(len(rhomap[layerKey]))
         else:
             if inputvars.initType == "Temperature":
@@ -142,8 +142,9 @@ def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars):
 
     Jlil = J.tolil()
     Jlil[:, 0] += first_col.reshape(-1, 1)
+    Jcsc = Jlil.tocsc()
 
-    return Jlil
+    return Jcsc
 
 
 def assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas, t, tDelta, inputvars):
@@ -946,24 +947,27 @@ def updateRho(lay, rhoimu, rhoin, Tnu, Tmap, tDelta):
         deltaRhoimu = ((rhoimu - rhoin - tDelta * drhodt(mat, rhoimu, Tj)) /
                        (tDelta * ddrhodt_drho(mat, rhoimu, Tj) - np.ones(rhoimu.shape)))
         rhoimu += deltaRhoimu
-        if np.linalg.norm(deltaRhoimu/rhoimu) < 1.0e-8:
+        if np.linalg.norm(deltaRhoimu/rhoimu) < 1.0e-8 and iteration > 2:
             print("Rho determination completed after %i iterations." % iteration)
             break
 
     frac = np.repeat(mat.data.frac.reshape(1, -1), repeats=len(Tj), axis=0)
     rhonu = np.sum(frac*rhoimu, axis=1)
 
+    rhv, rhc = (mat.data.rhov0, mat.data.rhoc0)
+    lay.wv = rhv/(rhv-rhc) * (1-rhc/rhonu)
+
     mgas = -np.sum(frac*drhodt(mat, rhoimu, Tj), axis=1) * (gr.zjp12-gr.zjm12)
 
     return rhonu, rhoimu, mgas
 
 def drhodt(mat, rhoi, Tj):
-    rhoc = np.repeat(mat.data.charRho0.reshape(1, -1), repeats=len(Tj), axis=0)
-    rhov = np.repeat(mat.data.virginRho0.reshape(1, -1), repeats=len(Tj), axis=0)
+    rhoc = np.repeat(mat.data.charRhoFrac0.reshape(1, -1), repeats=len(Tj), axis=0)
+    rhov = np.repeat(mat.data.virginRhoFrac0.reshape(1, -1), repeats=len(Tj), axis=0)
     kr = np.repeat(mat.data.kr.reshape(1, -1), repeats=len(Tj), axis=0)
     nr = np.repeat(mat.data.nr.reshape(1, -1), repeats=len(Tj), axis=0)
     Ei = np.repeat(mat.data.Ei.reshape(1, -1), repeats=len(Tj), axis=0)
-    T = np.repeat(Tj.reshape(-1,1), repeats=len(mat.data.charRho0), axis=1)
+    T = np.repeat(Tj.reshape(-1,1), repeats=len(mat.data.charRhoFrac0), axis=1)
     decomp = rhoc != rhov
     val = np.zeros(rhoi.shape)
     val[decomp] = -kr[decomp] * ((rhoi[decomp] - rhoc[decomp]) / (rhov[decomp] - rhoc[decomp])) ** nr[decomp] \
@@ -971,12 +975,12 @@ def drhodt(mat, rhoi, Tj):
     return val
 
 def ddrhodt_drho(mat, rhoi, Tj):
-    rhoc = np.repeat(mat.data.charRho0.reshape(1, -1), repeats=len(Tj), axis=0)
-    rhov = np.repeat(mat.data.virginRho0.reshape(1, -1), repeats=len(Tj), axis=0)
+    rhoc = np.repeat(mat.data.charRhoFrac0.reshape(1, -1), repeats=len(Tj), axis=0)
+    rhov = np.repeat(mat.data.virginRhoFrac0.reshape(1, -1), repeats=len(Tj), axis=0)
     kr = np.repeat(mat.data.kr.reshape(1, -1), repeats=len(Tj), axis=0)
     nr = np.repeat(mat.data.nr.reshape(1, -1), repeats=len(Tj), axis=0)
     Ei = np.repeat(mat.data.Ei.reshape(1, -1), repeats=len(Tj), axis=0)
-    T = np.repeat(Tj.reshape(-1, 1), repeats=len(mat.data.charRho0), axis=1)
+    T = np.repeat(Tj.reshape(-1, 1), repeats=len(mat.data.charRhoFrac0), axis=1)
     decomp = rhoc != rhov
     val = np.zeros(rhoi.shape)
     val[decomp] = -kr[decomp] * nr[decomp] / (rhov[decomp] - rhoc[decomp]) *\
