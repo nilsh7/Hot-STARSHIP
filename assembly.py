@@ -947,7 +947,7 @@ def updateRho(lay, rhoimu, rhoin, Tnu, Tmap, tDelta):
         deltaRhoimu = ((rhoimu - rhoin - tDelta * drhodt(mat, rhoimu, Tj)) /
                        (tDelta * ddrhodt_drho(mat, rhoimu, Tj) - np.ones(rhoimu.shape)))
         rhoimu += deltaRhoimu
-        if np.linalg.norm(deltaRhoimu/rhoimu) < 1.0e-8 and iteration > 2:
+        if np.linalg.norm(deltaRhoimu/rhoimu) < 1.0e-8:
             print("Rho determination completed after %i iterations." % iteration)
             break
 
