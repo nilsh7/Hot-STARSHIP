@@ -83,7 +83,8 @@ adds recession amount and recalculates nodal positions
         :param delta_s: difference in recession amount since last update
         """
         self.s += delta_s
-        self.zj = self.length - self.eta * (self.length - self.s)
+        self.z0 += delta_s
+        self.zj = self.length - self.etaj * (self.length - self.s)
         self.calculateProperties(calceta=False)
 
 
