@@ -275,13 +275,15 @@ reads csv file and stores data
 
             # Decomposition kinetics
             self.data.nDecomp = dec_data.columns.values.size - 1
-            self.data.virginRho0 = dec_data.values[0, :]
-            self.data.charRho0 = dec_data.values[1, :]
+            self.data.virginRhoFrac0 = dec_data.values[0, :]
+            self.data.charRhoFrac0 = dec_data.values[1, :]
             self.data.kr = dec_data.values[2, :]
             self.data.nr = dec_data.values[3, :]
             self.data.Ei = dec_data.values[4, :]
             self.data.Tmin = dec_data.values[5, :]
             self.data.frac = dec_data.values[6, :]
+            self.data.rhov0 = np.sum(self.data.virginRhoFrac0 * self.data.frac)
+            self.data.rhoc0 = np.sum(self.data.charRhoFrac0 * self.data.frac)
 
     def calculateVariables(self):
         ### Virgin ###
