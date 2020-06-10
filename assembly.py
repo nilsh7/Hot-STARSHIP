@@ -83,6 +83,7 @@ def init_T_rho(T, rho, Tmap, rhomap, layers, inputvars):
             rhoi = np.repeat(layer.material.data.virginRhoFrac0.reshape(1, -1), repeats=len(rhomap[layerKey]), axis=0)
             mgas = np.zeros(len(rhomap[layerKey]))
         else:
+            mgas = np.zeros(len(rhomap[layerKey]))
             if inputvars.initType == "Temperature":
                 rho[rhomap[layerKey]] = np.repeat(layer.material.rho(inputvars.initValue), len(rhomap[layerKey]))
                 rhoi = np.zeros(len(rhomap[layerKey]))
@@ -530,7 +531,7 @@ def addGridMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key):
     lay = layers[int(key[3:])]
     # The deeper layers are not moving, nor is the front layer if we don't have an ablative case
     # Thus we don't have any convection due to grid movement
-    if int(key[3:]) != 0 and not lay.ablative:
+    if int(key[3:]) != 0 or not lay.ablative:
         return J, first_col
 
     # Store some variables
@@ -585,7 +586,7 @@ def addGridVector(fnu, Tnu, Tmap, rhonu, rhomap, layers, key):
     lay = layers[int(key[3:])]
     # The deeper layers are not moving, nor is the front layer if we don't have an ablative case
     # Thus we don't have any convection due to grid movement
-    if int(key[3:]) != 0 and not lay.ablative:
+    if int(key[3:]) != 0 or not lay.ablative:
         return fnu
 
     # Store some variables
@@ -615,7 +616,7 @@ def addPyroMatrix(J, Tnu, Tmap, mgas, layers, key, inputvars):
     lay = layers[int(key[3:])]
     # The deeper layers are not pyrolyzing, nor is the front layer if we don't have an ablative case
     # Thus we don't have any convection due to pyrolysis gas
-    if int(key[3:]) != 0 and not lay.ablative:
+    if int(key[3:]) != 0 or not lay.ablative:
         return J
 
     # Store some variables
@@ -662,7 +663,7 @@ def addPyroVector(fnu, Tnu, Tmap, mgas, layers, key, inputvars):
     lay = layers[int(key[3:])]
     # The deeper layers are not pyrolyzing, nor is the front layer if we don't have an ablative case
     # Thus we don't have any convection due to pyrolysis gas
-    if int(key[3:]) != 0 and not lay.ablative:
+    if int(key[3:]) != 0 or not lay.ablative:
         return fnu
 
     # Store some variables
