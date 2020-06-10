@@ -200,8 +200,8 @@ def addConductionMatrixInner(J, first_col, Tnu, Tmap, layers, key, tDelta):
 
     ### Conduction ###
     # Flux at plus side
-    dCjp12_dTj   =  mat.k(p12(Tj), p12(lay.wv)) / gr.dzjp + (Tj - p1(Tj)) / (2 * gr.dzjp) * mat.dkdT(Tj, lay.wv)  # TODO: change to p12(lay.wv)
-    dCjp12_dTjp1 = -mat.k(p12(Tj), p12(lay.wv)) / gr.dzjp + (Tj - p1(Tj)) / (2 * gr.dzjp) * mat.dkdT(p1(Tj), p1(lay.wv))
+    dCjp12_dTj   =  mat.k(p12(Tj), p12(lay.wv)) / gr.dzjp + (Tj - p1(Tj)) / (2 * gr.dzjp) * mat.dkdT(Tj, p12(lay.wv))
+    dCjp12_dTjp1 = -mat.k(p12(Tj), p12(lay.wv)) / gr.dzjp + (Tj - p1(Tj)) / (2 * gr.dzjp) * mat.dkdT(p1(Tj), p12(lay.wv))
     if lay.ablative:
         dCjp12_dsdot = -mat.k(p12(Tj), p12(lay.wv)) * (Tj - p1(Tj)) / (gr.dzjp ** 2) * (p1(gr.etaj) - gr.etaj) * tDelta
     else:
@@ -209,8 +209,8 @@ def addConductionMatrixInner(J, first_col, Tnu, Tmap, layers, key, tDelta):
     dCjp12_dTj[-1], dCjp12_dTjp1[-1], dCjp12_dsdot[-1] = (0, 0, 0)
 
     # Flux at minus side
-    dCjm12_dTj   = -mat.k(m12(Tj), m12(lay.wv)) / gr.dzjm + (m1(Tj) - Tj) / (2 * gr.dzjm) * mat.dkdT(Tj, lay.wv)
-    dCjm12_dTjm1 = +mat.k(m12(Tj), m12(lay.wv)) / gr.dzjm + (m1(Tj) - Tj) / (2 * gr.dzjm) * mat.dkdT(m1(Tj), m1(lay.wv))
+    dCjm12_dTj   = -mat.k(m12(Tj), m12(lay.wv)) / gr.dzjm + (m1(Tj) - Tj) / (2 * gr.dzjm) * mat.dkdT(Tj, m12(lay.wv))
+    dCjm12_dTjm1 = +mat.k(m12(Tj), m12(lay.wv)) / gr.dzjm + (m1(Tj) - Tj) / (2 * gr.dzjm) * mat.dkdT(m1(Tj), m12(lay.wv))
     if lay.ablative:
         dCjm12_dsdot = -mat.k(m12(Tj), m12(lay.wv)) * (m1(Tj) - Tj) / (gr.dzjm ** 2) * (gr.etaj - m1(gr.etaj)) * tDelta
     else:
