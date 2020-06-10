@@ -4,7 +4,7 @@ from material import NonAblativeMaterial
 
 def compareToAnalytical(t, Tnu, inputvars, nmax=201):
     T0 = inputvars.initValue
-    q = inputvars.BCfrontValue
+    q = inputvars.BCfrontValue(0)
     L = inputvars.layers[0].thickness
     mat = inputvars.layers[0].material
     rho = mat.rho(T0)
