@@ -537,9 +537,6 @@ constructs a piecewise linear spline through data
         x = np.concatenate((x, x*1.01))
         y = np.repeat(y, 2)
 
-    y = np.hstack((y[0], y, y[-1]))
-    x = np.hstack((0, x, 1e4))
-
     spline = ip.UnivariateSpline(x=x, y=y, k=1, ext='const')
     return spline
 
