@@ -791,7 +791,7 @@ def addAerodynamicMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, i
     bg = mg / (inputvars.aerocoef * blowcor)
 
     # Sensitivity to wall temperature
-    dQw_dTw = inputvars.aerocoef * blowcor * (-mat.hw(bg, Tw))
+    dQw_dTw = inputvars.aerocoef * blowcor * (-mat.dhwdT(bg, Tw))
 
     # Sensitivity to recession rate
     dblowcor_dsdot = dblowdsdotFromPhi(phi, rhow, lam, inputvars.aerocoef)
@@ -929,6 +929,7 @@ def dblowdsdotFromPhi(phi, rhow, lam, aerocoef):
     else:
         return 0
 
+
 def updateRho(lay, rhoimu, rhoin, Tnu, Tmap, tDelta):
 
     key = "lay0"
@@ -961,6 +962,7 @@ def updateRho(lay, rhoimu, rhoin, Tnu, Tmap, tDelta):
 
     return rhonu, rhoimu, mgas
 
+
 def drhodt(mat, rhoi, Tj):
     rhoc = np.repeat(mat.data.charRhoFrac0.reshape(1, -1), repeats=len(Tj), axis=0)
     rhov = np.repeat(mat.data.virginRhoFrac0.reshape(1, -1), repeats=len(Tj), axis=0)
@@ -973,6 +975,7 @@ def drhodt(mat, rhoi, Tj):
     val[decomp] = -kr[decomp] * ((rhoi[decomp] - rhoc[decomp]) / (rhov[decomp] - rhoc[decomp])) ** nr[decomp] \
                   * np.exp(-Ei[decomp] / T[decomp])
     return val
+
 
 def ddrhodt_drho(mat, rhoi, Tj):
     rhoc = np.repeat(mat.data.charRhoFrac0.reshape(1, -1), repeats=len(Tj), axis=0)
