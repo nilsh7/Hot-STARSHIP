@@ -248,7 +248,8 @@ def addConductionMatrixOuter(J, first_col, Tnu, Tmap, layers, key, tDelta):
     dCl_dTl = lay_left.material.k(T_int, wv) / dz_left
     dCl_dTint = -lay_left.material.k(T_int, wv) / dz_left + lay_left.material.dkdT(T_int, wv) * \
                 (T_left - T_int) / dz_left
-    dCl_dsdot = lay_left.grid.etaj[-1] * tDelta if lay_left.ablative else 0
+    dCl_dsdot = -lay_left.material.k(T_int, wv) / dz_left**2 * (T_left - T_int) * \
+               (-lay_left.grid.etaj[-1] * tDelta) if lay_left.ablative else 0
 
     # Right side conduction flux
     dz_right = lay_right.grid.zj[0] - lay_right.grid.zjm12[0]
@@ -396,8 +397,8 @@ def addEnergyMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta,
         dEj_dTjp1[-1] = rhoj[-1] * mat.cp(Tint, lay.wv[-1]) * dzint/2 / tDelta
         if lay.ablative:
             dEj_dsdot[-1] = ((rhoj[-1] * (mat.e(Tint, lay.wv[-1]) + mat.e(Tj[-1], lay.wv[-1]))/2) * (-gr.etaj[-1]) +
-                             (gr.etaj[-1] - gr.etaj[-2]) * (3/8 * rhoj[-1] * mat.e(rhoj[-1], lay.wv[-1]) +
-                                                                     1/8 * rhoj[-2] * mat.e(rhoj[-2], lay.wv[-2])))
+                             (gr.etaj[-1] - gr.etaj[-2]) * (3/8 * rhoj[-1] * mat.e(Tj[-1], lay.wv[-1]) +
+                                                            1/8 * rhoj[-2] * mat.e(Tj[-2], lay.wv[-2])))
     else:
         # Boundary at back of material
         if inputvars.BCbackType == "adiabatic":
@@ -410,7 +411,7 @@ def addEnergyMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta,
 
             if lay.ablative:
                 dEj_dsdot[-1] = ((gr.etaj[-1] - gr.etaj[-2]) * (3/8 * rhoj[-1] * mat.e(Tj[-1], lay.wv[-1]) +
-                                                                        1/8 * rhoj[-2] * mat.e(Tj[-2], lay.wv[-2])) +
+                                                                1/8 * rhoj[-2] * mat.e(Tj[-2], lay.wv[-2])) +
                                  (0 - gr.etaj[-1]) * rhoj[-1] * mat.e(Tj[-1], lay.wv[-1]))
             else:
                 dEj_dsdot[-1] = 0
