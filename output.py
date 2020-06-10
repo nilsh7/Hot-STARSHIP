@@ -32,16 +32,20 @@ def plotT(layers, Tnu, Tmap, t, inputvars):
 
 def plotBeta(layers, rhonu, rhomap, t):
 
-    plt.clf()
     lay = layers[0]
+    if not lay.ablative:
+        raise UserWarning("Cannot plot beta for non-ablative material.")
+        return
     mat = lay.material
     gr = lay.grid
     rhoj = rhonu[rhomap["lay0"]]
-    plt.clf()
     beta = (mat.data.rhov0 - rhoj)/(mat.data.rhov0 - mat.data.rhoc0)
     beta_int = beta[-2] + (beta[-1] - beta[-2])/(gr.zj[-1] - gr.zj[-2]) * (gr.zjp12[-1] - gr.zj[-2])
     beta_tot = np.hstack((beta, beta_int))
     z_tot = np.hstack((gr.zj, gr.zjp12[-1]))
+
+    # Construct plot
+    plt.clf()
     plt.plot(z_tot, beta_tot, '-o', label='Numerical solution')
     plt.xlabel('z [m]')
     plt.ylabel('beta [-]')
