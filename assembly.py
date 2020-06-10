@@ -513,10 +513,10 @@ def addEnergyVector(fnu, Tnu, Tn, Tmap, rhonu, rhon, rhomap, layers, layerspre, 
 
             Ej[-1] = 1/tDelta * (+ gr.dzjm[-1] * (3/8 * rhojnu[-1] * mat.e(Tjnu[-1], lay.wv[-1]) +
                                                   1/8 * rhojnu[-2] * mat.e(Tjnu[-2], lay.wv[-2]))
-                                 + rhojnu[-1] * mat.e(Tjnu[-1], lay.wv[-1]) * 1/2 * dzp12nu
+                                 + rhojnu[-1] * mat.e(Tjnu[-1], lay.wv[-1]) * dzp12nu
                                  - grpre.dzjm[-1] * (3/8 * rhojn[-1] * mat.e(Tjn[-1], laypre.wv[-1]) +
                                                      1/8 * rhojn[-2] * mat.e(Tjn[-2], laypre.wv[-2]))
-                                 - rhojn[-1] * mat.e(Tjn[-1], lay.wv[-1]) * 1/2 * dzp12n)
+                                 - rhojn[-1] * mat.e(Tjn[-1], lay.wv[-1]) * dzp12n)
         else:
             raise UserWarning("Back BC %s not implemented yet." % inputvars.BCbackType)
 
