@@ -274,7 +274,7 @@ reads csv file and stores data
             self.gas.data.hf = hof_data.values[3, 1]
 
             # Decomposition kinetics
-            self.data.nDecomp = dec_data.columns.values.size - 1
+            self.data.nDecomp = dec_data.columns.values.size
             self.data.virginRhoFrac0 = dec_data.values[0, :]
             self.data.charRhoFrac0 = dec_data.values[1, :]
             self.data.kr = dec_data.values[2, :]
