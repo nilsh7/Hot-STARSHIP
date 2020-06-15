@@ -48,8 +48,9 @@ def createUnknownVectors(layers):
     numRhos = rhomap["lay%i" % layers[-1].number][-1] + 1
 
     T, rho = np.zeros(numTs), np.zeros(numRhos)
+    rhoi = np.zeros((numRhos, layers[0].material.data.nDecomp)) if layers[0].ablative else np.zeros((numRhos, 1))
 
-    return T, rho, Tmap, rhomap
+    return T, rho, rhoi, Tmap, rhomap
 
 
 def createGlobFlux(flux, length, iStart, iEnd, offset):
@@ -67,7 +68,7 @@ def createGlobFlux(flux, length, iStart, iEnd, offset):
     return globflux
 
 
-def init_T_rho(T, rho, Tmap, rhomap, layers, inputvars):
+def init_T_rho(T, rho, rhoi, Tmap, rhomap, layers, inputvars):
     if inputvars.initType == "Temperature":
         if "sdot" in Tmap:
             T[0] = 0
@@ -80,11 +81,11 @@ def init_T_rho(T, rho, Tmap, rhomap, layers, inputvars):
         if type(layer.material) is material.AblativeMaterial:
             rho[rhomap[layerKey]] = np.repeat(np.dot(layer.material.data.virginRhoFrac0, layer.material.data.frac),
                                               len(rhomap[layerKey]))
-            rhoi = np.repeat(layer.material.data.virginRhoFrac0.reshape(1, -1), repeats=len(rhomap[layerKey]), axis=0)
+            rhoi[rhomap[layerKey], :] = np.repeat(layer.material.data.virginRhoFrac0.reshape(1, -1), repeats=len(rhomap[layerKey]), axis=0)
         else:
             if inputvars.initType == "Temperature":
                 rho[rhomap[layerKey]] = np.repeat(layer.material.rho(inputvars.initValue), len(rhomap[layerKey]))
-                rhoi = np.zeros(len(rhomap[layerKey]))
+                rhoi[rhomap[layerKey], :] = np.nan
             else:
                 raise ValueError("Unimplemented initialization type %s", inputvars.initType)
 
@@ -482,7 +483,7 @@ def addEnergyVector(fnu, Tnu, Tn, Tmap, rhonu, rhon, rhomap, layers, layerspre, 
         Ej[0] = 1/tDelta * (+ rhojnu[0] * (mat.e(Tintnu, lay.wv[0])+mat.e(Tjnu[0], lay.wv[0]))/2 * dzintnu
                             + (gr.dzjp[0] * (3/8 * rhojnu[0] * mat.e(Tjnu[0], lay.wv[0]) +
                                              1/8 * rhojnu[1] * mat.e(Tjnu[1], lay.wv[1])))
-                            - rhon[0] * (mat.e(Tintn, laypre.wv[0])+mat.e(Tjn[0], laypre.wv[0]))/2 * dzintn
+                            - rhojn[0] * (mat.e(Tintn, laypre.wv[0])+mat.e(Tjn[0], laypre.wv[0]))/2 * dzintn
                             - (grpre.dzjp[0] * (3/8 * rhojn[0] * mat.e(Tjn[0], laypre.wv[0]) +
                                                 1/8 * rhojn[1] * mat.e(Tjn[1], laypre.wv[1]))))
     else:
@@ -503,7 +504,7 @@ def addEnergyVector(fnu, Tnu, Tn, Tmap, rhonu, rhon, rhomap, layers, layerspre, 
         Ej[-1] = 1/tDelta * (+ rhojnu[-1] * (mat.e(Tintnu, lay.wv[-1])+mat.e(Tjnu[-1], lay.wv[-1]))/2 * dzintnu
                              + (gr.dzjm[-1] * (3/8 * rhojnu[-1] * mat.e(Tjnu[-1], lay.wv[-1]) +
                                                1/8 * rhojnu[-2] * mat.e(Tjnu[-2], lay.wv[-2])))
-                             - rhon[-1] * (mat.e(Tintn, laypre.wv[-1])+mat.e(Tjn[-1], laypre.wv[-1]))/2 * dzintn
+                             - rhojn[-1] * (mat.e(Tintn, laypre.wv[-1])+mat.e(Tjn[-1], laypre.wv[-1]))/2 * dzintn
                              - (grpre.dzjm[-1] * (3/8 * rhojn[-1] * mat.e(Tjn[-1], laypre.wv[-1]) +
                                                   1/8 * rhojn[-2] * mat.e(Tjn[-2], laypre.wv[-2]))))
     else:
@@ -933,12 +934,15 @@ def dblowdsdotFromPhi(phi, rhow, lam, aerocoef):
         return 0
 
 
-def updateRho(lay, rhoimu, rhoin, Tnu, Tmap, tDelta):
+def updateRho(lay, rhoimu, rhoin, rhonu, rhomap, Tnu, Tmap, tDelta):
 
     key = "lay0"
     Tj = Tnu[Tmap[key]]
     mat = lay.material
     gr = lay.grid
+    ablativeCells = rhomap[key]
+    rhoimu_abl = rhoimu[ablativeCells, :]
+    rhoin_abl = rhoin[ablativeCells, :]
 
     #Tj = np.linspace(100, 900, len(Tj))  # TODO: remove later, only for debugging purposes
 
@@ -948,20 +952,20 @@ def updateRho(lay, rhoimu, rhoin, Tnu, Tmap, tDelta):
 
         iteration += 1
 
-        deltaRhoimu = ((rhoimu - rhoin - tDelta * drhodt(mat, rhoimu, Tj)) /
-                       (tDelta * ddrhodt_drho(mat, rhoimu, Tj) - np.ones(rhoimu.shape)))
-        rhoimu += deltaRhoimu
-        if np.linalg.norm(deltaRhoimu/rhoimu) < 1.0e-8:
-            print("Rho determination completed after %i iterations." % iteration)
+        deltaRhoimu = ((rhoimu_abl - rhoin_abl - tDelta * drhodt(mat, rhoimu_abl, Tj)) /
+                       (tDelta * ddrhodt_drho(mat, rhoimu_abl, Tj) - np.ones(rhoimu_abl.shape)))
+        rhoimu_abl += deltaRhoimu
+        if np.linalg.norm(deltaRhoimu/rhoimu_abl) < 1.0e-8:
+            print("-> Rho determination completed after %i iterations." % iteration)
             break
 
     frac = np.repeat(mat.data.frac.reshape(1, -1), repeats=len(Tj), axis=0)
-    rhonu = np.sum(frac*rhoimu, axis=1)
+    rhonu[ablativeCells] = np.sum(frac*rhoimu_abl, axis=1)
 
     rhv, rhc = (mat.data.rhov0, mat.data.rhoc0)
-    lay.wv = rhv/(rhv-rhc) * (1-rhc/rhonu)
+    lay.wv = rhv/(rhv-rhc) * (1-rhc/rhonu[ablativeCells])
 
-    mgas = -np.sum(frac*drhodt(mat, rhoimu, Tj), axis=1) * (gr.zjp12-gr.zjm12)
+    mgas = -np.sum(frac*drhodt(mat, rhoimu[ablativeCells], Tj), axis=1) * (gr.zjp12-gr.zjm12)
 
     return rhonu, rhoimu, mgas
 
