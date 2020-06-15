@@ -81,14 +81,15 @@ def init_T_rho(T, rho, Tmap, rhomap, layers, inputvars):
             rho[rhomap[layerKey]] = np.repeat(np.dot(layer.material.data.virginRhoFrac0, layer.material.data.frac),
                                               len(rhomap[layerKey]))
             rhoi = np.repeat(layer.material.data.virginRhoFrac0.reshape(1, -1), repeats=len(rhomap[layerKey]), axis=0)
-            mgas = np.zeros(len(rhomap[layerKey]))
         else:
-            mgas = np.zeros(len(rhomap[layerKey]))
             if inputvars.initType == "Temperature":
                 rho[rhomap[layerKey]] = np.repeat(layer.material.rho(inputvars.initValue), len(rhomap[layerKey]))
                 rhoi = np.zeros(len(rhomap[layerKey]))
             else:
                 raise ValueError("Unimplemented initialization type %s", inputvars.initType)
+
+    # Init mgas by number of volumes in first layer
+    mgas = np.zeros(len(rhomap["lay0"]))
 
     return T, rho, rhoi, mgas
 
@@ -266,8 +267,8 @@ def addConductionMatrixOuter(J, first_col, Tnu, Tmap, layers, key, tDelta):
     J_int[iInt, iInt] += -dCl_dTint  # Contribution to energy balance of interface
     J_int[iInt, iInt] += +dCr_dTint  # Contribution to energy balance of interface
     J_int[iInt, iInt + 1] += +dCr_dTr  # Contribution to energy balance of interface
-    J_int[iInt + 1, iInt] += +dCr_dTint  # Contribution to energy balance of next volume
-    J_int[iInt + 1, iInt + 1] += +dCr_dTr  # Contribution to energy balance of next volume
+    J_int[iInt + 1, iInt] += -dCr_dTint  # Contribution to energy balance of next volume
+    J_int[iInt + 1, iInt + 1] += -dCr_dTr  # Contribution to energy balance of next volume
 
     first_col[iInt - 1] += +dCl_dsdot
     first_col[iInt] += -dCl_dsdot + dCr_dsdot
