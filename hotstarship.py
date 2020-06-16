@@ -55,7 +55,7 @@ if __name__ == "__main__":
     # Initialize deltaTn guess with zero change
     deltaTn = np.zeros(len(Tnu))
 
-    for it, t in enumerate(np.arange(inputvars.tStart, inputvars.tEnd + 1e-5, inputvars.tDelta)):
+    for it, t in enumerate(np.arange(inputvars.tStart+inputvars.tDelta, inputvars.tEnd + 1e-5, inputvars.tDelta)):
 
         # Print some information about current time step
         print("+++ New time step: t = %.4f secs +++" % t)
@@ -71,6 +71,8 @@ if __name__ == "__main__":
 
         # Initial guess based on difference at previous time step
         Tnu += deltaTn
+        if layers[0].ablative:
+            rhonu, rhoimu, mgas = updateRho(layers[0], rhoimu, rhoin, rhonu, rhomap, Tnu, Tmap, inputvars.tDelta)
 
         while True:
 
@@ -104,8 +106,9 @@ if __name__ == "__main__":
                         layers[0].grid.updateZ(delta_s=delta_sdot * inputvars.tDelta)
 
                 # Stop iterating if convergence in T (and possibly sdot) has been reached
-                if np.linalg.norm(dT/Tnu) < 1.0e-3: #and iteration > 2:
-                    print("T determination completed after %i iterations." % iteration)
+                if np.max(np.abs(dT/Tnu)) < 1.0e-8: #and iteration > 2:
+                #if np.linalg.norm(dT/Tnu) < 1.0e-5:
+                    print("-> T determination completed after %i iterations." % iteration)
                     deltaTn = Tnu - Tn
                     break
 
@@ -114,10 +117,11 @@ if __name__ == "__main__":
                 break
             # else update nodal densities
             else:
-                rhonu, rhoimup1, mgas = updateRho(layers[0], rhoimu, rhoin, rhonu, rhomap, Tnu, Tmap, inputvars.tDelta)
-                ablvols = rhomap["lay0"]
-                if np.linalg.norm((rhoimup1[ablvols]-rhoimu[ablvols])/rhoimu[ablvols]) < 1.0e-8:
-                    print("Time step completed after %i iterations." % globiteration)
+                rhomu_m1 = rhonu.copy()
+                rhonu, rhoimu, mgas = updateRho(layers[0], rhoimu, rhoin, rhonu, rhomap, Tnu, Tmap, inputvars.tDelta)
+                if np.max(np.abs((rhonu-rhomu_m1)/rhomu_m1)) < 1.0e-8:
+                    print("--> Time step completed after %i iterations." % globiteration)
+                    deltaRhon = rhonu - rhon
                     break
 
     # Option to compare test case to analytical profile

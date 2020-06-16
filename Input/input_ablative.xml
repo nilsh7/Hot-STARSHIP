@@ -2,16 +2,16 @@
 <input>
     <layers>
         <layer number="1">
-            <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Carbon_Phenolic/</material>
+            <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Carbon_Phenolic/Carbon_Phenolic.matp</material>
             <thickness>0.01</thickness>
             <firstcell>0.0001</firstcell>
             <maxgrowth>1.1</maxgrowth>
             <ablative>True</ablative>
         </layer>
-        <!--layer number="2">
+        <layer number="2">
             <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Test_1</material>
             <thickness>0.01</thickness>
-        </layer-->
+        </layer>
     </layers>
     <options>
         <BCs>
@@ -28,7 +28,7 @@
         </BCs>
         <time>
             <start>0.0</start>
-            <end>4.0</end>
+            <end>10.0</end>
             <delta>0.03125</delta>
         </time>
         <init type="Temperature">
