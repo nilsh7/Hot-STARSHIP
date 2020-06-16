@@ -28,7 +28,7 @@
         </BCs>
         <time>
             <start>0.0</start>
-            <end>4.0</end>
+            <end>10.0</end>
             <delta>0.03125</delta>
         </time>
         <init type="Temperature">

@@ -959,13 +959,16 @@ def updateRho(lay, rhoimu, rhoin, rhonu, rhomap, Tnu, Tmap, tDelta):
             print("-> Rho determination completed after %i iterations." % iteration)
             break
 
+    # Feed update into global vector
+    rhoimu[ablativeCells, :] = rhoimu_abl
+
     frac = np.repeat(mat.data.frac.reshape(1, -1), repeats=len(Tj), axis=0)
     rhonu[ablativeCells] = np.sum(frac*rhoimu_abl, axis=1)
 
     rhv, rhc = (mat.data.rhov0, mat.data.rhoc0)
     lay.wv = rhv/(rhv-rhc) * (1-rhc/rhonu[ablativeCells])
 
-    mgas = -np.sum(frac*drhodt(mat, rhoimu[ablativeCells], Tj), axis=1) * (gr.zjp12-gr.zjm12)
+    mgas = -np.sum(frac*drhodt(mat, rhoimu_abl, Tj), axis=1) * (gr.zjp12-gr.zjm12)
 
     return rhonu, rhoimu, mgas
 
