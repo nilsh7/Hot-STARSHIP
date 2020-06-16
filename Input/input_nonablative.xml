@@ -2,33 +2,33 @@
 <input>
     <layers>
         <layer number="1">
-            <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Carbon_Phenolic/</material>
+            <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Test_2</material>
             <thickness>0.01</thickness>
             <firstcell>0.0001</firstcell>
             <maxgrowth>1.1</maxgrowth>
-            <ablative>True</ablative>
+            <ablative>False</ablative>
         </layer>
-        <!--layer number="2">
+        <layer number="2">
             <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Test_1</material>
             <thickness>0.01</thickness>
-        </layer-->
+        </layer>
     </layers>
     <options>
         <BCs>
-            <!--front type="heatflux">
+            <front type="heatflux">
                 <value>7.5e5</value>
-            </front-->
-            <front type="aerodynamic">
+            </front>
+            <!--front type="aerodynamic">
                 <value>/Users/nils/PycharmProjects/H_STARSHIP/Data/HeatFlux/Test_cos_750kW.csv</value>
                 <BL_Edge_Temperature>1500</BL_Edge_Temperature>
                 <Surface_Temperature>800</Surface_Temperature>
                 <Time_of_Temperature>25.0</Time_of_Temperature>
-            </front>
+            </front-->
             <back type="adiabatic"></back>
         </BCs>
         <time>
             <start>0.0</start>
-            <end>10.0</end>
+            <end>4.0</end>
             <delta>0.03125</delta>
         </time>
         <init type="Temperature">

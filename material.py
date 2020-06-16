@@ -274,7 +274,7 @@ reads csv file and stores data
             self.gas.data.hf = hof_data.values[3, 1]
 
             # Decomposition kinetics
-            self.data.nDecomp = dec_data.columns.values.size - 1
+            self.data.nDecomp = dec_data.columns.values.size
             self.data.virginRhoFrac0 = dec_data.values[0, :]
             self.data.charRhoFrac0 = dec_data.values[1, :]
             self.data.kr = dec_data.values[2, :]
@@ -540,7 +540,7 @@ constructs a piecewise linear spline through data
     y = np.hstack((y[0], y, y[-1]))
     x = np.hstack((0, x, 1e4))
 
-    spline = ip.UnivariateSpline(x=x, y=y, k=1, ext='const')
+    spline = ip.UnivariateSpline(x=x, y=y, k=1, s=0, ext='const')
     return spline
 
 

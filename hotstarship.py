@@ -47,10 +47,10 @@ if __name__ == "__main__":
     layers = addVariables(layers)
 
     # Create vectors to store unknowns in and dictionary from layer to indices
-    Tnu, rhonu, Tmap, rhomap = createUnknownVectors(layers)
+    Tnu, rhonu, rhoimu, Tmap, rhomap = createUnknownVectors(layers)
 
     # Initialize variables to be solved
-    Tnu, rhonu, rhoimu, mgas = init_T_rho(Tnu, rhonu, Tmap, rhomap, layers, inputvars)
+    Tnu, rhonu, rhoimu, mgas = init_T_rho(Tnu, rhonu, rhoimu, Tmap, rhomap, layers, inputvars)
 
     # Initialize deltaTn guess with zero change
     deltaTn = np.zeros(len(Tnu))
@@ -114,8 +114,9 @@ if __name__ == "__main__":
                 break
             # else update nodal densities
             else:
-                rhonu, rhoimup1, mgas = updateRho(layers[0], rhoimu, rhoin, Tnu, Tmap, inputvars.tDelta)
-                if np.linalg.norm((rhoimup1-rhoimu)/rhoimu) < 1.0e-8:
+                rhonu, rhoimup1, mgas = updateRho(layers[0], rhoimu, rhoin, rhonu, rhomap, Tnu, Tmap, inputvars.tDelta)
+                ablvols = rhomap["lay0"]
+                if np.linalg.norm((rhoimup1[ablvols]-rhoimu[ablvols])/rhoimu[ablvols]) < 1.0e-8:
                     print("Time step completed after %i iterations." % globiteration)
                     break
 
