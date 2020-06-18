@@ -437,7 +437,7 @@ def addEnergyMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDe
         dzm = gr.dzjm[-1]
 
         # Calculate derivatives
-        dEj_dTj[-1] = rhoj[-1] * mat.cp(Tj[-1], lay.wv[-1]) * (dzint/2 + 3/8 * dzm * 3/8) / tDelta
+        dEj_dTj[-1] = rhoj[-1] * mat.cp(Tj[-1], lay.wv[-1]) * (dzint/2 + 3/8 * dzm) / tDelta
         dEj_dTjm1[-1] = dzm * 1/8 * rhoj[-2] * mat.cp(Tj[-2], lay.wv[-2]) / tDelta
         dEj_dTjp1[-1] = rhoj[-1] * mat.cp(Tint, lay.wv[-1]) * dzint/2 / tDelta
         if lay.ablative:
@@ -982,7 +982,7 @@ def updateRho(lay, rhoimu, rhoin, rhonu, rhomap, Tnu, Tmap, tDelta):
                        (tDelta * ddrhodt_drho(mat, rhoimu_abl, Tj) - np.ones(rhoimu_abl.shape)))
         rhoimu_abl += deltaRhoimu
         if np.linalg.norm(deltaRhoimu/rhoimu_abl) < 1.0e-8:
-            print("-> Rho determination completed after %i iterations." % iteration)
+            #print("-> Rho determination completed after %i iterations." % iteration)
             break
 
     # Feed update into global vector
