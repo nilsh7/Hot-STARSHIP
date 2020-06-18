@@ -437,7 +437,7 @@ def addEnergyMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDe
         dzm = gr.dzjm[-1]
 
         # Calculate derivatives
-        dEj_dTj[-1] = rhoj[-1] * mat.cp(Tj[-1], lay.wv[-1]) * (dzint/2 + 3/8 * dzm * 3/8) / tDelta
+        dEj_dTj[-1] = rhoj[-1] * mat.cp(Tj[-1], lay.wv[-1]) * (dzint/2 + 3/8 * dzm) / tDelta
         dEj_dTjm1[-1] = dzm * 1/8 * rhoj[-2] * mat.cp(Tj[-2], lay.wv[-2]) / tDelta
         dEj_dTjp1[-1] = rhoj[-1] * mat.cp(Tint, lay.wv[-1]) * dzint/2 / tDelta
         if lay.ablative:
