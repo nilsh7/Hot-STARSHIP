@@ -982,7 +982,7 @@ def updateRho(lay, rhoimu, rhoin, rhonu, rhomap, Tnu, Tmap, tDelta):
                        (tDelta * ddrhodt_drho(mat, rhoimu_abl, Tj) - np.ones(rhoimu_abl.shape)))
         rhoimu_abl += deltaRhoimu
         if np.linalg.norm(deltaRhoimu/rhoimu_abl) < 1.0e-8:
-            print("-> Rho determination completed after %i iterations." % iteration)
+            #print("-> Rho determination completed after %i iterations." % iteration)
             break
 
     # Feed update into global vector
