@@ -3,11 +3,35 @@ import numpy as np
 from scipy.sparse import dia_matrix, lil_matrix
 import grid
 
-p1 = lambda f: np.roll(f, shift=-1)
-m1 = lambda f: np.roll(f, shift=+1)
+#p1 = lambda f: np.roll(f, shift=-1)
+#m1 = lambda f: np.roll(f, shift=+1)
+p1 = lambda f: np.concatenate([f[1:], f[0:1]])
+m1 = lambda f: np.concatenate([f[-1:], f[:-1]])
 p12 = lambda f: (p1(f) + f)/2
 m12 = lambda f: (m1(f) + f)/2
 sw = 1  # stencil width
+
+
+class Diags:
+    def __init__(self, nVals):
+        self.c = np.zeros(nVals)
+        self.p1 = np.zeros(nVals+1)
+        self.m1 = np.zeros(nVals+1)
+
+    def assignFluxes(self, fluxes, signs, offsets):
+        for flux, sign, offset in zip(fluxes, signs, offsets):
+            if offset == 0:
+                self.c += sign*flux
+            elif offset == +1:
+                self.p1 += sign*flux
+            elif offset == -1:
+                self.m1 += sign*flux
+            else:
+                raise ValueError("Unknown offset %i" % offset)
+
+    def __iter__(self):
+        return zip([self.c, self.p1, self.m1], [0, +1, -1])
+
 
 def addVariables(layers):
 
@@ -55,7 +79,7 @@ def createUnknownVectors(layers):
 
 def createGlobFlux(flux, length, iStart, iEnd, offset):
 
-    globflux = np.zeros(length + sw)
+    globflux = np.zeros(length + sw) if offset != 0 else np.zeros(length)
     if iStart+offset < 0:
         st = 0
         trunc = -(iStart+offset)
@@ -66,6 +90,10 @@ def createGlobFlux(flux, length, iStart, iEnd, offset):
     globflux[st:iEnd + offset + 1] = flux[trunc:]
 
     return globflux
+
+
+def createGlobFluxes(fluxes, length, iStart, iEnd, offsets):
+    return (createGlobFlux(flux, length, iStart, iEnd, offset) for flux, offset in zip(fluxes, offsets))
 
 
 def init_T_rho(T, rho, rhoi, Tmap, rhomap, layers, inputvars):
@@ -106,7 +134,7 @@ def assembleT(layers, layerspre, Tmap, Tnu, Tn, rhomap, rhonu, rhon, mgas, t, tD
 
 def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars):
 
-    J = dia_matrix((len(Tnu), len(Tnu)))
+    diags = Diags(len(Tnu))
     first_col = np.zeros(len(Tnu))
 
     for key in Tmap:
@@ -115,35 +143,43 @@ def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars):
 
             if inputvars.BCfrontType == "aerodynamic":
 
-                J, first_col = addWallBlowMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
+                addWallBlowMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
 
         elif key[0:3] == "lay":
 
-            J, first_col = addConductionMatrixInner(J, first_col, Tnu, Tmap, layers, key, tDelta)
+            addConductionMatrixInner(diags, first_col, Tnu, Tmap, layers, key, tDelta)
 
-            J, first_col = addEnergyMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta, inputvars)
+            addEnergyMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta, inputvars)
 
-            J, first_col = addGridMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key)
+            addGridMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, layers, key)
 
-            J = addPyroMatrix(J, Tnu, Tmap, mgas, layers, key, inputvars)
+            addPyroMatrix(diags, Tnu, Tmap, mgas, layers, key, inputvars)
 
         elif key[0:3] == "int":
 
-            J, first_col = addConductionMatrixOuter(J, first_col, Tnu, Tmap, layers, key, tDelta)
+            addConductionMatrixOuter(diags, first_col, Tnu, Tmap, layers, key, tDelta)
 
     # Add BC
     if inputvars.BCfrontType == "aerodynamic":
 
-        J, first_col = addAerodynamicMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
+        addAerodynamicMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
 
-        J, first_col = addBcMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
+        addBcMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
 
     elif inputvars.BCfrontType == "heatflux":
         pass  # No sensitivity of heat flux
     else:
         raise ValueError("Unimplemented front BC %s" % inputvars.BCfrontType)
 
-    Jlil = J.tolil()
+    #Jtest = dia_matrix((len(Tnu), len(Tnu)))
+    #for diag, offset in diags:
+    #    Jtest += dia_matrix((diag, offset), shape=(len(Tnu), len(Tnu)))
+
+    data = np.array([diags.c, diags.m1[:-1], diags.p1[:-1]])
+    offsets = np.array([0, -1, +1])
+    Jdia = dia_matrix((data, offsets), shape=(len(Tnu), len(Tnu)))
+
+    Jlil = Jdia.tolil()
     Jlil[:, 0] += first_col.reshape(-1, 1)
     Jcsc = Jlil.tocsc()
 
@@ -190,7 +226,7 @@ def assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas,
     return fnu
 
 
-def addConductionMatrixInner(J, first_col, Tnu, Tmap, layers, key, tDelta):
+def addConductionMatrixInner(diags, first_col, Tnu, Tmap, layers, key, tDelta):
 
     # Store some variables
     iStart = Tmap[key][0]
@@ -223,19 +259,15 @@ def addConductionMatrixInner(J, first_col, Tnu, Tmap, layers, key, tDelta):
     fluxes = (dCjp12_dTj, dCjp12_dTjp1, dCjm12_dTj, dCjm12_dTjm1)
     signs = (+1, +1, -1, -1)
     offsets = (0, +1, 0, -1)
-    for flux, sign, offset in zip(fluxes, signs, offsets):
-        globflux = createGlobFlux(flux, len(Tnu), iStart, iEnd, offset)
-        J += dia_matrix((sign * globflux, offset), shape=(len(Tnu), len(Tnu)))
+    globfluxes = createGlobFluxes(fluxes, len(Tnu), iStart, iEnd, offsets)
+    diags.assignFluxes(globfluxes, signs, offsets)
 
     # Store first column in separate vector
     first_col[iStart:iEnd + 1] += dCjp12_dsdot - dCjm12_dsdot
 
-    return J, first_col
 
+def addConductionMatrixOuter(diags, first_col, Tnu, Tmap, layers, key, tDelta):
 
-def addConductionMatrixOuter(J, first_col, Tnu, Tmap, layers, key, tDelta):
-
-    J_int = lil_matrix((len(Tnu), len(Tnu)))
 
     # Store some variables
     iInt = Tmap[key]
@@ -262,22 +294,32 @@ def addConductionMatrixOuter(J, first_col, Tnu, Tmap, layers, key, tDelta):
     dCr_dsdot = 0
 
     # Assemble Jacobian matrix
-    J_int[iInt - 1, iInt - 1] += +dCl_dTl  # Contribution to energy balance of previous volume
-    J_int[iInt - 1, iInt] += +dCl_dTint  # Contribution to energy balance of previous volume
-    J_int[iInt, iInt - 1] += -dCl_dTl  # Contribution to energy balance of interface
-    J_int[iInt, iInt] += -dCl_dTint  # Contribution to energy balance of interface
-    J_int[iInt, iInt] += +dCr_dTint  # Contribution to energy balance of interface
-    J_int[iInt, iInt + 1] += +dCr_dTr  # Contribution to energy balance of interface
-    J_int[iInt + 1, iInt] += -dCr_dTint  # Contribution to energy balance of next volume
-    J_int[iInt + 1, iInt + 1] += -dCr_dTr  # Contribution to energy balance of next volume
+    iStart = iInt - 1
+    iEnd = iInt + 1
+
+    flux_c = np.array([+dCl_dTl, -dCl_dTint+dCr_dTint, -dCr_dTr])
+    flux_p1 = np.array([+dCl_dTint, +dCr_dTr, 0])
+    flux_m1 = np.array([0, -dCl_dTl, -dCr_dTint])
+
+    fluxes = (flux_c, flux_p1, flux_m1)
+    offsets = (0, +1, -1)
+    signs = (+1, +1, +1)
+
+    globfluxes = createGlobFluxes(fluxes, len(Tnu), iStart, iEnd, offsets)
+    diags.assignFluxes(globfluxes, signs, offsets)
+
+    #J_int[iInt - 1, iInt - 1] += +dCl_dTl  # Contribution to energy balance of previous volume
+    #J_int[iInt - 1, iInt] += +dCl_dTint  # Contribution to energy balance of previous volume
+    #J_int[iInt, iInt - 1] += -dCl_dTl  # Contribution to energy balance of interface
+    #J_int[iInt, iInt] += -dCl_dTint  # Contribution to energy balance of interface
+    #J_int[iInt, iInt] += +dCr_dTint  # Contribution to energy balance of interface
+    #J_int[iInt, iInt + 1] += +dCr_dTr  # Contribution to energy balance of interface
+    #J_int[iInt + 1, iInt] += -dCr_dTint  # Contribution to energy balance of next volume
+    #J_int[iInt + 1, iInt + 1] += -dCr_dTr  # Contribution to energy balance of next volume
 
     first_col[iInt - 1] += +dCl_dsdot
     first_col[iInt] += -dCl_dsdot + dCr_dsdot
     first_col[iInt + 1] += -dCr_dsdot
-
-    J += J_int.todia()
-
-    return J, first_col
 
 
 def addConductionVectorInner(fnu, Tnu, Tmap, layers, key):
@@ -331,7 +373,7 @@ def addConductionVectorOuter(fnu, Tnu, Tmap, layers, key):
     return fnu
 
 
-def addEnergyMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta, inputvars):
+def addEnergyMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta, inputvars):
 
     # Store some variables
     iStart = Tmap[key][0]
@@ -425,14 +467,11 @@ def addEnergyMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta,
     fluxes = (dEj_dTj, dEj_dTjm1, dEj_dTjp1)
     signs = (+1, +1, +1)
     offsets = (0, -1, +1)
-    for flux, sign, offset in zip(fluxes, signs, offsets):
-        globflux = createGlobFlux(flux, len(Tnu), iStart, iEnd, offset)
-        J += dia_matrix((sign * globflux, offset), shape=(len(Tnu), len(Tnu)))
+    globfluxes = createGlobFluxes(fluxes, len(Tnu), iStart, iEnd, offsets)
+    diags.assignFluxes(globfluxes, signs, offsets)
 
     # Store first column in separate vector
     first_col[iStart:iEnd + 1] += dEj_dsdot
-
-    return J, first_col
 
 
 def addEnergyVector(fnu, Tnu, Tn, Tmap, rhonu, rhon, rhomap, layers, layerspre, key, tDelta, inputvars):
@@ -528,13 +567,13 @@ def addEnergyVector(fnu, Tnu, Tn, Tmap, rhonu, rhon, rhomap, layers, layerspre, 
     return fnu
 
 
-def addGridMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key):
+def addGridMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, layers, key):
 
     lay = layers[int(key[3:])]
     # The deeper layers are not moving, nor is the front layer if we don't have an ablative case
     # Thus we don't have any convection due to grid movement
     if int(key[3:]) != 0 or not lay.ablative:
-        return J, first_col
+        return
 
     # Store some variables
     iStart = Tmap[key][0]
@@ -573,14 +612,11 @@ def addGridMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, layers, key):
     fluxes = (dGjp12_dTj, dGjp12_dTjp1, dGjm12_dTj, dGjm12_dTjm1)
     signs = (-1, -1, +1, +1)
     offsets = (0, +1, 0, -1)
-    for flux, sign, offset in zip(fluxes, signs, offsets):
-        globflux = createGlobFlux(flux, len(Tnu), iStart, iEnd, offset)
-        J += dia_matrix((sign * globflux, offset), shape=(len(Tnu), len(Tnu)))
+    globfluxes = createGlobFluxes(fluxes, len(Tnu), iStart, iEnd, offsets)
+    diags.assignFluxes(globfluxes, signs, offsets)
 
     # Store first column in separate vector
     first_col[iStart:iEnd + 1] += -dGjp12_dsdot + dGjm12_dsdot
-
-    return J, first_col
 
 
 def addGridVector(fnu, Tnu, Tmap, rhonu, rhomap, layers, key):
@@ -613,13 +649,13 @@ def addGridVector(fnu, Tnu, Tmap, rhonu, rhomap, layers, key):
     return fnu
 
 
-def addPyroMatrix(J, Tnu, Tmap, mgas, layers, key, inputvars):
+def addPyroMatrix(diags, Tnu, Tmap, mgas, layers, key, inputvars):
 
     lay = layers[int(key[3:])]
     # The deeper layers are not pyrolyzing, nor is the front layer if we don't have an ablative case
     # Thus we don't have any convection due to pyrolysis gas
     if int(key[3:]) != 0 or not lay.ablative:
-        return J
+        return
 
     # Store some variables
     iStart = Tmap[key][0]
@@ -653,11 +689,8 @@ def addPyroMatrix(J, Tnu, Tmap, mgas, layers, key, inputvars):
     fluxes = (dPjp12_dTj, dPjp12_dTjp1, dPjm12_dTj, dPjm12_dTjm1)
     signs = (-1, -1, +1, +1)
     offsets = (0, +1, 0, -1)
-    for flux, sign, offset in zip(fluxes, signs, offsets):
-        globflux = createGlobFlux(flux, len(Tnu), iStart, iEnd, offset)
-        J += dia_matrix((sign * globflux, offset), shape=(len(Tnu), len(Tnu)))
-
-    return J
+    globfluxes = createGlobFluxes(fluxes, len(Tnu), iStart, iEnd, offsets)
+    diags.assignFluxes(globfluxes, signs, offsets)
 
 
 def addPyroVector(fnu, Tnu, Tmap, mgas, layers, key, inputvars):
@@ -700,7 +733,7 @@ def addPyroVector(fnu, Tnu, Tmap, mgas, layers, key, inputvars):
     return fnu
 
 
-def addWallBlowMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
+def addWallBlowMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
 
     # Store some variables
     iStart = Tmap["lay0"][0]
@@ -730,11 +763,9 @@ def addWallBlowMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inpu
 
     # Assemble Jacobian matrix
     globflux = createGlobFlux(dPw_dTw, length=len(Tnu), iStart=iStart, iEnd=iStart, offset=0)
-    J += dia_matrix((+1 * globflux, 0), shape=(len(Tnu), len(Tnu)))
+    diags.assignFluxes(fluxes=(globflux,), signs=(+1,), offsets=(0,))
 
     first_col[iStart] += dPw_dsdot
-
-    return J, first_col
 
 
 def addWallBlowVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
@@ -774,7 +805,7 @@ def addHeatFluxVector(fnu, Tmap, inputvars, t):
     return fnu
 
 
-def addAerodynamicMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
+def addAerodynamicMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
 
     # Store some variables
     iStart = Tmap["lay0"][0]
@@ -805,11 +836,9 @@ def addAerodynamicMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, i
 
     # Assemble Jacobian matrix
     globflux = createGlobFlux(dQw_dTw, length=len(Tnu), iStart=iStart, iEnd=iStart, offset=0)
-    J += dia_matrix((-1 * globflux, 0), shape=(len(Tnu), len(Tnu)))
+    diags.assignFluxes(fluxes=(globflux, ), signs=(-1, ), offsets=(0, ))
 
     first_col[iStart] += -dQw_dsdot
-
-    return J, first_col
 
 
 def addAerodynamicVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
@@ -840,7 +869,7 @@ def addAerodynamicVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
     return fnu
 
 
-def addBcMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
+def addBcMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
 
     # Store some variables
     isdot = Tmap["sdot"]
@@ -872,13 +901,10 @@ def addBcMatrix(J, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
     dR0_dTw = -mat.dbcdT(bg, Tw)
 
     # Assemble Jacobian matrix
-    globflux = np.zeros(len(Tnu))
-    globflux[iStart] = dR0_dTw
-    J += dia_matrix((+1 * globflux, +1), shape=(len(Tnu), len(Tnu)))
+    globflux = createGlobFlux(dR0_dTw, len(Tnu), isdot, isdot, +1)
+    diags.assignFluxes(fluxes=(globflux, ), signs=(+1, ), offsets=(+1, ))
 
     first_col[isdot] += dR0_dsdot
-
-    return J, first_col
 
 
 def addBcVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
