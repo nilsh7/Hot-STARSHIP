@@ -108,6 +108,7 @@ reads the input xml file and stores the information
         self.tStart = float(root.find("options").find("time").find("start").text)
         self.tEnd = float(root.find("options").find("time").find("end").text)
         self.tDelta = float(root.find("options").find("time").find("delta").text)
+        self.write_step = int(root.find("options").find("time").find("write_every").text)
 
         # Initialization
         self.initType = root.find("options").find("init").attrib["type"]

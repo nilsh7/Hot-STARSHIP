@@ -30,6 +30,7 @@
             <start>0.0</start>
             <end>4.0</end>
             <delta>0.03125</delta>
+            <write_every>16</write_every>
         </time>
         <init type="Temperature">
             <value>300.0</value>

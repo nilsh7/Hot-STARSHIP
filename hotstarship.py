@@ -18,7 +18,10 @@ handles arguments passed to Hot-STARSHIP
     # Create argument paser with respective options
     parser = argparse.ArgumentParser(description='Pass an input.xml file for calculation with Hot-STARSHIP')
 
-    parser.add_argument("input_file")
+    parser.add_argument("input_file", help="input file to read from (xml format)")
+
+    parser.add_argument("output_file", help="output file to write to (csv format)", nargs='?',
+                        default=None)
 
     args = vars(parser.parse_args())
 
@@ -51,6 +54,10 @@ if __name__ == "__main__":
 
     # Initialize variables to be solved
     Tnu, rhonu, rhoimu, mgas = init_T_rho(Tnu, rhonu, rhoimu, Tmap, rhomap, layers, inputvars)
+
+    # Initialize output file and write initial distribution
+    solwrite = output.SolutionWriter(args["output_file"], layers, Tmap, inputvars)
+    solwrite.write(inputvars.tStart, layers, Tnu, rhonu, Tmap, rhomap)
 
     # Initialize deltaTn guess with zero change
     deltaTn = np.zeros(len(Tnu))
@@ -111,6 +118,8 @@ if __name__ == "__main__":
             #if np.linalg.norm(dT/Tnu) < 1.0e-5:
                 print("Completed after %i iterations." % iteration)
                 deltaTn = Tnu - Tn
+                if (it+1) % inputvars.write_step == 0:
+                    solwrite.write(t, layers, Tnu, rhonu, Tmap, rhomap)
                 break
 
     # Option to compare test case to analytical profile
