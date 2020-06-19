@@ -114,6 +114,7 @@ reads the input xml file and stores the information
         self.initValue = float(root.find("options").find("init").find("value").text)
 
         # Turbulent flow
+        self.Tamb = float(root.find("options").find("ambient").find("temperature").text)
         self.turbflow = bool(root.find("options").find("ambient").find("turbulent_flow").text)
 
 

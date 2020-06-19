@@ -132,6 +132,7 @@ reads csv file and stores data
 
         # eps
         self.data.epsLin = constructLinearSpline(self.data.Tforeps, self.data.eps)
+        self.data.depsdTLin = self.data.epsLin.derivative(1)
 
         # rho
         self.data.rhoLin = constructLinearSpline(self.data.Tforrho, self.data.rho)
@@ -151,6 +152,9 @@ reads csv file and stores data
 
     def eps(self, T, *ignoreargs):
         return self.data.epsLin(T)
+
+    def depsdT(self, T, *ignoreargs):
+        return self.data.depsdTLin(T)
 
     def rho(self, T, *ignoreargs):
         return self.data.rhoLin(T)
@@ -296,6 +300,7 @@ reads csv file and stores data
 
         # eps
         self.virgin.eps = constructLinearSpline(self.virgin.data.Tforeps, self.virgin.data.eps)
+        self.virgin.depsdT = self.virgin.eps.derivative(1)
 
         # e
         self.virgin.eshift = self.virgin.data.hf - self.virgin.cp.integral(0, self.data.Tref)
@@ -312,6 +317,7 @@ reads csv file and stores data
 
         # eps
         self.char.eps = constructLinearSpline(self.char.data.Tforeps, self.char.data.eps)
+        self.char.depsdT = self.char.eps.derivative(1)
 
         # e
         self.char.eshift = self.char.data.hf - self.char.cp.integral(0, self.data.Tref)
@@ -331,6 +337,7 @@ reads csv file and stores data
 
         # eps
         self.eps = lambda T, wv: wv * self.virgin.eps(T) + (1-wv) * self.char.eps(T)
+        self.depsdT = lambda T, wv: wv * self.virgin.depsdT(T) + (1-wv) * self.char.depsdT(T)
 
         # e
         self.e = lambda T, wv: wv * self.virgin.e(T) + (1-wv) * self.char.e(T)

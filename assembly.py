@@ -2,6 +2,7 @@ import material
 import numpy as np
 from scipy.sparse import dia_matrix, lil_matrix
 import grid
+from scipy.constants import sigma as scisigma
 
 #p1 = lambda f: np.roll(f, shift=-1)
 #m1 = lambda f: np.roll(f, shift=+1)
@@ -171,6 +172,8 @@ def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars):
     else:
         raise ValueError("Unimplemented front BC %s" % inputvars.BCfrontType)
 
+    addRadiationMatrix(diags, Tnu, Tmap, layers, inputvars)
+
     #Jtest = dia_matrix((len(Tnu), len(Tnu)))
     #for diag, offset in diags:
     #    Jtest += dia_matrix((diag, offset), shape=(len(Tnu), len(Tnu)))
@@ -222,6 +225,8 @@ def assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas,
         fnu = addHeatFluxVector(fnu, Tmap, inputvars, t)
     else:
         raise ValueError("Unimplemented front BC %s" % inputvars.BCfrontType)
+
+    fnu = addRadiationVector(fnu, Tnu, Tmap, layers, inputvars)
 
     return fnu
 
@@ -932,6 +937,41 @@ def addBcVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
     R0 = rhow * sdot / (inputvars.aerocoef * blowcor) - mat.bc(bg, Tw)
 
     fnu[isdot] += R0
+
+    return fnu
+
+
+def addRadiationMatrix(diags, Tnu, Tmap, layers, inputvars):
+
+    # Store some variables
+    lay = layers[0]
+    mat = lay.material
+    iw = Tmap["lay0"][0]
+    Tw = Tnu[Tmap["lay0"]][0:1]
+
+    # Compute derivative w.r.t. Tw
+    dQ_R_dTw = (4 * mat.eps(Tw, lay.wv[0]) * scisigma * Tw**3 +
+                mat.depsdT(Tw, lay.wv[0]) * scisigma * (Tw**4 - inputvars.Tamb**4))
+    # dQ_R_dsdot is zero
+
+    # Add to matrix
+    globflux = createGlobFlux(dQ_R_dTw, length=len(Tnu), iStart=iw, iEnd=iw, offset=0)
+    diags.assignFluxes(fluxes=(globflux,), signs=(+1,), offsets=(0,))
+
+
+def addRadiationVector(fnu, Tnu, Tmap, layers, inputvars):
+
+    # Store some variables
+    lay = layers[0]
+    mat = lay.material
+    iw = Tmap["lay0"][0]
+    Tw = Tnu[Tmap["lay0"]][0]
+
+    # Compute radiation value
+    Q_R = mat.eps(Tw, lay.wv[0]) * scisigma * (Tw**4 - inputvars.Tamb**4)
+
+    # Add radiation to vector
+    fnu[iw] += Q_R
 
     return fnu
 
