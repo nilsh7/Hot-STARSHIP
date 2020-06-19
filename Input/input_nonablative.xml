@@ -35,6 +35,7 @@
             <value>300.0</value>
         </init>
         <ambient>
+            <temperature>300</temperature>
             <pressure>101325</pressure>
             <atmosphere>Earth</atmosphere>
             <turbulent_flow>True</turbulent_flow>
