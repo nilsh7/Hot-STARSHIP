@@ -93,6 +93,7 @@ class SolutionWriter:
         # Add t
         writevars[:, 0] = t
 
+        # Add other variables
         for key in Tmap:
             writelocs = Tmap[key] if not layers[0].ablative else Tmap[key] - 1
             Tlocs = Tmap[key]
@@ -137,8 +138,10 @@ class SolutionReader:
         with open(self.filepath, 'rb') as f:
             loadvars = np.loadtxt(f, skiprows=1, delimiter=';')
 
+        # Get indices of time (where time changes first)
         iTs = np.vstack((0, np.argwhere(np.diff(loadvars[:, 0]) != 0) + 1))
 
+        # Fill arrays with data
         self.t = loadvars[iTs, 0].flatten()
         self.nts = len(self.t)
         self.nVals = int(iTs[1])
@@ -148,6 +151,7 @@ class SolutionReader:
         self.wv = loadvars[:, 4].reshape(self.nVals, self.nts, order='F')
         self.beta = loadvars[:, 5].reshape(self.nVals, self.nts, order='F')
 
+        # Construct dicts for plotting
         self.namedict = {'t': self.t,
                          'z': self.z,
                          'T': self.T,
@@ -162,8 +166,9 @@ class SolutionReader:
                           'wv': 'wv [-]',
                           'beta': 'beta [-]'}
 
-    def plot(self, x, y, t=0.0, z=0.0, varLS=False):
+    def plot(self, x, y, t=0.0, z=0.0, vary_linestyle=False):
 
+        # Manipulate parameter if needed (convert to numpy array)
         if 'z' == x:
             location_dependent = True
             if type(t) is float:
@@ -176,39 +181,114 @@ class SolutionReader:
                 raise ValueError("Unknown input type %s" % type(t))
         elif 't' == x:
             location_dependent = False
+            if type(z) is float:
+                z = np.array([z])
+            elif type(z) is np.ndarray:
+                z = z.flatten()
+            elif type(z) is list:
+                z = np.array(z)
+            elif z == 'wall':
+                pass
+            else:
+                raise ValueError("Unknown input type %s" % type(z))
         else:
             raise ValueError('%s cannot be on x axis' % x)
 
+        # Get variables
         xvar = self.namedict[x]
         yvar = self.namedict[y]
 
+        # For plots over z
         if location_dependent:
             if any(t < self.t[0]) or any(t > self.t[-1]):
                 raise ValueError('Time out of bounds.')
             else:
+
+                # Get indices and times where time lies inbetween
                 iTplus = np.argmax(self.t.reshape(self.nts, 1) - t.reshape(1, -1) > 0, axis=0)
                 iTminus = iTplus - 1
                 tplus = self.t[iTplus]
                 tminus = self.t[iTminus]
+
+                # Construct weights for interpolation based on time
                 wminus = (tplus - t)/(tplus - tminus)
                 wplus = 1 - wminus
 
+                # Fill into global array
                 weights = np.zeros((len(t), self.nts))
                 weights[np.arange(weights.shape[0]), iTplus] = wplus
                 weights[np.arange(weights.shape[0]), iTminus] = wminus
 
+                # Calculate interpolated values
                 xvals = np.dot(xvar, weights.transpose())
                 yvals = np.dot(yvar, weights.transpose())
 
-                if not varLS:
-                    plt.plot(xvals, yvals)
-                else:
-                    linestyles = list(lines.lineStyles.keys())[:len(t)]
-                    for i in range(yvals.shape[1]):
-                        plt.plot(xvals[:, i], yvals[:, i], linestyles[i])
-                if len(t) > 1:
-                    plt.legend(t.astype(str), title='t [s]')
-                plt.xlabel(self.labeldict[x])
-                plt.ylabel(self.labeldict[y])
-                plt.grid()
-                plt.show()
+        # For plots over t
+        else:
+
+            # Check if 'Wall' is part of list
+            zlist = z.tolist()
+            if 'Wall' in zlist:
+                z_nowall = z[z != 'Wall'].astype(float)
+                walls = z == 'Wall'
+            else:
+                z_nowall = z
+
+            # Check if valid locations (in material at least at start)
+            if any(z_nowall < self.z[0, 0]) or any(z_nowall > self.z[-1, 0]):
+                raise ValueError('Location out of bounds.')
+            else:
+
+                # Get indices of location and z coordinate where points lay inbetween
+                iZplus = np.argmax(self.z.reshape(self.nVals, self.nts, 1) - z_nowall.reshape(1, 1, -1) > 0, axis=0)
+                iZminus = iZplus - 1
+                zplus = self.z[iZplus, np.repeat(np.arange(self.nts)[:, np.newaxis], len(z_nowall), axis=1)]
+                zminus = self.z[iZminus, np.repeat(np.arange(self.nts)[:, np.newaxis], len(z_nowall), axis=1)]
+
+                # Calculate weights
+                wminus = (zplus - z_nowall) / (zplus - zminus)
+                wplus = 1 - wminus
+
+                # Remove points when the material is gone
+                wplus[wminus < 0], wminus[wminus < 0] = (np.nan, np.nan)
+
+                # Fill global weights array and compute interpolated values
+                weights = np.zeros((len(z), self.nVals, self.nts))
+                yvals = np.zeros((len(z), self.nts))
+                wall_occurences = 0
+                for i, wall in zip(np.arange(len(z)), walls):
+                    if wall:
+                        weights[i, 0, np.arange(self.nts)] = 1.0
+                        wall_occurences += 1
+                    else:
+                        wo = wall_occurences
+                        weights[i, iZplus[:, i-wo], np.arange(self.nts)] = wplus[:, i-wo]
+                        weights[i, iZminus[:, i-wo], np.arange(self.nts)] = wminus[:, i-wo]
+                    yvals[i, :] = np.sum(yvar*weights[i, :, :], axis=0)
+
+                xvals = np.repeat(self.t[:, np.newaxis], len(z), axis=1)
+                yvals = yvals.transpose()
+
+        # Plot graph
+        plt.clf()
+        if not vary_linestyle:
+            plt.plot(self.t, yvals)
+        else:
+            linestyles = get_linestyles(yvals.shape[1])
+            for i in range(yvals.shape[1]):
+                plt.plot(xvals[:, i], yvals[:, i], linestyles[i])
+        if yvals.shape[1] > 1:
+            if location_dependent:
+                plt.legend(t.astype(str), title='t [s]')
+            else:
+                plt.legend(z.astype(str), title='z [m]')
+        plt.xlabel(self.labeldict[x])
+        plt.ylabel(self.labeldict[y])
+        plt.grid()
+        plt.show()
+
+
+def get_linestyles(n):
+    nAllowable = 4
+    possible_styles = list(lines.lineStyles.keys())[:nAllowable]
+    return [possible_styles[i % nAllowable] for i in range(n)]
