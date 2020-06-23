@@ -187,8 +187,8 @@ class SolutionReader:
                 z = z.flatten()
             elif type(z) is list:
                 z = np.array(z)
-            elif z == 'wall':
-                pass
+            elif z == 'Wall':
+                z = np.array([z])
             else:
                 raise ValueError("Unknown input type %s" % type(z))
         else:
@@ -253,10 +253,10 @@ class SolutionReader:
                 wplus[wminus < 0], wminus[wminus < 0] = (np.nan, np.nan)
 
                 # Fill global weights array and compute interpolated values
-                weights = np.zeros((len(z), self.nVals, self.nts))
-                yvals = np.zeros((len(z), self.nts))
+                weights = np.zeros((z.size, self.nVals, self.nts))
+                yvals = np.zeros((z.size, self.nts))
                 wall_occurences = 0
-                for i, wall in zip(np.arange(len(z)), walls):
+                for i, wall in zip(np.arange(z.size), walls):
                     if wall:
                         weights[i, 0, np.arange(self.nts)] = 1.0
                         wall_occurences += 1
@@ -266,7 +266,7 @@ class SolutionReader:
                         weights[i, iZminus[:, i-wo], np.arange(self.nts)] = wminus[:, i-wo]
                     yvals[i, :] = np.sum(yvar*weights[i, :, :], axis=0)
 
-                xvals = np.repeat(self.t[:, np.newaxis], len(z), axis=1)
+                xvals = np.repeat(self.t[:, np.newaxis], z.size, axis=1)
                 yvals = yvals.transpose()
 
         # Plot graph
