@@ -126,14 +126,14 @@ def init_T_rho(T, rho, rhoi, Tmap, rhomap, layers, inputvars):
 
 def assembleT(layers, layerspre, Tmap, Tnu, Tn, rhomap, rhonu, rhon, mgas, t, tDelta, inputvars):
 
-    J = assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars)
+    J = assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars, t)
 
     fnu = assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas, t, tDelta, inputvars)
 
     return J, fnu
 
 
-def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars):
+def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars, t):
 
     diags = Diags(len(Tnu))
     first_col = np.zeros(len(Tnu))
@@ -161,14 +161,19 @@ def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars):
             addConductionMatrixOuter(diags, first_col, Tnu, Tmap, layers, key, tDelta)
 
     # Add BC
+    if layers[0].ablative:
+
+        addBcMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
+
     if inputvars.BCfrontType == "aerodynamic":
 
         addAerodynamicMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
 
-        addBcMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
-
     elif inputvars.BCfrontType == "heatflux":
-        pass  # No sensitivity of heat flux
+        if layers[0].ablative:
+            addHeatFluxMatrixAblative(first_col, Tnu, Tmap, rhonu, rhomap, mgas, inputvars, t)
+        else:
+            pass  # No sensitivity of heat flux
     else:
         raise ValueError("Unimplemented front BC %s" % inputvars.BCfrontType)
 
@@ -215,14 +220,18 @@ def assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas,
             fnu = addConductionVectorOuter(fnu, Tnu, Tmap, layers, key)
 
     # Add BC
+    if layers[0].ablative:
+
+        fnu = addBcVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
+
     if inputvars.BCfrontType == "aerodynamic":
 
         fnu = addAerodynamicVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
 
-        fnu = addBcVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
-
     elif inputvars.BCfrontType == "heatflux":
-        fnu = addHeatFluxVector(fnu, Tmap, inputvars, t)
+
+        fnu = addHeatFluxVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
+
     else:
         raise ValueError("Unimplemented front BC %s" % inputvars.BCfrontType)
 
@@ -801,11 +810,59 @@ def addWallBlowVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
     return fnu
 
 
-def addHeatFluxVector(fnu, Tmap, inputvars, t):
+def addHeatFluxMatrixAblative(first_col, Tnu, Tmap, rhonu, rhomap, mgas, inputvars, t):
+
+    # Store some variables
+    iStart = Tmap["lay0"][0]
+    #lay = layers[0]
+    # mat = lay.material
+    # gr = lay.grid
+    sdot = Tnu[Tmap["sdot"]]
+    # Tw = Tnu[iStart]
+    # wvw = lay.wv[0]
+    rhow = rhonu[rhomap["lay0"][0]]
+    mg = np.sum(mgas)
+    mc = rhow * sdot
+
+    # Calculate coefficients
+    lam = 0.4 if inputvars.turbflow else 0.5
+    phi = 2 * lam * (mg + mc) / inputvars.aerocoef
+    #blowcor = blowFromPhi(phi)
+    #bg = mg / (inputvars.aerocoef * blowcor)
+
+    # Sensitivity to wall temperature is zero
+
+    # Sensitivity to recession rate
+    dblowcor_dsdot = dblowdsdotFromPhi(phi, rhow, lam, inputvars.aerocoef)
+    dQw_dsdot = -inputvars.BCfrontValue(t) * dblowcor_dsdot
+
+    first_col[iStart] += -dQw_dsdot
+
+
+def addHeatFluxVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t):
 
     # Determine first cell
     iStart = Tmap["lay0"][0]
-    fnu[iStart] += -inputvars.BCfrontValue(t)
+
+    if layers[0].ablative:
+
+        # Calculate blowing correction
+        sdot = Tnu[Tmap["sdot"]]
+        rhow = rhonu[rhomap["lay0"][0]]
+        mg = np.sum(mgas)
+        mc = rhow * sdot
+
+        # Calculate blowing correction and heat flux
+        lam = 0.4 if inputvars.turbflow else 0.5
+        phi = 2 * lam * (mg + mc) / inputvars.aerocoef
+        blowcor = blowFromPhi(phi)
+
+    else:
+
+        # For non-ablative materials no blowing correction is needed
+        blowcor = 1.0
+
+    fnu[iStart] += -inputvars.BCfrontValue(t) * blowcor
 
     return fnu
 

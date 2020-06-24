@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<input>
+    <layers>
+        <layer number="1">
+            <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Carbon_Phenolic/Carbon_Phenolic.matp</material>
+            <thickness>0.05</thickness>
+            <firstcell>0.0001</firstcell>
+            <maxgrowth>1.1</maxgrowth>
+            <ablative>True</ablative>
+        </layer>
+        <layer number="2">
+            <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Test_1</material>
+            <thickness>0.01</thickness>
+        </layer>
+    </layers>
+    <options>
+        <BCs>
+            <front type="heatflux">
+                <value>/Users/nils/PycharmProjects/H_STARSHIP/Data/HeatFlux/Test_cos_750kW.csv</value>
+                <coef>2.0</coef>
+            </front>
+            <!--front type="aerodynamic">
+                <value>/Users/nils/PycharmProjects/H_STARSHIP/Data/HeatFlux/Test_cos_750kW.csv</value>
+                <BL_Edge_Temperature>1500</BL_Edge_Temperature>
+                <Surface_Temperature>800</Surface_Temperature>
+                <Time_of_Temperature>25.0</Time_of_Temperature>
+            </front-->
+            <back type="adiabatic"></back>
+        </BCs>
+        <time>
+            <start>0.0</start>
+            <end>50.0</end>
+            <delta>0.03125</delta>
+            <write_every>16</write_every>
+        </time>
+        <init type="Temperature">
+            <value>300.0</value>
+        </init>
+        <ambient>
+            <temperature>300</temperature>
+            <pressure>101325</pressure>
+            <atmosphere>Earth</atmosphere>
+            <turbulent_flow>True</turbulent_flow>
+        </ambient>
+    </options>
+</input>

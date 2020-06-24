@@ -83,6 +83,8 @@ reads the input xml file and stores the information
                 with open(csv_file) as f:
                     data = pd.read_csv(f, sep=';', decimal=',', header=0)
                 self.BCfrontValue = interp1d(data.values[:, 0], data.values[:, 1], kind='linear')
+                if self.layers[0].ablative:
+                    self.aerocoef = float(root.find("options").find("BCs").find("front").find("coef").text)
         elif self.BCfrontType in ("aerodynamic",):
             try:
                 value = float(root.find("options").find("BCs").find("front").find("value").text)
