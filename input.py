@@ -95,11 +95,12 @@ reads the input xml file and stores the information
                 with open(csv_file) as f:
                     data = pd.read_csv(f, sep=';', decimal=',', header=0)
                 self.BCfrontValue = interp1d(data.values[:, 0], data.values[:, 1], kind='linear')
-            self.BLEdgeT = float(root.find("options").find("BCs").find("front").find("BL_Edge_Temperature").text)
-            self.SurfT = float(root.find("options").find("BCs").find("front").find("Surface_Temperature").text)
+            self.BLEdgeT_at_t = float(root.find("options").find("BCs").find("front").find("BL_Edge_Temperature").text)
+            self.SurfT_at_t = float(root.find("options").find("BCs").find("front").find("Surface_Temperature").text)
             self.tforT = float(root.find("options").find("BCs").find("front").find("Time_of_Temperature").text)
             mat = self.layers[0].material
-            self.aerocoef = self.BCfrontValue(self.tforT)/(mat.hatmo(self.BLEdgeT)-mat.hatmo(self.SurfT))
+            self.aerocoef = self.BCfrontValue(self.tforT)/(mat.hatmo(self.BLEdgeT_at_t)-mat.hatmo(self.SurfT_at_t))
+            self.BLedge_h = lambda t: self.BCfrontValue(t)/self.aerocoef + mat.hatmo(self.SurfT_at_t)
         else:
             raise ValueError("Unsupported front BC %s" % self.BCfrontType)
         self.BCbackType = root.find("options").find("BCs").find("back").attrib["type"]

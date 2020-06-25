@@ -167,7 +167,7 @@ def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars, t
 
     if inputvars.BCfrontType == "aerodynamic":
 
-        addAerodynamicMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
+        addAerodynamicMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
 
     elif inputvars.BCfrontType == "heatflux":
         if layers[0].ablative:
@@ -226,7 +226,7 @@ def assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas,
 
     if inputvars.BCfrontType == "aerodynamic":
 
-        fnu = addAerodynamicVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
+        fnu = addAerodynamicVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
 
     elif inputvars.BCfrontType == "heatflux":
 
@@ -867,7 +867,7 @@ def addHeatFluxVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
     return fnu
 
 
-def addAerodynamicMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
+def addAerodynamicMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t):
 
     # Store some variables
     iStart = Tmap["lay0"][0]
@@ -893,7 +893,7 @@ def addAerodynamicMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layer
     # Sensitivity to recession rate
     dblowcor_dsdot = dblowdsdotFromPhi(phi, rhow, lam, inputvars.aerocoef)
     dhw_dsdot = mat.dhwdbg(bg, Tw) * mg / inputvars.aerocoef * dblowcor_dsdot / (-blowcor ** 2)
-    dQw_dsdot = inputvars.aerocoef * (mat.hatmo(inputvars.BLEdgeT) - mat.hw(bg, Tw)) * dblowcor_dsdot + \
+    dQw_dsdot = inputvars.aerocoef * (inputvars.BLedge_h(t) - mat.hw(bg, Tw)) * dblowcor_dsdot + \
                 inputvars.aerocoef * blowcor * (-dhw_dsdot)
 
     # Assemble Jacobian matrix
@@ -903,7 +903,7 @@ def addAerodynamicMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layer
     first_col[iStart] += -dQw_dsdot
 
 
-def addAerodynamicVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
+def addAerodynamicVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t):
 
     # Store some variables
     iStart = Tmap["lay0"][0]
@@ -924,7 +924,7 @@ def addAerodynamicVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
     bg = mg / (inputvars.aerocoef * blowcor)
 
     # Calculate wall heat flux
-    Qw = inputvars.aerocoef * blowcor * (mat.hatmo(inputvars.BLEdgeT) - mat.hw(bg, Tw))
+    Qw = inputvars.aerocoef * blowcor * (inputvars.BLedge_h(t) - mat.hw(bg, Tw))
 
     fnu[iStart] += -Qw
 
