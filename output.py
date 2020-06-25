@@ -157,16 +157,24 @@ class SolutionReader:
                          'T': self.T,
                          'rho': self.rho,
                          'wv': self.wv,
-                         'beta': self.beta}
+                         'beta': self.beta,
+                         's': self.z,
+                         'sdot': self.z}
 
         self.labeldict = {'t': 't [s]',
                           'z': 'z [m]',
                           'T': 'T [K]',
                           'rho': 'rho [kg/m^3]',
                           'wv': 'wv [-]',
-                          'beta': 'beta [-]'}
+                          'beta': 'beta [-]',
+                          's': 's [m]',
+                          'sdot': 'sdot [m/s]'}
 
     def plot(self, x, y, t=0.0, z=0.0, vary_linestyle=False):
+
+        # For plot of s, use z coordinate of wall
+        if y in ('s', 'sdot'):
+            z = np.array(['Wall'])
 
         # Manipulate parameter if needed (convert to numpy array)
         if 'z' == x:
@@ -197,6 +205,10 @@ class SolutionReader:
         # Get variables
         xvar = self.namedict[x]
         yvar = self.namedict[y]
+
+        # Calculate sdot if selected
+        if y == 'sdot':
+            yvar = np.gradient(yvar[0, :], xvar)
 
         # For plots over z
         if location_dependent:
@@ -233,6 +245,7 @@ class SolutionReader:
                 walls = z == 'Wall'
             else:
                 z_nowall = z
+                walls = [False] * z.size
 
             # Check if valid locations (in material at least at start)
             if any(z_nowall < self.z[0, 0]) or any(z_nowall > self.z[-1, 0]):
