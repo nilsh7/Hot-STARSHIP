@@ -1089,7 +1089,7 @@ def updateRho(lay, rhoimu, rhoin, rhonu, rhomap, Tnu, Tmap, tDelta):
     rhonu[ablativeCells] = np.sum(frac*rhoimu_abl, axis=1)
 
     rhv, rhc = (mat.data.rhov0, mat.data.rhoc0)
-    lay.wv = rhv/(rhv-rhc) * (1-rhc/rhonu[ablativeCells])
+    lay.wv = rhv/(rhv-rhc) * (1-rhc/rhonu[ablativeCells]) if rhv != rhc else np.ones(len(rhonu[ablativeCells]))
 
     mgas = -np.sum(frac*drhodt(mat, rhoimu_abl, Tj), axis=1) * (gr.zjp12-gr.zjm12)
 

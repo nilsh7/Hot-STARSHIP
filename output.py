@@ -133,24 +133,41 @@ class SolutionWriter:
                 writevars[writelocs, 2] = Tnu[Tlocs]
                 writevars[writelocs, 3] = rhonu[rholocs]
                 writevars[writelocs, 4] = layers[iLay].wv if layers[iLay].ablative else 1.0
-                writevars[writelocs, 5] = (mat.data.rhov0 - rhonu[rholocs])/(mat.data.rhov0 - mat.data.rhoc0)\
-                    if layers[iLay].ablative else 0.0
+                if layers[iLay].ablative:
+                    if mat.data.rhov0 != mat.data.rhoc0:
+                        writevars[writelocs, 5] = (mat.data.rhov0 - rhonu[rholocs])/(mat.data.rhov0 - mat.data.rhoc0)
+                    else:
+                        writevars[writelocs, 5] = 0
+                else:
+                    writevars[writelocs, 5] = 0
             if key[0:3] == "int":
                 iLay = int(key[3:])
                 writevars[writelocs, 1] = layers[iLay].grid.zjp12[-1]
                 writevars[writelocs, 2] = Tnu[Tlocs]
                 writevars[writelocs, 3] = rhonu[rhomap["lay%i" % iLay]][-1]
                 writevars[writelocs, 4] = layers[iLay].wv[-1] if layers[iLay].ablative else 1.0
-                writevars[writelocs, 5] = ((mat.data.rhov0 - rhonu[rhomap["lay%i" % iLay]][-1]) /
-                                           (mat.data.rhov0 - mat.data.rhoc0)) if layers[iLay].ablative else 0.0
+                if layers[iLay].ablative:
+                    if mat.data.rhov0 != mat.data.rhoc0:
+                        writevars[writelocs, 5] = ((mat.data.rhov0 - rhonu[rhomap["lay%i" % iLay]][-1]) /
+                                                   (mat.data.rhov0 - mat.data.rhoc0))
+                    else:
+                        writevars[writelocs, 5] = 0
+                else:
+                    writevars[writelocs, 5] = 0
 
         lastlay = layers[-1]
         writevars[-1, 1] = lastlay.grid.zjp12[-1]
         writevars[-1, 2] = Tnu[-1]
         writevars[-1, 3] = rhonu[-1]
         writevars[-1, 4] = lastlay.wv[-1] if lastlay.ablative else 1.0
-        writevars[-1, 5] = ((mat.data.rhov0 - rhonu[-1]) /
-                            (mat.data.rhov0 - mat.data.rhoc0)) if lastlay.ablative else 0.0
+        if layers[iLay].ablative:
+            if mat.data.rhov0 != mat.data.rhoc0:
+                writevars[-1, 5] = ((mat.data.rhov0 - rhonu[-1]) /
+                                    (mat.data.rhov0 - mat.data.rhoc0))
+            else:
+                writevars[-1, 5] = 0
+        else:
+            writevars[-1, 5] = 0
 
         # Save to file
         with open(self.filepath, 'ab') as f:
