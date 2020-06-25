@@ -23,6 +23,10 @@ handles arguments passed to Hot-STARSHIP
     parser.add_argument("output_file", help="output file to write to (csv format)", nargs='?',
                         default=None)
 
+    parser.add_argument('--force', action='store_true', dest='force_write',
+                        help="force to overwrite solution file if it already exists",
+                        default=False)
+
     args = vars(parser.parse_args())
 
     return args
@@ -56,7 +60,7 @@ if __name__ == "__main__":
     Tnu, rhonu, rhoimu, mgas = init_T_rho(Tnu, rhonu, rhoimu, Tmap, rhomap, layers, inputvars)
 
     # Initialize output file and write initial distribution
-    solwrite = output.SolutionWriter(args["output_file"], layers, Tmap, inputvars)
+    solwrite = output.SolutionWriter(args["output_file"], layers, Tmap, inputvars, args["force_write"])
     solwrite.write(inputvars.tStart, layers, Tnu, rhonu, Tmap, rhomap)
 
     # Initialize deltaTn guess with zero change

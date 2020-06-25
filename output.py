@@ -57,13 +57,13 @@ def plotBeta(layers, rhonu, rhomap, t):
 
 
 class SolutionWriter:
-    def __init__(self, file, layers, Tmap, inputvars):
+    def __init__(self, file, layers, Tmap, inputvars, force_write=False):
 
         # Construct path to write to
-        cwd = Path.cwd()
+        self.cwd = Path.cwd()
         if file is None:
             file = "Hot-STARSHIP_out_" + datetime.today().strftime('%Y-%m-%d-%H:%M:%S') + ".csv"
-        self.filepath = Path.joinpath(cwd, file)
+        self.filepath = Path.joinpath(self.cwd, file)
 
         # Count number of values to write per time step
         nLayers = len(layers)
@@ -75,15 +75,43 @@ class SolutionWriter:
         else:
             raise ValueError("Unimplemented back BC %s" % inputvars.BCbackType)
 
-        # Clear file if existent
+        # Check if file exists
+        if not force_write:
+            self.checkIfFileExists()
+
         with open(self.filepath, 'w') as f:
-            f.write('t [s]       ;'
-                    'z [m]       ;'
-                    'T [K]       ;'
-                    'rho [kg/m^3];'
-                    'wv [-]      ;'
-                    'beta [-]    '
+            f.write('t [s]       ;'  # index 0
+                    'z [m]       ;'  # index 1
+                    'T [K]       ;'  # index 2
+                    'rho [kg/m^3];'  # index 3
+                    'wv [-]      ;'  # index 4
+                    'beta [-]    '   # index 5
                     '\n')
+
+    def checkIfFileExists(self):
+
+        # Check if file exists
+        if self.filepath.is_file():
+            while True:
+                try:
+                    inp = str(input("Output file %s already exists.\nDo you wish to overwrite?"
+                                    " (Type y/yes or n/no)" % self.filepath))
+                except ValueError:
+                    print("Invalid input.")
+                break
+
+            # If overwrite is not desired, give user the ability to write to different file
+            if inp in ("n", "no"):
+                inp = str(input("Please specify the file you wish to write to:"))
+                self.filepath = Path.joinpath(self.cwd, inp)
+                self.checkIfFileExists()
+            # If overwrite is desired, go on
+            elif inp in ("y", "yes"):
+                pass
+            # No valid input
+            else:
+                print("Invalid input.")
+                self.checkIfFileExists()
 
     def write(self, t, layers, Tnu, rhonu, Tmap, rhomap):
 
