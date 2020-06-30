@@ -101,7 +101,7 @@ reads csv file and stores data
 
         # Open file
         with open(csv_file) as f:
-            data = pd.read_csv(f, sep=';', decimal=',')
+            data = pd.read_csv(f, sep=';', decimal='.')
 
         data = dropnafromboth(data)
 
@@ -207,7 +207,7 @@ reads csv file and stores data
 
             # Open file
             with open(csv_file) as f:
-                data = pd.read_csv(f, sep=';', decimal=',', header=head, index_col=index)
+                data = pd.read_csv(f, sep=';', decimal='.', header=head, index_col=index)
 
             data = dropnafromboth(data)
 

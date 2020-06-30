@@ -81,7 +81,7 @@ reads the input xml file and stores the information
                 # Open file
                 csv_file = root.find("options").find("BCs").find("front").find("value").text
                 with open(csv_file) as f:
-                    data = pd.read_csv(f, sep=';', decimal=',', header=0)
+                    data = pd.read_csv(f, sep=';', decimal='.', header=0)
                 self.BCfrontValue = interp1d(data.values[:, 0], data.values[:, 1], kind='linear')
                 if self.layers[0].ablative:
                     self.aerocoef = float(root.find("options").find("BCs").find("front").find("coef").text)
@@ -93,7 +93,7 @@ reads the input xml file and stores the information
                 # Open file
                 csv_file = root.find("options").find("BCs").find("front").find("value").text
                 with open(csv_file) as f:
-                    data = pd.read_csv(f, sep=';', decimal=',', header=0)
+                    data = pd.read_csv(f, sep=';', decimal='.', header=0)
                 self.BCfrontValue = interp1d(data.values[:, 0], data.values[:, 1], kind='linear')
             self.BLEdgeT_at_t = float(root.find("options").find("BCs").find("front").find("BL_Edge_Temperature").text)
             self.SurfT_at_t = float(root.find("options").find("BCs").find("front").find("Surface_Temperature").text)
