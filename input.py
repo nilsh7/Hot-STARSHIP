@@ -82,7 +82,8 @@ reads the input xml file and stores the information
                 csv_file = root.find("options").find("BCs").find("front").find("value").text
                 with open(csv_file) as f:
                     data = pd.read_csv(f, sep=';', decimal='.', header=0)
-                self.BCfrontValue = interp1d(data.values[:, 0], data.values[:, 1], kind='linear')
+                self.BCfrontValue = interp1d(data.values[:, 0], data.values[:, 1], kind='linear',
+                                             fill_value=0.0, bounds_error=False)
                 if self.layers[0].ablative:
                     self.aerocoef = float(root.find("options").find("BCs").find("front").find("coef").text)
         elif self.BCfrontType in ("aerodynamic",):
@@ -94,7 +95,8 @@ reads the input xml file and stores the information
                 csv_file = root.find("options").find("BCs").find("front").find("value").text
                 with open(csv_file) as f:
                     data = pd.read_csv(f, sep=';', decimal='.', header=0)
-                self.BCfrontValue = interp1d(data.values[:, 0], data.values[:, 1], kind='linear')
+                self.BCfrontValue = interp1d(data.values[:, 0], data.values[:, 1], kind='linear',
+                                             fill_value=0.0, bounds_error=False)
             self.BLEdgeT_at_t = float(root.find("options").find("BCs").find("front").find("BL_Edge_Temperature").text)
             self.SurfT_at_t = float(root.find("options").find("BCs").find("front").find("Surface_Temperature").text)
             self.tforT = float(root.find("options").find("BCs").find("front").find("Time_of_Temperature").text)
