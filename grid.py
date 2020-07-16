@@ -155,7 +155,7 @@ plots the passed grids
     fig, ax = plt.subplots(1, figsize=(10, 2))
 
     maxz = max([grid.zjp12[-1]] for grid in grids)[0]
-    minz = min([grid.zjp12[-1]] for grid in grids)[0]
+    minz = min([grid.zjm12[0]] for grid in grids)[0]
 
     for grid in grids:
 
@@ -172,7 +172,7 @@ plots the passed grids
         plt.scatter(grid.zj, np.zeros(grid.zj.shape), c='black', s=size)
 
     # Modify plot looks
-    plt.xlim((minz - 0.0005 * grid.zjp12[-1], 1.0005 * maxz))
+    plt.xlim((minz - 0.005 * grid.zjp12[-1], 1.005 * maxz))
     # plt.ylim((-0.6*height, 0.75*height))
     plt.xlabel('x [m]')
     ax.spines['right'].set_visible(False)
@@ -180,7 +180,7 @@ plots the passed grids
     ax.spines['left'].set_visible(False)
     ax.yaxis.set_visible(False)
     ax.xaxis.set_ticks_position('bottom')
-    ax.axis('equal')
+    #ax.axis('equal')
     fig.subplots_adjust(top=1.0)
     fig.subplots_adjust(bottom=0.3)
     fig.set_size_inches(10, 2, forward=True)
