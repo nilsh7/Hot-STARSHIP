@@ -224,7 +224,7 @@ class SolutionReader:
         # Manipulate parameter if needed (convert to numpy array)
         if 'z' == x:
             location_dependent = True
-            if type(t) is float:
+            if type(t) is float or type(t) is int:
                 t = np.array([t])
             elif type(t) is np.ndarray:
                 t = t.flatten()
@@ -234,7 +234,7 @@ class SolutionReader:
                 raise ValueError("Unknown input type %s" % type(t))
         elif 't' == x:
             location_dependent = False
-            if type(z) is float:
+            if type(z) is float or type(z) is int:
                 z = np.array([z])
             elif type(z) is np.ndarray:
                 z = z.flatten()
@@ -329,12 +329,15 @@ class SolutionReader:
 
         # Plot graph
         plt.clf()
-        if not vary_linestyle:
-            plt.plot(self.t, yvals)
-        else:
-            linestyles = get_linestyles(yvals.shape[1])
-            for i in range(yvals.shape[1]):
-                plt.plot(xvals[:, i], yvals[:, i], linestyles[i])
+        plt.style.use("MA_Style")
+        #if not vary_linestyle:
+        #    plt.plot(self.t, yvals)
+        #else:
+        #    linestyles = get_linestyles(yvals.shape[1])
+        #    for i in range(yvals.shape[1]):
+        #        plt.plot(xvals[:, i], yvals[:, i], linestyles[i])
+        for i in range(yvals.shape[1]):
+            plt.plot(xvals[:, i], yvals[:, i])
         if yvals.shape[1] > 1:
             if location_dependent:
                 plt.legend(t.astype(str), title='t [s]')
