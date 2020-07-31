@@ -12,7 +12,7 @@ def compareToAnalytical(t, Tnu, inputvars, nmax=201):
     k = mat.k(T0)
     alpha = k/(rho*cv)
     grid = inputvars.layers[0].grid
-    z = grid.zj
+    z = np.hstack((grid.zj, L))
     n = np.arange(1, nmax)
 
     if type(mat) is NonAblativeMaterial and len(mat.data.Tforcp) == 2 and len(mat.data.Tfork) == 2:
@@ -47,10 +47,15 @@ def compareToAnalytical(t, Tnu, inputvars, nmax=201):
     T = Tf(theta)
 
     plt.clf()
-    plt.plot(grid.zj, Tnu, label='Numerical')
-    plt.plot(z, T, label='Analytical')
-    plt.xlabel('z [m]')
-    plt.ylabel('T [K]')
-    plt.title('Comparison at t = %.3fs' % t)
+    plt.style.use("MA_Style")
+    markers = iter(["1", "+", "x", "."])
+    #plt.rc('text', usetex=True)
+    #plt.rc('font', family='serif')
+    plt.plot(z, T, label='Analytical')  #, color='black')
+    plt.scatter(grid.zj, Tnu, label='Numerical', marker=next(markers))  #, edgecolors='black', facecolors='none', marker='s')
+    plt.xlabel(r'$z \: \mathrm{ [m]}$')
+    plt.ylabel(r'$T \: \mathrm{ [K]}$')
+    # plt.title('Comparison at t = %.3fs' % t)
     plt.legend()
+    # plt.grid()
     plt.show()
