@@ -219,7 +219,7 @@ reads csv file and stores data
 
             # Open file
             with open(hof_file) as f:
-                hof_data = pd.read_csv(f, sep=';', decimal=',', header=None)
+                hof_data = pd.read_csv(f, sep=';', decimal=',', header=None, index_col=0, converters={1: float})
 
             hof_data = dropnafromboth(hof_data)
 
@@ -272,10 +272,10 @@ reads csv file and stores data
         elif iDir == 7:
 
             # Heats of formation
-            self.data.Tref = hof_data.values[0, 1]
-            self.virgin.data.hf = hof_data.values[1, 1]
-            self.char.data.hf = hof_data.values[2, 1]
-            self.gas.data.hf = hof_data.values[3, 1]
+            self.data.Tref = hof_data.values[0, 0]
+            self.virgin.data.hf = hof_data.values[1, 0]
+            self.char.data.hf = hof_data.values[2, 0]
+            self.gas.data.hf = hof_data.values[3, 0]
 
             # Decomposition kinetics
             self.data.nDecomp = dec_data.columns.values.size
@@ -373,6 +373,11 @@ calculates pyrolysis gas composition using mppequil
         a['pyroweightfrac'] = a['pyromass'] / sum(a['pyromass'])
         a['pyromoles'] = a['pyromass'] / a['molarmass']
         a['pyromolefrac'] = a['pyromoles'] / sum(a['pyromoles'])
+
+        # Check if negative number
+        if any(a["pyromolefrac"] < 0):
+            raise ValueError("Negative mole fraction in pyrolysis gas composition!\n"
+                             "Lower the expected yield of pyrolysis gas.")
 
         # Construct Mutation++ mixture file
         xmldata = Path("Templates/mutationpp_mixtures_pyrogas.xml").read_text()
