@@ -84,8 +84,9 @@ reads the input xml file and stores the information
                     data = pd.read_csv(f, sep=';', decimal='.', header=0)
                 self.BCfrontValue = interp1d(data.values[:, 0], data.values[:, 1], kind='linear',
                                              fill_value=0.0, bounds_error=False)
-                if self.layers[0].ablative:
-                    self.aerocoef = float(root.find("options").find("BCs").find("front").find("coef").text)
+            if self.layers[0].ablative:
+                self.aerocoef = float(root.find("options").find("BCs").find("front").find("coef").text)
+
         elif self.BCfrontType in ("aerodynamic",):
             try:
                 value = float(root.find("options").find("BCs").find("front").find("value").text)
@@ -103,6 +104,22 @@ reads the input xml file and stores the information
             mat = self.layers[0].material
             self.aerocoef = self.BCfrontValue(self.tforT)/(mat.hatmo(self.BLEdgeT_at_t)-mat.hatmo(self.SurfT_at_t))
             self.BLedge_h = lambda t: self.BCfrontValue(t)/self.aerocoef + mat.hatmo(self.SurfT_at_t)
+
+        elif self.BCfrontType == "recovery_enthalpy":
+            if not self.layers[0].ablative:
+                raise ValueError("Reovery enthalpy BC not implemented for non-ablative cases.")
+            else:
+                try:
+                    value = float(root.find("options").find("BCs").find("front").find("value").text)
+                    self.BLedge_h = lambda t: value
+                except ValueError:
+                    # Open file
+                    csv_file = root.find("options").find("BCs").find("front").find("value").text
+                    with open(csv_file) as f:
+                        data = pd.read_csv(f, sep=';', decimal='.', header=0)
+                    self.BLedge_h = interp1d(data.values[:, 0], data.values[:, 1], kind='linear',
+                                                 fill_value=0.0, bounds_error=False)
+                self.aerocoef = float(root.find("options").find("BCs").find("front").find("coef").text)
         else:
             raise ValueError("Unsupported front BC %s" % self.BCfrontType)
         self.BCbackType = root.find("options").find("BCs").find("back").attrib["type"]

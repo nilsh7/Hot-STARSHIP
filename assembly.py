@@ -165,7 +165,7 @@ def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars, t
 
         addBcMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
 
-    if inputvars.BCfrontType == "aerodynamic":
+    if inputvars.BCfrontType in ("aerodynamic", "recovery_enthalpy"):
 
         addAerodynamicMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
 
@@ -224,7 +224,7 @@ def assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas,
 
         fnu = addBcVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
 
-    if inputvars.BCfrontType == "aerodynamic":
+    if inputvars.BCfrontType in ("aerodynamic", "recovery_enthalpy"):
 
         fnu = addAerodynamicVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
 
@@ -693,8 +693,8 @@ def addPyroMatrix(diags, Tnu, Tmap, mgas, layers, key, inputvars):
     dPjm12_dTj = 1/2 * mgasm12 * mat.gas.cp(Tj)
     dPjm12_dTjm1 = 1/2 * mgasm12 * m1(mat.gas.cp(Tj))
     if inputvars.BCfrontType == "heatflux":
-        dPjm12_dTj[0], dPjm12_dTjm1[0] = (mgasm12[0] * mat.gas.cp(Tj[0]), 0)
-    elif inputvars.BCfrontType == "aerodynamic":
+        dPjm12_dTj[0], dPjm12_dTjm1[0] = (mgasm12[0] * mat.gas.cp(Tj[0]), 0)  # TODO: Check whether this is correct or if this should be in WallBlowMatrix, too
+    elif inputvars.BCfrontType in ("aerodynamic", "recovery_enthalpy"):
         dPjm12_dTj[0], dPjm12_dTjm1[0] = (0, 0)  # Implemented in WallBlowMatrix
     else:
         raise ValueError("Unimplemented front BC %s" % inputvars.BCfrontType)
@@ -735,8 +735,8 @@ def addPyroVector(fnu, Tnu, Tmap, mgas, layers, key, inputvars):
     Pjm12 = mgasm12 * m12(mat.gas.h(Tj))
     Pjm12[0] = mgasm12[0] * mat.gas.h(Tj[0])
     if inputvars.BCfrontType == "heatflux":
-        Pjm12[0] = mgasm12[0] * mat.gas.h(Tj[0])
-    elif inputvars.BCfrontType == "aerodynamic":
+        Pjm12[0] = mgasm12[0] * mat.gas.h(Tj[0])  # TODO: check whether this is correct (see matrix)
+    elif inputvars.BCfrontType in ("aerodynamic", "recovery_enthalpy"):
         Pjm12[0] = 0  # Implemented in WallBlowVector
     else:
         raise ValueError("Unimplemented front BC %s" % inputvars.BCfrontType)
