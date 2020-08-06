@@ -144,7 +144,7 @@ def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars, t
 
             if inputvars.BCfrontType == "aerodynamic":
 
-                addWallBlowMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
+                addWallBlowMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
 
         elif key[0:3] == "lay":
 
@@ -163,7 +163,7 @@ def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars, t
     # Add BC
     if layers[0].ablative:
 
-        addBcMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
+        addBcMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
 
     if inputvars.BCfrontType in ("aerodynamic", "recovery_enthalpy"):
 
@@ -203,7 +203,7 @@ def assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas,
         if key == "sdot":
 
             if inputvars.BCfrontType == "aerodynamic":
-                fnu = addWallBlowVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
+                fnu = addWallBlowVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
 
         elif key[0:3] == "lay":
 
@@ -222,7 +222,7 @@ def assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas,
     # Add BC
     if layers[0].ablative:
 
-        fnu = addBcVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars)
+        fnu = addBcVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
 
     if inputvars.BCfrontType in ("aerodynamic", "recovery_enthalpy"):
 
@@ -747,7 +747,7 @@ def addPyroVector(fnu, Tnu, Tmap, mgas, layers, key, inputvars):
     return fnu
 
 
-def addWallBlowMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
+def addWallBlowMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t):
 
     # Store some variables
     iStart = Tmap["lay0"][0]
@@ -763,13 +763,13 @@ def addWallBlowMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, 
 
     # Calculate corrected bg
     lam = 0.4 if inputvars.turbflow else 0.5
-    phi = 2 * lam * (mg+mc) / inputvars.aerocoef
+    phi = 2 * lam * (mg+mc) / inputvars.aerocoef(t) if inputvars.aerocoef(t) != 0 else 1e10
     blowcor = blowFromPhi(phi)
-    bg = mg/(inputvars.aerocoef*blowcor)
+    bg = mg/(inputvars.aerocoef(t)*blowcor)if inputvars.aerocoef(t) != 0 else 1e10
 
     # Calculate sensitivity w.r.t. sdot
-    dblowcor_dsdot = dblowdsdotFromPhi(phi, rhow, lam, inputvars.aerocoef)
-    dhw_dsdot = mat.dhwdbg(bg, Tw) * mg/inputvars.aerocoef * dblowcor_dsdot / (-blowcor ** 2)
+    dblowcor_dsdot = dblowdsdotFromPhi(phi, rhow, lam, inputvars.aerocoef(t))
+    dhw_dsdot = mat.dhwdbg(bg, Tw) * mg / inputvars.aerocoef(t) * dblowcor_dsdot / (-blowcor ** 2) if inputvars.aerocoef(t) != 0 else 0
     dPw_dsdot = rhow * mat.hw(bg, Tw) + (mc + mg) * dhw_dsdot
 
     # Calculate sensitivity w.r.t. Tw
@@ -782,7 +782,7 @@ def addWallBlowMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, 
     first_col[iStart] += dPw_dsdot
 
 
-def addWallBlowVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
+def addWallBlowVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t):
 
     # Store some variables
     iStart = Tmap["lay0"][0]
@@ -798,9 +798,9 @@ def addWallBlowVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
 
     # Calculate corrected bg
     lam = 0.4 if inputvars.turbflow else 0.5
-    phi = 2 * lam * (mg + mc) / inputvars.aerocoef
+    phi = 2 * lam * (mg + mc) / inputvars.aerocoef(t) if inputvars.aerocoef(t) != 0 else 1e10
     blowcor = blowFromPhi(phi)
-    bg = mg / (inputvars.aerocoef * blowcor)
+    bg = mg / (inputvars.aerocoef(t) * blowcor) if inputvars.aerocoef(t) != 0 else 1e10
 
     # Calculate wall blow flux
     Pw = (mc + mg) * mat.hw(bg, Tw)
@@ -826,14 +826,14 @@ def addHeatFluxMatrixAblative(first_col, Tnu, Tmap, rhonu, rhomap, mgas, inputva
 
     # Calculate coefficients
     lam = 0.4 if inputvars.turbflow else 0.5
-    phi = 2 * lam * (mg + mc) / inputvars.aerocoef
+    phi = 2 * lam * (mg + mc) / inputvars.aerocoef(t) if inputvars.aerocoef(t) != 0 else 1e10
     #blowcor = blowFromPhi(phi)
-    #bg = mg / (inputvars.aerocoef * blowcor)
+    #bg = mg / (inputvars.aerocoef(t) * blowcor)
 
     # Sensitivity to wall temperature is zero
 
     # Sensitivity to recession rate
-    dblowcor_dsdot = dblowdsdotFromPhi(phi, rhow, lam, inputvars.aerocoef)
+    dblowcor_dsdot = dblowdsdotFromPhi(phi, rhow, lam, inputvars.aerocoef(t))
     dQw_dsdot = -inputvars.BCfrontValue(t) * dblowcor_dsdot
 
     first_col[iStart] += -dQw_dsdot
@@ -854,7 +854,7 @@ def addHeatFluxVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
 
         # Calculate blowing correction and heat flux
         lam = 0.4 if inputvars.turbflow else 0.5
-        phi = 2 * lam * (mg + mc) / inputvars.aerocoef
+        phi = 2 * lam * (mg + mc) / inputvars.aerocoef(t) if inputvars.aerocoef(t) != 0 else 1e10
         blowcor = blowFromPhi(phi)
 
     else:
@@ -883,18 +883,18 @@ def addAerodynamicMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layer
 
     # Calculate corrected bg
     lam = 0.4 if inputvars.turbflow else 0.5
-    phi = 2 * lam * (mg + mc) / inputvars.aerocoef
+    phi = 2 * lam * (mg + mc) / inputvars.aerocoef(t) if inputvars.aerocoef(t) != 0 else 1e10
     blowcor = blowFromPhi(phi)
-    bg = mg / (inputvars.aerocoef * blowcor)
+    bg = mg / (inputvars.aerocoef(t) * blowcor) if inputvars.aerocoef(t) != 0 else 1e10
 
     # Sensitivity to wall temperature
-    dQw_dTw = inputvars.aerocoef * blowcor * (-mat.dhwdT(bg, Tw))
+    dQw_dTw = inputvars.aerocoef(t) * blowcor * (-mat.dhwdT(bg, Tw))
 
     # Sensitivity to recession rate
-    dblowcor_dsdot = dblowdsdotFromPhi(phi, rhow, lam, inputvars.aerocoef)
-    dhw_dsdot = mat.dhwdbg(bg, Tw) * mg / inputvars.aerocoef * dblowcor_dsdot / (-blowcor ** 2)
-    dQw_dsdot = inputvars.aerocoef * (inputvars.BLedge_h(t) - mat.hw(bg, Tw)) * dblowcor_dsdot + \
-                inputvars.aerocoef * blowcor * (-dhw_dsdot)
+    dblowcor_dsdot = dblowdsdotFromPhi(phi, rhow, lam, inputvars.aerocoef(t))
+    dhw_dsdot = mat.dhwdbg(bg, Tw) * mg / inputvars.aerocoef(t) * dblowcor_dsdot / (-blowcor ** 2) if inputvars.aerocoef(t) != 0 else 0
+    dQw_dsdot = inputvars.aerocoef(t) * (inputvars.BLedge_h(t) - mat.hw(bg, Tw)) * dblowcor_dsdot + \
+                inputvars.aerocoef(t) * blowcor * (-dhw_dsdot)
 
     # Assemble Jacobian matrix
     globflux = createGlobFlux(dQw_dTw, length=len(Tnu), iStart=iStart, iEnd=iStart, offset=0)
@@ -919,19 +919,19 @@ def addAerodynamicVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars,
 
     # Calculate corrected bg
     lam = 0.4 if inputvars.turbflow else 0.5
-    phi = 2 * lam * (mg + mc) / inputvars.aerocoef
+    phi = 2 * lam * (mg + mc) / inputvars.aerocoef(t) if inputvars.aerocoef(t) != 0 else 1e10
     blowcor = blowFromPhi(phi)
-    bg = mg / (inputvars.aerocoef * blowcor)
+    bg = mg / (inputvars.aerocoef(t) * blowcor) if inputvars.aerocoef(t) != 0 else 1e10
 
     # Calculate wall heat flux
-    Qw = inputvars.aerocoef * blowcor * (inputvars.BLedge_h(t) - mat.hw(bg, Tw))
+    Qw = inputvars.aerocoef(t) * blowcor * (inputvars.BLedge_h(t) - mat.hw(bg, Tw))
 
     fnu[iStart] += -Qw
 
     return fnu
 
 
-def addBcMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
+def addBcMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t):
 
     # Store some variables
     isdot = Tmap["sdot"]
@@ -948,16 +948,17 @@ def addBcMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputv
 
     # Calculate corrected bg
     lam = 0.4 if inputvars.turbflow else 0.5
-    phi = 2 * lam * (mg + mc) / inputvars.aerocoef
+    phi = 2 * lam * (mg + mc) / inputvars.aerocoef(t) if inputvars.aerocoef(t) != 0 else 1e10
     blowcor = blowFromPhi(phi)
-    bg = mg / (inputvars.aerocoef * blowcor)
+    bg = mg / (inputvars.aerocoef(t) * blowcor) if inputvars.aerocoef(t) != 0 else 1e10
 
     # Sensitivity to recession rate
-    dblowcor_dsdot = dblowdsdotFromPhi(phi, rhow, lam, inputvars.aerocoef)
-    dbg_dsdot = mg / inputvars.aerocoef * dblowcor_dsdot / (-blowcor ** 2)
-    dR0_dsdot = rhow / (inputvars.aerocoef * blowcor) + \
-                rhow * sdot / (inputvars.aerocoef * (-blowcor**2)) * dblowcor_dsdot - \
-                mat.dbcdbg(bg, Tw) * dbg_dsdot
+    dblowcor_dsdot = dblowdsdotFromPhi(phi, rhow, lam, inputvars.aerocoef(t))
+    dbg_dsdot = mg / inputvars.aerocoef(t) * dblowcor_dsdot / (-blowcor ** 2) if inputvars.aerocoef(t) != 0 else 0
+    dR0_dsdot = rhow / (inputvars.aerocoef(t) * blowcor) + \
+                rhow * sdot / (inputvars.aerocoef(t) * (-blowcor**2)) * dblowcor_dsdot - \
+                mat.dbcdbg(bg, Tw) * dbg_dsdot if inputvars.aerocoef(t) != 0 else rhow / (1e10 * blowcor) \
+                if inputvars.aerocoef(t) != 0 else rhow / (1e-8 * blowcor)
 
     # Sensitivity to temperature
     dR0_dTw = -mat.dbcdT(bg, Tw)
@@ -969,7 +970,7 @@ def addBcMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputv
     first_col[isdot] += dR0_dsdot
 
 
-def addBcVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
+def addBcVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t):
 
     # Store some variables
     isdot = Tmap["sdot"]
@@ -986,12 +987,12 @@ def addBcVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars):
 
     # Calculate corrected bg
     lam = 0.4 if inputvars.turbflow else 0.5
-    phi = 2 * lam * (mg + mc) / inputvars.aerocoef
+    phi = 2 * lam * (mg + mc) / inputvars.aerocoef(t) if inputvars.aerocoef(t) != 0 else 1e10
     blowcor = blowFromPhi(phi)
-    bg = mg / (inputvars.aerocoef * blowcor)
+    bg = mg / (inputvars.aerocoef(t) * blowcor) if inputvars.aerocoef(t) != 0 else 1e10
 
     # Calculate aerodynamic heating flux
-    R0 = rhow * sdot / (inputvars.aerocoef * blowcor) - mat.bc(bg, Tw)
+    R0 = rhow * sdot / (inputvars.aerocoef(t) * blowcor) - mat.bc(bg, Tw) if inputvars.aerocoef(t) != 0 else rhow * sdot / (1.0e-8 * blowcor) - mat.bc(bg, Tw)
 
     fnu[isdot] += R0
 
@@ -1045,7 +1046,9 @@ def blowFromPhi(phi):
 
 
 def dblowdsdotFromPhi(phi, rhow, lam, aerocoef):
-    dphi_dsdot = 2 * lam * rhow / aerocoef
+
+    if phi < 100:
+        dphi_dsdot = 2 * lam * rhow / aerocoef
 
     if phi < 1.0e-7:
         return 0.5 * (phi/3 - 1) * dphi_dsdot
@@ -1103,7 +1106,8 @@ def drhodt(mat, rhoi, Tj):
     nr = np.repeat(mat.data.nr.reshape(1, -1), repeats=len(Tj), axis=0)
     Ei = np.repeat(mat.data.Ei.reshape(1, -1), repeats=len(Tj), axis=0)
     T = np.repeat(Tj.reshape(-1,1), repeats=len(mat.data.charRhoFrac0), axis=1)
-    decomp = rhoc != rhov
+    Tmin = np.repeat(mat.data.Tmin.reshape(-1, 3), repeats=len(Tj), axis=0)
+    decomp = np.logical_and(rhoc != rhov, T > Tmin)
     val = np.zeros(rhoi.shape)
     val[decomp] = -kr[decomp] * ((rhoi[decomp] - rhoc[decomp]) / (rhov[decomp] - rhoc[decomp])) ** nr[decomp] \
                   * np.exp(-Ei[decomp] / T[decomp])
@@ -1117,7 +1121,8 @@ def ddrhodt_drho(mat, rhoi, Tj):
     nr = np.repeat(mat.data.nr.reshape(1, -1), repeats=len(Tj), axis=0)
     Ei = np.repeat(mat.data.Ei.reshape(1, -1), repeats=len(Tj), axis=0)
     T = np.repeat(Tj.reshape(-1, 1), repeats=len(mat.data.charRhoFrac0), axis=1)
-    decomp = rhoc != rhov
+    Tmin = np.repeat(mat.data.Tmin.reshape(-1, 3), repeats=len(Tj), axis=0)
+    decomp = np.logical_and(rhoc != rhov, T > Tmin)
     val = np.zeros(rhoi.shape)
     val[decomp] = -kr[decomp] * nr[decomp] / (rhov[decomp] - rhoc[decomp]) *\
                   ((rhoi[decomp] - rhoc[decomp]) / (rhov[decomp] - rhoc[decomp])) ** (nr[decomp] - 1) \
