@@ -80,12 +80,14 @@ class SolutionWriter:
             self.checkIfFileExists()
 
         with open(self.filepath, 'w') as f:
-            f.write('t [s]       ;'  # index 0
-                    'z [m]       ;'  # index 1
-                    'T [K]       ;'  # index 2
-                    'rho [kg/m^3];'  # index 3
-                    'wv [-]      ;'  # index 4
-                    'beta [-]    '   # index 5
+            f.write('t [s]           ;'  # index 0
+                    'z [m]           ;'  # index 1
+                    'T [K]           ;'  # index 2
+                    'rho [kg/m^3]    ;'  # index 3
+                    'wv [-]          ;'  # index 4
+                    'beta [-]        ;'  # index 5
+                    'm_c [kg/(m^2*s)];'  # index 6
+                    'm_g [kg//m^2*s)]'   # index 7
                     '\n')
 
     def checkIfFileExists(self):
@@ -113,10 +115,10 @@ class SolutionWriter:
                 print("Invalid input.")
                 self.checkIfFileExists()
 
-    def write(self, t, layers, Tnu, rhonu, Tmap, rhomap):
+    def write(self, t, layers, Tnu, rhonu, Tmap, rhomap, mgas):
 
         # Allocate space for variables to be written
-        writevars = np.empty((self.nVals, 6))
+        writevars = np.empty((self.nVals, 8))
 
         # Add t
         writevars[:, 0] = t
@@ -138,8 +140,13 @@ class SolutionWriter:
                         writevars[writelocs, 5] = (mat.data.rhov0 - rhonu[rholocs])/(mat.data.rhov0 - mat.data.rhoc0)
                     else:
                         writevars[writelocs, 5] = 0
+                    writevars[writelocs, 6] = 0
+                    writevars[0, 6] = rhonu[rholocs][0] * Tnu[Tmap['sdot']]
+                    writevars[writelocs, 7] = mgas[::-1].cumsum()[::-1]
                 else:
                     writevars[writelocs, 5] = 0
+                    writevars[writelocs, 6] = 0
+                    writevars[writelocs, 7] = 0
             if key[0:3] == "int":
                 iLay = int(key[3:])
                 writevars[writelocs, 1] = layers[iLay].grid.zjp12[-1]
@@ -154,6 +161,8 @@ class SolutionWriter:
                         writevars[writelocs, 5] = 0
                 else:
                     writevars[writelocs, 5] = 0
+                writevars[writelocs, 6] = 0
+                writevars[writelocs, 7] = 0
 
         lastlay = layers[-1]
         writevars[-1, 1] = lastlay.grid.zjp12[-1]
@@ -168,6 +177,8 @@ class SolutionWriter:
                 writevars[-1, 5] = 0
         else:
             writevars[-1, 5] = 0
+        writevars[-1, 6] = 0
+        writevars[-1, 7] = 0
 
         # Save to file
         with open(self.filepath, 'ab') as f:
@@ -195,6 +206,8 @@ class SolutionReader:
         self.rho = loadvars[:, 3].reshape(self.nVals, self.nts, order='F')
         self.wv = loadvars[:, 4].reshape(self.nVals, self.nts, order='F')
         self.beta = loadvars[:, 5].reshape(self.nVals, self.nts, order='F')
+        self.mc = loadvars[:, 6].reshape(self.nVals, self.nts, order='F')
+        self.mg = loadvars[:, 7].reshape(self.nVals, self.nts, order='F')
 
         # Construct dicts for plotting
         self.namedict = {'t': self.t,
@@ -204,7 +217,9 @@ class SolutionReader:
                          'wv': self.wv,
                          'beta': self.beta,
                          's': self.z,
-                         'sdot': self.z}
+                         'sdot': self.z,
+                         'mc': self.mc,
+                         'mg': self.mg}
 
         self.labeldict = {'t': 't [s]',
                           'z': 'z [m]',
@@ -213,9 +228,11 @@ class SolutionReader:
                           'wv': 'wv [-]',
                           'beta': 'beta [-]',
                           's': 's [m]',
-                          'sdot': 'sdot [m/s]'}
+                          'sdot': 'sdot [m/s]',
+                          'mc': 'mdot_c [kg/(m^2*s)]',
+                          'mg': 'mdot_g [kg/(m^2*s)]'}
 
-    def plot(self, x, y, t=0.0, z=0.0, vary_linestyle=False):
+    def plot(self, x, y, t=0.0, z=0.0, print_values=False):
 
         # For plot of s, use z coordinate of wall
         if y in ('s', 'sdot'):
@@ -336,8 +353,9 @@ class SolutionReader:
         #    linestyles = get_linestyles(yvals.shape[1])
         #    for i in range(yvals.shape[1]):
         #        plt.plot(xvals[:, i], yvals[:, i], linestyles[i])
+        #colors = ['#332288', '#88CCEE', '#44AA99', '#117733', '#999933', '#DDCC77', '#CC6677', '#882255', '#AA4499']
         for i in range(yvals.shape[1]):
-            plt.plot(xvals[:, i], yvals[:, i])
+            plt.plot(xvals[:, i], yvals[:, i])#, c=colors[i], ls='solid')
         if yvals.shape[1] > 1:
             if location_dependent:
                 plt.legend(t.astype(str), title='t [s]')
@@ -346,7 +364,6 @@ class SolutionReader:
         plt.xlabel(self.labeldict[x])
         plt.ylabel(self.labeldict[y])
         plt.grid()
-        plt.show()
 
 
 def get_linestyles(n):

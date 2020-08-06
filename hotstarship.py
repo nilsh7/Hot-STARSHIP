@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
     # Initialize output file and write initial distribution
     solwrite = output.SolutionWriter(args["output_file"], layers, Tmap, inputvars, args["force_write"])
-    solwrite.write(inputvars.tStart, layers, Tnu, rhonu, Tmap, rhomap)
+    solwrite.write(inputvars.tStart, layers, Tnu, rhonu, Tmap, rhomap, mgas)
 
     # Initialize deltaTn guess with zero change
     deltaTn = np.zeros(len(Tnu))
@@ -123,7 +123,7 @@ if __name__ == "__main__":
                 print("Completed after %i iterations." % iteration)
                 deltaTn = Tnu - Tn
                 if (it+1) % inputvars.write_step == 0:
-                    solwrite.write(t, layers, Tnu, rhonu, Tmap, rhomap)
+                    solwrite.write(t, layers, Tnu, rhonu, Tmap, rhomap, mgas)
                 break
 
     # Option to compare test case to analytical profile
