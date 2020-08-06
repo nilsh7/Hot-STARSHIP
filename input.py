@@ -85,7 +85,16 @@ reads the input xml file and stores the information
                 self.BCfrontValue = interp1d(data.values[:, 0], data.values[:, 1], kind='linear',
                                              fill_value=0.0, bounds_error=False)
             if self.layers[0].ablative:
-                self.aerocoef = float(root.find("options").find("BCs").find("front").find("coef").text)
+                try:
+                    value = float(root.find("options").find("BCs").find("front").find("coef").text)
+                    self.aerocoef = lambda t: value
+                except ValueError:
+                    # Open file
+                    csv_file = root.find("options").find("BCs").find("front").find("coef").text
+                    with open(csv_file) as f:
+                        data = pd.read_csv(f, sep=';', decimal='.', header=0)
+                    self.aerocoef = interp1d(data.values[:, 0], data.values[:, 1], kind='linear',
+                                             fill_value=0.0, bounds_error=False)
 
         elif self.BCfrontType in ("aerodynamic",):
             try:
@@ -102,7 +111,7 @@ reads the input xml file and stores the information
             self.SurfT_at_t = float(root.find("options").find("BCs").find("front").find("Surface_Temperature").text)
             self.tforT = float(root.find("options").find("BCs").find("front").find("Time_of_Temperature").text)
             mat = self.layers[0].material
-            self.aerocoef = self.BCfrontValue(self.tforT)/(mat.hatmo(self.BLEdgeT_at_t)-mat.hatmo(self.SurfT_at_t))
+            self.aerocoef = lambda t: self.BCfrontValue(self.tforT)/(mat.hatmo(self.BLEdgeT_at_t)-mat.hatmo(self.SurfT_at_t))
             self.BLedge_h = lambda t: self.BCfrontValue(t)/self.aerocoef + mat.hatmo(self.SurfT_at_t)
 
         elif self.BCfrontType == "recovery_enthalpy":
@@ -119,7 +128,17 @@ reads the input xml file and stores the information
                         data = pd.read_csv(f, sep=';', decimal='.', header=0)
                     self.BLedge_h = interp1d(data.values[:, 0], data.values[:, 1], kind='linear',
                                                  fill_value=0.0, bounds_error=False)
-                self.aerocoef = float(root.find("options").find("BCs").find("front").find("coef").text)
+
+                try:
+                    value = float(root.find("options").find("BCs").find("front").find("coef").text)
+                    self.aerocoef = lambda t: value
+                except ValueError:
+                    # Open file
+                    csv_file = root.find("options").find("BCs").find("front").find("coef").text
+                    with open(csv_file) as f:
+                        data = pd.read_csv(f, sep=';', decimal='.', header=0)
+                    self.aerocoef = interp1d(data.values[:, 0], data.values[:, 1], kind='linear',
+                                                 fill_value=0.0, bounds_error=False)
         else:
             raise ValueError("Unsupported front BC %s" % self.BCfrontType)
         self.BCbackType = root.find("options").find("BCs").find("back").attrib["type"]
