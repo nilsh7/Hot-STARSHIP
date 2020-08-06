@@ -4,3 +4,13 @@ venv/
 ~$*
 Data/Materials/**/*.matp
 Data/Materials/**/*.xml
+/Input/input_ablative.xml
+Solution/
+Input/Working/
+Hot-STARSHIP_out_*.csv
+Testing/compare_to_PATO_Temperature.py
+*.csv
+Data/HeatFlux/
+Data/Materials
+Input/
+Testing/
