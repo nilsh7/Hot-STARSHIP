@@ -1,0 +1,8 @@
+;A;B;C
+Virgin Density [kg/m^3];300;900;1600
+Char Density [kg/m^3];0;600;1600
+Pre-exponential factor [kg/(m^3*s)];3.60E+06;1.49E+11;0
+Reaction order;3.00E+00;3.00E+00;0
+Scaled Activation Energy [K];8.56E+03;2.04E+04;0
+Minimum reaction temperature [K];333.33;555.56;1000
+Fraction;0.1;1.00E-01;0.1
