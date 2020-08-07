@@ -83,7 +83,7 @@ lines.color       : black      ## has no affect on plot(); see axes.prop_cycle
 #lines.markerfacecolor  : auto    ## the default markerfacecolor
 #lines.markeredgecolor  : auto    ## the default markeredgecolor
 #lines.markeredgewidth  : 1.0     ## the line width around the marker symbol
-lines.markersize  : 12            ## markersize, in points
+#lines.markersize  : 12            ## markersize, in points
 #lines.dash_joinstyle : round        ## miter|round|bevel
 #lines.dash_capstyle : butt          ## butt|round|projecting
 #lines.solid_joinstyle : round       ## miter|round|bevel
@@ -291,7 +291,7 @@ font.size           : 10.0
 #axes.edgecolor      : black   ## axes edge color
 #axes.linewidth      : 0.8     ## edge linewidth
 axes.grid           : True   ## display grid or not
-#axes.grid.axis      : both    ## which axis the grid should apply to
+axes.grid.axis      : both    ## which axis the grid should apply to
 #axes.grid.which     : major   ## gridlines at major, minor or both ticks
 #axes.titlesize      : large   ## fontsize of the axes title
 #axes.titleweight    : normal  ## font weight of title
@@ -330,7 +330,7 @@ axes.grid           : True   ## display grid or not
                                ## rather than hyphen.  See
                                ## http://en.wikipedia.org/wiki/Plus_and_minus_signs#Character_codes
 # axes.prop_cycle    : cycler('color', ["000000", "182e48", "2b6f39", "a07949", "d38fc5", "c2d8f2"]) + cycler('linestyle', ["-", "--", "-.", ":", "-", "--"])
-axes.prop_cycle    : cycler('color', ["000000", "004488", "BB5566", "DDAA33"]) + cycler('linestyle', ["-", "--", "-.", ":"])
+axes.prop_cycle    : cycler('color', ["000000", "004488", "BB5566", "DDAA33"]*5) + cycler('linestyle', ["-", "--", "-.", ":"]*5) + cycler('marker', [None]*4 + ["o"]*4 + ["v"]*4 + ["s"]*4 + ["D"]*4) + cycler('markevery', [0.2]*20)
                       ## color cycle for plot lines  as list of string
                       ## colorspecs: single letter, long name, or web-style hex
 					  ## Note the use of string escapes here ('1f77b4', instead of 1f77b4)
