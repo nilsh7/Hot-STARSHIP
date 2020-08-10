@@ -355,7 +355,8 @@ class SolutionReader:
         #        plt.plot(xvals[:, i], yvals[:, i], linestyles[i])
         #colors = ['#332288', '#88CCEE', '#44AA99', '#117733', '#999933', '#DDCC77', '#CC6677', '#882255', '#AA4499']
         for i in range(yvals.shape[1]):
-            plt.plot(xvals[:, i], yvals[:, i])#, c=colors[i], ls='solid')
+            to_plot = ~np.isnan(yvals[:, i])
+            plt.plot(xvals[to_plot, i], yvals[to_plot, i])#, c=colors[i], ls='solid')
         if yvals.shape[1] > 1:
             if location_dependent:
                 plt.legend(t.astype(str), title='t [s]')
@@ -363,7 +364,6 @@ class SolutionReader:
                 plt.legend(z.astype(str), title='z [m]')
         plt.xlabel(self.labeldict[x])
         plt.ylabel(self.labeldict[y])
-        plt.grid()
 
 
 def get_linestyles(n):

@@ -66,10 +66,12 @@ if __name__ == "__main__":
     # Initialize deltaTn guess with zero change
     deltaTn = np.zeros(len(Tnu))
 
-    for it, t in enumerate(np.arange(inputvars.tStart+inputvars.tDelta, inputvars.tEnd + 1e-5, inputvars.tDelta)):
+    for it, t in enumerate(inputvars.ts):
 
         # Print some information about current time step
         print("\n+++ New time step: t = %.4f secs +++" % t)
+        inputvars.tDelta = inputvars.ts[it] - inputvars.ts[it-1]\
+            if it != 0 else inputvars.ts[it] - inputvars.tStart
 
         # Copy values of previous time step for time dependent function values
         Tn, rhon, rhoin = Tnu.copy(), rhonu.copy(), rhoimu.copy()

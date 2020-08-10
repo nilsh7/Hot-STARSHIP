@@ -4,6 +4,7 @@ import material
 import sys
 from scipy.interpolate import interp1d
 import pandas as pd
+import numpy as np
 
 
 class Layer:
@@ -146,9 +147,17 @@ reads the input xml file and stores the information
             raise ValueError("Unsupported back BC %s" % self.BCbackType)
 
         # Time stepping
-        self.tStart = float(root.find("options").find("time").find("start").text)
-        self.tEnd = float(root.find("options").find("time").find("end").text)
-        self.tDelta = float(root.find("options").find("time").find("delta").text)
+        if root.find("options").find("time").find("file") is not None:
+            f = root.find("options").find("time").find("file").text
+            self.ts = pd.read_csv(f, sep=';', decimal='.', header=0).to_numpy().flatten()
+            self.tStart = self.ts[0]
+            self.tEnd = self.ts[1]
+            self.ts = self.ts[1:]
+        else:
+            self.tStart = float(root.find("options").find("time").find("start").text)
+            self.tEnd = float(root.find("options").find("time").find("end").text)
+            self.tDelta = float(root.find("options").find("time").find("delta").text)
+            self.ts = np.arange(self.tStart+self.tDelta, self.tEnd + 1e-8, self.tDelta)
         self.write_step = int(root.find("options").find("time").find("write_every").text)
 
         # Initialization

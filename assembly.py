@@ -142,9 +142,9 @@ def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars, t
 
         if key == "sdot":
 
-            if inputvars.BCfrontType == "aerodynamic":
+            addWallBlowMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
 
-                addWallBlowMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
+            addBcMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
 
         elif key[0:3] == "lay":
 
@@ -160,11 +160,10 @@ def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars, t
 
             addConductionMatrixOuter(diags, first_col, Tnu, Tmap, layers, key, tDelta)
 
-    # Add BC
-    if layers[0].ablative:
+    # Add radiation
+    addRadiationMatrix(diags, Tnu, Tmap, layers, inputvars)
 
-        addBcMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
-
+    # Add Boundary Condition
     if inputvars.BCfrontType in ("aerodynamic", "recovery_enthalpy"):
 
         addAerodynamicMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
@@ -177,16 +176,16 @@ def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars, t
     else:
         raise ValueError("Unimplemented front BC %s" % inputvars.BCfrontType)
 
-    addRadiationMatrix(diags, Tnu, Tmap, layers, inputvars)
-
     #Jtest = dia_matrix((len(Tnu), len(Tnu)))
     #for diag, offset in diags:
     #    Jtest += dia_matrix((diag, offset), shape=(len(Tnu), len(Tnu)))
 
+    # Assemble diagonals into matrix
     data = np.array([diags.c, diags.m1[:-1], diags.p1[:-1]])
     offsets = np.array([0, -1, +1])
     Jdia = dia_matrix((data, offsets), shape=(len(Tnu), len(Tnu)))
 
+    # Add first column (sensitivity w.r.t. sdot)
     Jlil = Jdia.tolil()
     Jlil[:, 0] += first_col.reshape(-1, 1)
     Jcsc = Jlil.tocsc()
@@ -202,8 +201,9 @@ def assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas,
 
         if key == "sdot":
 
-            if inputvars.BCfrontType == "aerodynamic":
-                fnu = addWallBlowVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
+            fnu = addBcVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
+
+            fnu = addWallBlowVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
 
         elif key[0:3] == "lay":
 
@@ -219,11 +219,10 @@ def assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas,
 
             fnu = addConductionVectorOuter(fnu, Tnu, Tmap, layers, key)
 
-    # Add BC
-    if layers[0].ablative:
+    # Add radiation
+    fnu = addRadiationVector(fnu, Tnu, Tmap, layers, inputvars)
 
-        fnu = addBcVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
-
+    # Add Boundary Condition
     if inputvars.BCfrontType in ("aerodynamic", "recovery_enthalpy"):
 
         fnu = addAerodynamicVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
@@ -234,8 +233,6 @@ def assembleTVector(layers, layerspre, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas,
 
     else:
         raise ValueError("Unimplemented front BC %s" % inputvars.BCfrontType)
-
-    fnu = addRadiationVector(fnu, Tnu, Tmap, layers, inputvars)
 
     return fnu
 
@@ -692,12 +689,9 @@ def addPyroMatrix(diags, Tnu, Tmap, mgas, layers, key, inputvars):
     # Flux at minus side
     dPjm12_dTj = 1/2 * mgasm12 * mat.gas.cp(Tj)
     dPjm12_dTjm1 = 1/2 * mgasm12 * m1(mat.gas.cp(Tj))
-    if inputvars.BCfrontType == "heatflux":
-        dPjm12_dTj[0], dPjm12_dTjm1[0] = (mgasm12[0] * mat.gas.cp(Tj[0]), 0)  # TODO: Check whether this is correct or if this should be in WallBlowMatrix, too
-    elif inputvars.BCfrontType in ("aerodynamic", "recovery_enthalpy"):
+
+    if layers[0].ablative:
         dPjm12_dTj[0], dPjm12_dTjm1[0] = (0, 0)  # Implemented in WallBlowMatrix
-    else:
-        raise ValueError("Unimplemented front BC %s" % inputvars.BCfrontType)
 
     # Assemble Jacobian matrix
     fluxes = (dPjp12_dTj, dPjp12_dTjp1, dPjm12_dTj, dPjm12_dTjm1)
@@ -734,12 +728,8 @@ def addPyroVector(fnu, Tnu, Tmap, mgas, layers, key, inputvars):
     # Flux at minus side
     Pjm12 = mgasm12 * m12(mat.gas.h(Tj))
     Pjm12[0] = mgasm12[0] * mat.gas.h(Tj[0])
-    if inputvars.BCfrontType == "heatflux":
-        Pjm12[0] = mgasm12[0] * mat.gas.h(Tj[0])  # TODO: check whether this is correct (see matrix)
-    elif inputvars.BCfrontType in ("aerodynamic", "recovery_enthalpy"):
+    if layers[0].ablative:
         Pjm12[0] = 0  # Implemented in WallBlowVector
-    else:
-        raise ValueError("Unimplemented front BC %s" % inputvars.BCfrontType)
 
     # Assemble Jacobian matrix
     fnu[iStart:iEnd + 1] += Pjp12 - Pjm12
