@@ -11,6 +11,8 @@ from io import StringIO
 import matplotlib.pyplot as plt
 from scipy import interpolate as ip
 from scipy.integrate import cumtrapz
+import input
+import math
 
 # previously used packages: csv, os, glob, plt, json, jsonpickle, pickle, sympy
 
@@ -164,6 +166,56 @@ reads csv file and stores data
 
     def e(self, T, *ignoreargs):
         return self.data.e(T)
+
+
+class CorrugatedMaterial(Material):
+    def __init__(self, args):
+
+        corrugated_vals = args["corrugated_vals"]
+
+        self.mat_core = input.readMaterial(matname=corrugated_vals["mat_core"], ablative=False, corrugated=False)
+        self.mat_web = input.readMaterial(matname=corrugated_vals["mat_web"], ablative=False, corrugated=False)
+        self.dc = corrugated_vals["dc"]
+        self.dw = corrugated_vals["dw"]
+        self.p = corrugated_vals["p"]
+        self.theta = corrugated_vals["theta"]
+
+    # For the following formulas, see eqs. 1-3 in: Gogu, C., Bapanapalli, S. K., Haftka, R. T., & Sankar,
+    # B. V. (2009). Comparison of materials for an integrated thermal protection system for spacecraft reentry.
+    # Journal of Spacecraft and Rockets, 46(3), 501–513. https://doi.org/10.2514/1.35669
+    def rho(self, T, *ignoreargs):
+        mw = self.mat_web
+        mc = self.mat_core
+        return (mw.rho(T)*self.dw + mc.rho(T)*(self.p*math.sin(self.theta) - self.dw))/(self.p*math.sin(self.theta))
+
+    def cp(self, T, *ignoreargs):
+        mw = self.mat_web
+        mc = self.mat_core
+        return (mw.rho(T)*mw.cp(T)*self.dw + mc.rho(T)*mc.cp(T)*(self.p*math.sin(self.theta)-self.dw)) / \
+               (mw.rho(T)*self.dw + mc.rho(T)*(self.p*math.sin(self.theta)-self.dw))
+
+    def k(self, T, *ignoreargs):
+        mw = self.mat_web
+        mc = self.mat_core
+        return (mw.k(T)*self.dw + mc.k(T)*(self.p*math.sin(self.theta)-self.dw))/(self.p*math.sin(self.theta))
+
+    def dkdT(self, T, *ignoreargs):
+        mw = self.mat_web
+        mc = self.mat_core
+        return (mw.dkdT(T) * self.dw + mc.dkdT(T) * (self.p * math.sin(self.theta) - self.dw)) / (
+                    self.p * math.sin(self.theta))
+
+    def e(self, T, *ignoreargs):
+        mw = self.mat_web
+        mc = self.mat_core
+        return (mw.rho(T) * mw.e(T) * self.dw + mc.rho(T) * mc.e(T) * (self.p * math.sin(self.theta) - self.dw)) / \
+               (mw.rho(T) * self.dw + mc.rho(T) * (self.p * math.sin(self.theta) - self.dw))
+
+    def eps(self, T, *ignoreargs):
+        return self.mat_core.eps(T)
+
+    def depsdT(self, T, *ignoreargs):
+        return self.mat_core.depsdT(T)
 
 
 class AblativeMaterial(Material):
@@ -694,10 +746,11 @@ checks and corrects the input to material creation
     return args
 
 
-def createMaterial(inputdir, outfile=None, ablative=True, Trange="300:100:6000", pressure=101325, bg="0.01:0.3333:100",
-                   atmosphere="Earth"):
+def createMaterial(inputdir, outfile=None, ablative=True, corrugated=False, Trange="300:100:6000", pressure=101325, bg="0.01:0.3333:100",
+                   atmosphere="Earth", corrugated_vals=None):
     """
 creates a Material class object that holds various thermophysical properties
+    :param corrugated_vals: saves information about corrugated layer properties
     :param inputdir: input directory
     :param outfile: output file
     :param ablative: ablative material flag
@@ -711,6 +764,8 @@ creates a Material class object that holds various thermophysical properties
     args["input_dir"] = inputdir
     args["output_file"] = outfile
     args["ablative"] = ablative
+    args["corrugated"] = corrugated
+    args["corrugated_vals"] = corrugated_vals
     args["temprange"] = Trange
     args["p"] = pressure
     args["bg"] = bg
@@ -719,12 +774,18 @@ creates a Material class object that holds various thermophysical properties
     args = checkInput(args)
 
     # Read and store material information
-    material = AblativeMaterial(args) if args["ablative"] else NonAblativeMaterial(args)
+    if args["ablative"]:
+        material = AblativeMaterial(args)
+    elif args["corrugated"]:
+        material = CorrugatedMaterial(args)
+    else:
+        material = NonAblativeMaterial(args)
 
     # Write to .matp file
-    with open(args["output_file"], 'wb') as outfile:
-        # save using dill, recurse=True necessary for enabling pickling lambdify function from sympy
-        dill.dump(material, outfile, recurse=True)
+    if type(material) is not CorrugatedMaterial:
+        with open(args["output_file"], 'wb') as outfile:
+            # save using dill, recurse=True necessary for enabling pickling lambdify function from sympy
+            dill.dump(material, outfile, recurse=True)
 
     return material
 
