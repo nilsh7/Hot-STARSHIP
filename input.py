@@ -1,10 +1,11 @@
 import xml.etree.ElementTree as ET
 import dill
-import material
+import material as mat_module
 import sys
 from scipy.interpolate import interp1d
 import pandas as pd
 import numpy as np
+import math
 
 
 class Layer:
@@ -14,35 +15,54 @@ creates a Layer objects that holds various information about the TPS layer
         :param layerelem: layer element from xml tree
         :param root: xml root element
         """
-        matname = layerelem.find("material").text
+
+        # Check if layer is ablative
         self.ablative = True if layerelem.attrib["number"] == "1" and layerelem.find("ablative").text == "True" \
             else False
         if layerelem.find("ablative") is not None:
             if int(layerelem.attrib["number"]) > 1 and layerelem.find("ablative").text == "True":
                 raise ValueError("Material at layer no. %i cannot be ablative. Only the first layer can."
                                  % int(layerelem.attrib["number"]))
-        # Read .matp file if it was specified
-        if matname[-5:] == ".matp":
-            with open(matname, 'rb') as matpfile:
-                self.material = dill.load(matpfile)
-            # if it is an ablative material check whether the data was generated for the right pressure and atmosphere
-            if type(self.material) is material.AblativeMaterial:
-                if self.material.pressure == float(root.find("options").find("ambient").find("pressure").text) and \
-                        self.material.atmosphere == root.find("options").find("ambient").find("atmosphere").text:
-                    print("Using %s" % matname)  # nothing has changed, continue
-                else:
-                    # if not, run material generation again
-                    self.material = material.createMaterial(matname, ablative=True,
-                                            pressure=float(root.find("options").find("ambient").find("pressure").text),
-                                            atmosphere=root.find("options").find("ambient").find("atmosphere").text)
-            else:
-                print("Using %s" % matname)  # non-ablative material has no problem specific options, continue
+
+        if self.ablative:
+            ablative_vals = {
+                "pressure": float(root.find("options").find("ambient").find("pressure").text),
+                "atmosphere": root.find("options").find("ambient").find("atmosphere").text
+            }
         else:
-            # if no file was specified, generate a material file and store it
-            ablativeLayer = True if layerelem.attrib["number"] == "1" and self.ablative else False
-            self.material = material.createMaterial(matname, ablative=ablativeLayer,
-                                        pressure=float(root.find("options").find("ambient").find("pressure").text),
-                                        atmosphere=root.find("options").find("ambient").find("atmosphere").text)
+            ablative_vals = None
+
+        # Check if layer is corrugated
+        if layerelem.find("corrugated") is not None:
+            if layerelem.find("corrugated").text == "True":
+                self.corrugated = True
+                corrugated_vals = {
+                    "mat_core": layerelem.find("material_core").text,
+                    "mat_web": layerelem.find("material_web").text,
+                    "dc": float(layerelem.find("thickness").text),
+                    "dw": float(layerelem.find("web_thickness").text),
+                    "p": float(layerelem.find("half_cell_length").text),
+                    "theta": math.radians(float(layerelem.find("corrugation_angle").text))
+                }
+            else:
+                self.corrugated = False
+                corrugated_vals = None
+        else:
+            self.corrugated = False
+            corrugated_vals = None
+
+        # Check if layer is not corrugated and ablative
+        if self.ablative and self.corrugated:
+            raise ValueError("Material cannot be ablative and corrugated.")
+
+        # Construct material
+        if not self.corrugated:
+            matname = layerelem.find("material").text
+            self.material = readMaterial(matname, self.ablative, self.corrugated,
+                                     ablative_vals, corrugated_vals)
+        else:
+            self.material = mat_module.createMaterial("Corrugated_Mat", ablative=False, corrugated=True,
+                                                      corrugated_vals=corrugated_vals)
 
         self.thickness = float(layerelem.find("thickness").text)
         self.firstcell = float(layerelem.find("firstcell").text) if layerelem.find("firstcell") is not None else self.thickness/100.0
@@ -167,6 +187,36 @@ reads the input xml file and stores the information
         # Turbulent flow
         self.Tamb = float(root.find("options").find("ambient").find("temperature").text)
         self.turbflow = bool(root.find("options").find("ambient").find("turbulent_flow").text)
+
+
+def readMaterial(matname, ablative, corrugated, ablative_vals=None, corrugated_vals=None):
+    # Read .matp file if it was specified
+    if matname[-5:] == ".matp":
+        with open(matname, 'rb') as matpfile:
+            material = dill.load(matpfile)
+        # if it is an ablative material check whether the data was generated for the right pressure and atmosphere
+        if type(material) is mat_module.AblativeMaterial:
+            if material.pressure == ablative_vals["pressure"] and \
+                    material.atmosphere == ablative_vals["atmosphere"]:
+                print("Using %s" % matname)  # nothing has changed, continue
+            else:
+                # if not, run material generation again
+                material = mat_module.createMaterial(matname, ablative=True, corrugated=False,
+                                                     pressure=ablative_vals["pressure"],
+                                                     atmosphere=ablative_vals["atmosphere"])
+        else:
+            print("Using %s" % matname)  # non-ablative material has no problem specific options, continue
+    else:
+        # if no file was specified, generate a material file and store it
+        if ablative:
+            material = mat_module.createMaterial(matname, ablative=True, corrugated=False,
+                                                 pressure=ablative_vals["pressure"],
+                                                 atmosphere=ablative_vals["atmosphere"])
+        else:
+            material = mat_module.createMaterial(matname, ablative=False, corrugated=corrugated,
+                                                 corrugated_vals=corrugated_vals)
+
+    return material
 
 
 if __name__ == "__main__":

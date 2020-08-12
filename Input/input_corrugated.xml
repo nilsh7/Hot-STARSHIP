@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<input>
+    <layers>
+        <layer number="1">
+            <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Test_2</material>
+            <thickness>0.002</thickness>
+            <firstcell>0.00002</firstcell>
+            <maxgrowth>1.03</maxgrowth>
+            <ablative>False</ablative>
+        </layer>
+        <layer number="2">
+            <material_core>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Test_1</material_core>
+            <material_web>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Aluminium</material_web>
+            <thickness>0.05</thickness>
+            <web_thickness>5e-4</web_thickness>
+            <half_cell_length>100</half_cell_length>
+            <corrugation_angle>80</corrugation_angle>
+            <corrugated>True</corrugated>
+        </layer>
+        <layer number="3">
+            <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Test_2</material>
+            <thickness>0.002</thickness>
+        </layer>
+    </layers>
+    <options>
+        <BCs>
+            <front type="heatflux">
+                <value>7.5e5</value>
+            </front>
+            <!--front type="aerodynamic">
+                <value>/Users/nils/PycharmProjects/H_STARSHIP/Data/HeatFlux/Test_cos_750kW.csv</value>
+                <BL_Edge_Temperature>1500</BL_Edge_Temperature>
+                <Surface_Temperature>800</Surface_Temperature>
+                <Time_of_Temperature>25.0</Time_of_Temperature>
+            </front-->
+            <back type="adiabatic"></back>
+        </BCs>
+        <time>
+            <start>0.0</start>
+            <end>100.0</end>
+            <delta>0.1</delta>
+            <write_every>1</write_every>
+        </time>
+        <init type="Temperature">
+            <value>300.0</value>
+        </init>
+        <ambient>
+            <temperature>300</temperature>
+            <pressure>101325</pressure>
+            <atmosphere>Earth</atmosphere>
+            <turbulent_flow>True</turbulent_flow>
+        </ambient>
+    </options>
+</input>
