@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<input>
+    <layers>
+        <layer number="1">
+            <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/TACOT_3.0/TACOT_3.0.matp</material>
+            <thickness>0.05</thickness>
+            <firstcell>0.0001</firstcell>
+            <maxgrowth>1.03</maxgrowth>
+            <ablative>True</ablative>
+        </layer>
+    </layers>
+    <options>
+        <BCs>
+            <front type="recovery_enthalpy">
+                <value>/Users/nils/PycharmProjects/H_STARSHIP/Data/Recovery_Enthalpy/Test_25MJ_Ablation_Test_Case_2.csv</value>
+                <coef>/Users/nils/PycharmProjects/H_STARSHIP/Data/Recovery_Enthalpy/Test_Transfer_Coeff_Ablation_Test_Case_2.csv</coef>
+            </front>
+            <!--front type="aerodynamic">
+                <value>3.7e6</value>
+                <BL_Edge_Temperature>1500</BL_Edge_Temperature>
+                <Surface_Temperature>800</Surface_Temperature>
+                <Time_of_Temperature>25.0</Time_of_Temperature>
+            </front-->
+            <back type="adiabatic"></back>
+        </BCs>
+        <time>
+            <!--file>/Users/nils/PycharmProjects/H_STARSHIP/Input/times_TACOT.csv</file-->
+            <start>0</start>
+            <end>120.0</end>
+            <delta>0.01</delta>
+            <write_every>1</write_every>
+        </time>
+        <init type="Temperature">
+            <value>300.0</value>
+        </init>
+        <ambient>
+            <temperature>300</temperature>
+            <pressure>101325</pressure>
+            <atmosphere>Earth</atmosphere>
+            <turbulent_flow>False</turbulent_flow>
+        </ambient>
+    </options>
+</input>
