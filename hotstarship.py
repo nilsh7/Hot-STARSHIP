@@ -66,6 +66,7 @@ if __name__ == "__main__":
     # Initialize deltaTn guess with zero change
     deltaTn = np.zeros(len(Tnu))
 
+    last_step = len(inputvars.ts) - 1
     for it, t in enumerate(inputvars.ts):
 
         # Print some information about current time step
@@ -124,7 +125,7 @@ if __name__ == "__main__":
             #if np.linalg.norm(dT/Tnu) < 1.0e-5:
                 print("Completed after %i iterations." % iteration)
                 deltaTn = Tnu - Tn
-                if (it+1) % inputvars.write_step == 0:
+                if ((it+1) % inputvars.write_step) == 0 or (it == last_step):
                     solwrite.write(t, layers, Tnu, rhonu, Tmap, rhomap, mgas)
                 break
 
