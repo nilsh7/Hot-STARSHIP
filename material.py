@@ -140,11 +140,8 @@ reads csv file and stores data
         self.data.rhoLin = constructLinearSpline(self.data.Tforrho, self.data.rho)
 
         # e
-        self.data.e = lambda T: np.array([self.data.cpLin.integral(0, Tval) for Tval in T]) if type(T) is np.ndarray\
+        self.data.e = lambda T: np.array([self.data.cpLin.integral(0, Tval) for Tval in T]) if type(T) is np.ndarray \
             else self.data.cpLin.integral(0, T)
-        #self.data.e, self.data.eQuad = constructE(self.data.Tforcp, self.data.cp)
-        #self.data.eInterp = ip.interp1d(x=self.data.Tforcp, y=self.data.e, kind='quadratic', fill_value='extrapolate')
-
 
     def cp(self, T, *ignoreargs):
         return self.data.cpLin(T)
@@ -170,7 +167,6 @@ reads csv file and stores data
 
 class CorrugatedMaterial(Material):
     def __init__(self, args):
-
         corrugated_vals = args["corrugated_vals"]
 
         self.mat_core = input.readMaterial(matname=corrugated_vals["mat_core"], ablative=False, corrugated=False)
@@ -186,24 +182,26 @@ class CorrugatedMaterial(Material):
     def rho(self, T, *ignoreargs):
         mw = self.mat_web
         mc = self.mat_core
-        return (mw.rho(T)*self.dw + mc.rho(T)*(self.p*math.sin(self.theta) - self.dw))/(self.p*math.sin(self.theta))
+        return (mw.rho(T) * self.dw + mc.rho(T) * (self.p * math.sin(self.theta) - self.dw)) / (
+                    self.p * math.sin(self.theta))
 
     def cp(self, T, *ignoreargs):
         mw = self.mat_web
         mc = self.mat_core
-        return (mw.rho(T)*mw.cp(T)*self.dw + mc.rho(T)*mc.cp(T)*(self.p*math.sin(self.theta)-self.dw)) / \
-               (mw.rho(T)*self.dw + mc.rho(T)*(self.p*math.sin(self.theta)-self.dw))
+        return (mw.rho(T) * mw.cp(T) * self.dw + mc.rho(T) * mc.cp(T) * (self.p * math.sin(self.theta) - self.dw)) / \
+               (mw.rho(T) * self.dw + mc.rho(T) * (self.p * math.sin(self.theta) - self.dw))
 
     def k(self, T, *ignoreargs):
         mw = self.mat_web
         mc = self.mat_core
-        return (mw.k(T)*self.dw + mc.k(T)*(self.p*math.sin(self.theta)-self.dw))/(self.p*math.sin(self.theta))
+        return (mw.k(T) * self.dw + mc.k(T) * (self.p * math.sin(self.theta) - self.dw)) / (
+                    self.p * math.sin(self.theta))
 
     def dkdT(self, T, *ignoreargs):
         mw = self.mat_web
         mc = self.mat_core
         return (mw.dkdT(T) * self.dw + mc.dkdT(T) * (self.p * math.sin(self.theta) - self.dw)) / (
-                    self.p * math.sin(self.theta))
+                self.p * math.sin(self.theta))
 
     def e(self, T, *ignoreargs):
         mw = self.mat_web
@@ -244,6 +242,8 @@ class AblativeMaterial(Material):
 
         self.calculateAblativeProperties(args)
 
+        self.calculateEnergies()
+
     def readFile(self, iDir, globdir, csv_files):
         """
 reads csv file and stores data
@@ -271,8 +271,13 @@ reads csv file and stores data
 
             # Open file
             with open(hof_file) as f:
-                hof_data = pd.read_csv(f, sep=';', decimal=',', header=None, index_col=0, converters={1: float})
+                hof_data = pd.read_csv(f, sep=';', decimal='.', header=None, index_col=0,
+                                       converters={k: convertf for k in range(100)})
 
+            # Replace commas with dots and convert to float
+            hof_data = hof_data.apply(lambda x: x.str.replace(',', '.'))
+            hof_data = hof_data.apply(lambda x: x.str.replace(r'^\s*$', "NaN", regex=True))
+            hof_data = hof_data.astype(np.float64)
             hof_data = dropnafromboth(hof_data)
 
             checkForNonSI(hof_data, hof_file)
@@ -355,9 +360,7 @@ reads csv file and stores data
         self.virgin.depsdT = self.virgin.eps.derivative(1)
 
         # e
-        self.virgin.eshift = self.virgin.data.hf - self.virgin.cp.integral(0, self.data.Tref)
-        self.virgin.e = lambda T: np.array([self.virgin.cp.integral(0, Tval) + self.virgin.eshift for Tval in T])\
-            if type(T) is np.ndarray else self.virgin.cp.integral(0, T) + self.virgin.eshift
+        # to be calculated later
 
         ### Char ###
         # cp
@@ -372,28 +375,25 @@ reads csv file and stores data
         self.char.depsdT = self.char.eps.derivative(1)
 
         # e
-        self.char.eshift = self.char.data.hf - self.char.cp.integral(0, self.data.Tref)
-        self.char.e = lambda T: np.array([self.char.cp.integral(0, Tval) + self.char.eshift for Tval in T]) \
-            if type(T) is np.ndarray else self.char.cp.integral(0, T) + self.char.eshift
+        # to be calculated later
 
         ### Gas ###
         # Gas enthalpy to be determined using mppequil (see calculatePyroGasComposition)
 
         ### Combined ###
         # cp
-        self.cp = lambda T, wv: wv * self.virgin.cp(T) + (1-wv) * self.char.cp(T)
+        self.cp = lambda T, wv: wv * self.virgin.cp(T) + (1 - wv) * self.char.cp(T)
 
         # k
-        self.k = lambda T, wv: wv * self.virgin.k(T) + (1-wv) * self.char.k(T)
+        self.k = lambda T, wv: wv * self.virgin.k(T) + (1 - wv) * self.char.k(T)
         self.dkdT = lambda T, wv: wv * self.virgin.dkdT(T) + (1 - wv) * self.char.dkdT(T)
 
         # eps
-        self.eps = lambda T, wv: wv * self.virgin.eps(T) + (1-wv) * self.char.eps(T)
-        self.depsdT = lambda T, wv: wv * self.virgin.depsdT(T) + (1-wv) * self.char.depsdT(T)
+        self.eps = lambda T, wv: wv * self.virgin.eps(T) + (1 - wv) * self.char.eps(T)
+        self.depsdT = lambda T, wv: wv * self.virgin.depsdT(T) + (1 - wv) * self.char.depsdT(T)
 
         # e
-        self.e = lambda T, wv: wv * self.virgin.e(T) + (1-wv) * self.char.e(T)
-
+        # to be calculated later
 
     def calculateAblativeProperties(self, args):
         """
@@ -458,11 +458,8 @@ calculates pyrolysis gas composition using mppequil
         htab = pd.read_table(h, header=0, delim_whitespace=True)
 
         # Calculate enthalpy
-        hPreliminary = constructLinearSpline(x=htab.values[:, 0], y=htab.values[:, 1])
-        self.gas.data.hshift = self.gas.data.hf - hPreliminary(self.data.Tref)
-        self.gas.h = constructLinearSpline(x=htab.values[:, 0], y=htab.values[:, 1] + self.gas.data.hshift)
+        self.gas.h = constructLinearSpline(x=htab.values[:, 0], y=htab.values[:, 1])
         self.gas.cp = self.gas.h.derivative()
-
 
     def calculateBPrimes(self, args):
         """
@@ -525,18 +522,14 @@ calculates bprime tables using bprime executable provided by mutation++
         self.data.Tforbprime = bhtab['Tw[K]'].values
         self.data.bg = b_vals
 
-        # Calculate formation enthalpy
-        self.data.hw_shift = self.gas.data.hf - ip.interp1d(self.data.Tforbprime, self.data.hw[:, -1], fill_value='extrapolate')(self.data.Tref)
-        self.data.hw += self.data.hw_shift
-
         # Calculate interpolation functions
         self.bc = ip.interp2d(self.data.bg[:-1], self.data.Tforbprime, self.data.bc[:, :-1])
         self.hw = ip.interp2d(self.data.bg[:-1], self.data.Tforbprime, self.data.hw[:, :-1])
 
         # Calculate gradient functions
-        self.dbcdT  = lambda bg, T, tol=1.0e-8: (self.bc(bg, T + tol) - self.bc(bg, T - tol)) / (2 * tol)
+        self.dbcdT = lambda bg, T, tol=1.0e-8: (self.bc(bg, T + tol) - self.bc(bg, T - tol)) / (2 * tol)
         self.dbcdbg = lambda bg, T, tol=1.0e-8: (self.bc(bg + tol, T) - self.bc(bg - tol, T)) / (2 * tol)
-        self.dhwdT  = lambda bg, T, tol=1.0e-8: (self.hw(bg, T + tol) - self.hw(bg, T - tol)) / (2 * tol)
+        self.dhwdT = lambda bg, T, tol=1.0e-8: (self.hw(bg, T + tol) - self.hw(bg, T - tol)) / (2 * tol)
         self.dhwdbg = lambda bg, T, tol=1.0e-8: (self.hw(bg + tol, T) - self.hw(bg - tol, T)) / (2 * tol)
 
     def plotBc(self):
@@ -554,6 +547,21 @@ plots Bc over T table with Bg as parameter
         plt.subplots_adjust(right=0.7)
         plt.show()
 
+    def plot_hw(self):
+        """
+plots wall enthalpy hw over T with Bg as parameter
+        :return:
+        """
+        for ib, bg in enumerate(self.data.bg):
+            plt.plot(self.data.Tforbprime, self.data.hw[:, ib], label='%.2g' % bg)
+        plt.xlabel('T [K]')
+        plt.ylabel('h_w [J/kg]')
+        plt.grid(axis='x', which='major')
+        plt.grid(axis='y', which='both')
+        plt.legend(bbox_to_anchor=(1.04, 0.5), loc="center left", borderaxespad=0, title='B\'_g')
+        plt.subplots_adjust(right=0.7)
+        plt.show()
+
     def storeVariables(self, args):
         """
 stores pressure and atmosphere values
@@ -562,6 +570,19 @@ stores pressure and atmosphere values
         self.pressure = float(args["p"])
         self.atmosphere = args["planet"]
 
+    def calculateEnergies(self):
+
+        # Calculate shifts
+        Tref = self.data.Tref
+        self.virgin.eshift = self.virgin.data.hf - self.gas.data.hf + self.gas.h(Tref)
+        self.char.eshift = self.char.data.hf - self.gas.data.hf + self.gas.h(Tref)
+
+        # Calculate energies
+        self.virgin.e = lambda T: np.array([self.virgin.cp.integral(Tref, Tval) + self.virgin.eshift for Tval in T]) \
+            if type(T) is np.ndarray else self.virgin.cp.integral(Tref, T) + self.virgin.eshift
+        self.char.e = lambda T: np.array([self.char.cp.integral(Tref, Tval) + self.char.eshift for Tval in T]) \
+            if type(T) is np.ndarray else self.char.cp.integral(Tref, T) + self.char.eshift
+        self.e = lambda T, wv: wv * self.virgin.e(T) + (1 - wv) * self.char.e(T)
 
     def calculateHatmo(self, args):
 
@@ -585,7 +606,7 @@ stores pressure and atmosphere values
         htab = pd.read_table(h, header=0, delim_whitespace=True)
 
         # Calculate enthalpy
-        self.hatmo = constructLinearSpline(x=htab.values[:, 0], y=htab.values[:, 1] + self.data.hw_shift)
+        self.hatmo = constructLinearSpline(x=htab.values[:, 0], y=htab.values[:, 1])
 
 
 def constructLinearSpline(x, y):
@@ -598,7 +619,7 @@ constructs a piecewise linear spline through data
     if len(x) != len(y):
         raise ValueError("Arrays should have same length.")
     if len(x) == 1:
-        x = np.concatenate((x, x*1.01))
+        x = np.concatenate((x, x * 1.01))
         y = np.repeat(y, 2)
 
     y = np.hstack((y[0], y, y[-1]))
@@ -611,7 +632,7 @@ constructs a piecewise linear spline through data
 def constructE(Tforcp, cp, shift=0):
     if len(cp) == 1:
         cp = np.repeat(cp, 2)
-        Tforcp = np.hstack((Tforcp, Tforcp*2))
+        Tforcp = np.hstack((Tforcp, Tforcp * 2))
     elif len(cp) == 2:
         cp = np.array((cp[0], np.mean(cp), cp[1]))
         Tforcp = np.array((Tforcp[0], np.mean(Tforcp), Tforcp[1]))
@@ -746,7 +767,8 @@ checks and corrects the input to material creation
     return args
 
 
-def createMaterial(inputdir, outfile=None, ablative=True, corrugated=False, Trange="300:100:6000", pressure=101325, bg="0.01:0.3333:100",
+def createMaterial(inputdir, outfile=None, ablative=True, corrugated=False, Trange="300:100:6000", pressure=101325,
+                   bg="0.01:0.3333:100",
                    atmosphere="Earth", corrugated_vals=None):
     """
 creates a Material class object that holds various thermophysical properties
