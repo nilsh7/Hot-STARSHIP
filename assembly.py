@@ -1088,6 +1088,9 @@ def updateRho(lay, rhoimu, rhoin, rhonu, rhomap, Tnu, Tmap, tDelta):
 
     return rhonu, rhoimu, mgas
 
+# Specifies the ramp length from which decomposition goes from zero to full
+# Temperature to add where full decomposition takes place, zero decomposition at Tmin
+Tramp = 1.0
 
 def drhodt(mat, rhoi, Tj):
     rhoc = np.repeat(mat.data.charRhoFrac0.reshape(1, -1), repeats=len(Tj), axis=0)
@@ -1098,9 +1101,10 @@ def drhodt(mat, rhoi, Tj):
     T = np.repeat(Tj.reshape(-1,1), repeats=len(mat.data.charRhoFrac0), axis=1)
     Tmin = np.repeat(mat.data.Tmin.reshape(-1, 3), repeats=len(Tj), axis=0)
     decomp = np.logical_and(rhoc != rhov, T > Tmin)
+    ramp_fac = np.minimum((T[decomp]-Tmin[decomp])/(Tmin[decomp]+Tramp - Tmin[decomp]), 1.0)
     val = np.zeros(rhoi.shape)
     val[decomp] = -kr[decomp] * ((rhoi[decomp] - rhoc[decomp]) / (rhov[decomp] - rhoc[decomp])) ** nr[decomp] \
-                  * np.exp(-Ei[decomp] / T[decomp])
+                  * np.exp(-Ei[decomp] / T[decomp]) * ramp_fac
     return val
 
 
@@ -1113,8 +1117,9 @@ def ddrhodt_drho(mat, rhoi, Tj):
     T = np.repeat(Tj.reshape(-1, 1), repeats=len(mat.data.charRhoFrac0), axis=1)
     Tmin = np.repeat(mat.data.Tmin.reshape(-1, 3), repeats=len(Tj), axis=0)
     decomp = np.logical_and(rhoc != rhov, T > Tmin)
+    ramp_fac = np.minimum((T[decomp] - Tmin[decomp]) / (Tmin[decomp] + Tramp - Tmin[decomp]), 1.0)
     val = np.zeros(rhoi.shape)
     val[decomp] = -kr[decomp] * nr[decomp] / (rhov[decomp] - rhoc[decomp]) *\
                   ((rhoi[decomp] - rhoc[decomp]) / (rhov[decomp] - rhoc[decomp])) ** (nr[decomp] - 1) \
-                  * np.exp(-Ei[decomp] / T[decomp])
+                  * np.exp(-Ei[decomp] / T[decomp]) * ramp_fac
     return val
