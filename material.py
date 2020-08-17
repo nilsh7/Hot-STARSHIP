@@ -140,8 +140,7 @@ reads csv file and stores data
         self.data.rhoLin = constructLinearSpline(self.data.Tforrho, self.data.rho)
 
         # e
-        self.data.e = lambda T: np.array([self.data.cpLin.integral(0, Tval) for Tval in T]) if type(T) is np.ndarray \
-            else self.data.cpLin.integral(0, T)
+        self.data.e = self.data.cpLin.antiderivative(1)
 
     def cp(self, T, *ignoreargs):
         return self.data.cpLin(T)
@@ -572,16 +571,24 @@ stores pressure and atmosphere values
 
     def calculateEnergies(self):
 
-        # Calculate shifts
+        # Calculate shifts at Tref
         Tref = self.data.Tref
-        self.virgin.eshift = self.virgin.data.hf - self.gas.data.hf + self.gas.h(Tref)
-        self.char.eshift = self.char.data.hf - self.gas.data.hf + self.gas.h(Tref)
+        self.virgin.eshift_Tref = self.virgin.data.hf - self.gas.data.hf + self.gas.h(Tref)
+        self.char.eshift_Tref = self.char.data.hf - self.gas.data.hf + self.gas.h(Tref)
+
+        # Calculate shift of antiderivative at T=0
+        self.virgin.eshift_0 = self.virgin.eshift_Tref - self.virgin.cp.integral(0, Tref)
+        self.char.eshift_0 = self.char.eshift_Tref - self.char.cp.integral(0, Tref)
+
+        # Calculated unshifted energies
+        self.virgin.e_unshifted = self.virgin.cp.antiderivative(1)
+        self.char.e_unshifted = self.char.cp.antiderivative(1)
+
+        # Calculate shifted energies
+        self.virgin.e = lambda T: self.virgin.e_unshifted(T) + self.virgin.eshift_0
+        self.char.e = lambda T: self.char.e_unshifted(T) + self.char.eshift_0
 
         # Calculate energies
-        self.virgin.e = lambda T: np.array([self.virgin.cp.integral(Tref, Tval) + self.virgin.eshift for Tval in T]) \
-            if type(T) is np.ndarray else self.virgin.cp.integral(Tref, T) + self.virgin.eshift
-        self.char.e = lambda T: np.array([self.char.cp.integral(Tref, Tval) + self.char.eshift for Tval in T]) \
-            if type(T) is np.ndarray else self.char.cp.integral(Tref, T) + self.char.eshift
         self.e = lambda T, wv: wv * self.virgin.e(T) + (1 - wv) * self.char.e(T)
 
     def calculateHatmo(self, args):
