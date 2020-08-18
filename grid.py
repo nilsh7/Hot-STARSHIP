@@ -1,5 +1,4 @@
 import numpy as np
-import sympy as sp
 from scipy.optimize import newton
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
