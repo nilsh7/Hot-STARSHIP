@@ -23,6 +23,12 @@ converters = {"-": 0, "#WERT!": 0}
 
 convertf = lambda st: "0,0" if st in ("-", "#WERT!") else st
 
+try:
+    hotstarship_dir = os.environ["HOTSTARSHIP_DIR"]
+except KeyError:
+    raise IOError("Environment variable \'HOTSTARSHIP_DIR\' could not be found.\n"
+                  "Please export the variable.")
+
 
 class Material:
     def __init__(self):
@@ -431,7 +437,7 @@ calculates pyrolysis gas composition using mppequil
                              "Lower the expected yield of pyrolysis gas.")
 
         # Construct Mutation++ mixture file
-        xmldata = Path("Templates/mutationpp_mixtures_pyrogas.xml").read_text()
+        xmldata = Path(hotstarship_dir, "Templates/mutationpp_mixtures_pyrogas.xml").read_text()
         gasname = args["input_dir"].name + "_Gas"
         xmldata = xmldata.replace("!name", gasname)  # Replace name input dir name
         xmldata = xmldata.replace("!elems", self.pyroelems)
@@ -469,7 +475,7 @@ calculates bprime tables using bprime executable provided by mutation++
         print("Calculating wall gas composition using bprime (from Mutation++ library)...")
 
         # Construct Mutation++ mixture file
-        xmldata = Path("Templates/mutationpp_mixtures_surface.xml").read_text()
+        xmldata = Path(hotstarship_dir, "Templates/mutationpp_mixtures_surface.xml").read_text()
         gasname = args["input_dir"].name + "_Gas"
         xmldata = xmldata.replace("!name", gasname)  # Replace name input dir name
         xmldata = xmldata.replace("!elems", self.surfelems)
@@ -596,7 +602,7 @@ stores pressure and atmosphere values
         print("Calculating enthalpy of atmosphere...")
 
         # Construct Mutation++ mixture file
-        xmldata = Path("Templates/mutationpp_mixtures_atmosphere.xml").read_text()
+        xmldata = Path(hotstarship_dir, "Templates/mutationpp_mixtures_atmosphere.xml").read_text()
         xmldata = xmldata.replace("!elems", self.atmoelems)
         xmldata = xmldata.replace("!planet", self.atmosphere)
         xmlfilename = Path(args["input_dir"], "mutationpp_atmo_" + args["input_dir"].name + ".xml")
