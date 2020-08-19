@@ -37,10 +37,7 @@ def savePreValues(layers):
     return layerspre
 
 
-if __name__ == "__main__":
-
-    # Save input arguments
-    args = handleArguments()
+def hotstarship(args):
 
     # Read input file
     print("Reading input file %s..." % args["input_file"])
@@ -129,6 +126,13 @@ if __name__ == "__main__":
                     solwrite.write(t, layers, Tnu, rhonu, Tmap, rhomap, mgas)
                 break
 
+        if layers[0].ablative:
+            if (layers[0].grid.s + Tnu[Tmap["sdot"]] * inputvars.tDelta) / layers[0].grid.length0 > 0.97:
+                print("Material recession will probably exceed 97% in the next time step.\n"
+                      "Terminating here.")
+                solwrite.write(t, layers, Tnu, rhonu, Tmap, rhomap, mgas)
+                return False
+
     # Option to compare test case to analytical profile
     # comp.compareToAnalytical(t, Tnu, inputvars)
 
@@ -137,6 +141,37 @@ if __name__ == "__main__":
     #output.plotBeta(layers, rhonu, rhomap, t)
 
     # End has been reached (final statement for debugging purposes)
-    end = True
+    return True
 
-    aaa = 1
+
+def get_mass(args):
+
+    # Read input file
+    print("Reading input file %s..." % args["input_file"])
+    inputvars = input.Input(args["input_file"])
+    layers = inputvars.layers  # Extract layers
+
+    # Generate grids
+    layers = grid.generateGrids(layers)
+
+    # Add variables
+    layers = addVariables(layers)
+
+    # Create vectors to store unknowns in and dictionary from layer to indices
+    Tnu, rhonu, rhoimu, Tmap, rhomap = createUnknownVectors(layers)
+
+    # Initialize variables to be solved
+    Tnu, rhonu, rhoimu, mgas = init_T_rho(Tnu, rhonu, rhoimu, Tmap, rhomap, layers, inputvars)
+
+    # Get mass
+    mass = output.calc_weight(layers, rhonu)
+
+    return mass
+
+
+if __name__ == "__main__":
+
+    # Save input arguments
+    args = handleArguments()
+
+    hotstarship(args)
