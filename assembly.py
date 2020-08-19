@@ -1090,7 +1090,48 @@ def updateRho(lay, rhoimu, rhoin, rhonu, rhomap, Tnu, Tmap, tDelta):
 
 # Specifies the ramp length from which decomposition goes from zero to full
 # Temperature to add where full decomposition takes place, zero decomposition at Tmin
-Tramp = 1.0
+Tramp = 5.0
+
+
+def calculateSmoothStep():
+
+    Tmin = 0  # Value where smoothing function shall equal 1
+    Tmax = Tmin + Tramp  # Value where smoothing function shall equal 0
+
+    # Determine the third order polynomial S where
+    # S (0)     = 0
+    # S (Tramp) = 1
+    # S'(0)     = 0
+    # S'(Tramp) = 0
+    A = np.array([[Tmin**3, Tmin**2, Tmin, 1],
+                  [Tmax**3, Tmax**2, Tmax, 1],
+                  [3*Tmin**2, 2*Tmin,   1, 0],
+                  [3*Tmax**2, 2*Tmax,   1, 0]])
+
+    b = np.array([0, 1, 0, 0])
+
+    # Save the coefficients
+    global coeff
+    coeff = np.flip(np.linalg.solve(A, b))
+
+
+def smoothStep(T, Tmin, decomp):
+
+    # Fill arrays
+    Tmax = Tmin + Tramp
+
+    # Check which temperatures are below maximum temperature from where full ablation takes place
+    intermediate = T[decomp] < Tmax[decomp]
+
+    # Set scaling factors to one for all decomposing cells
+    scales = np.ones(T[decomp].shape)
+
+    # Determine scaling factors for temperatures between min temperature where ablation takes place and max
+    # temperature where full ablation takes place
+    scales[intermediate] = np.polynomial.polynomial.polyval((T[decomp]-Tmin[decomp])[intermediate].flatten(), coeff)
+
+    return scales
+
 
 def drhodt(mat, rhoi, Tj):
     rhoc = np.repeat(mat.data.charRhoFrac0.reshape(1, -1), repeats=len(Tj), axis=0)
@@ -1101,7 +1142,7 @@ def drhodt(mat, rhoi, Tj):
     T = np.repeat(Tj.reshape(-1,1), repeats=len(mat.data.charRhoFrac0), axis=1)
     Tmin = np.repeat(mat.data.Tmin.reshape(-1, 3), repeats=len(Tj), axis=0)
     decomp = np.logical_and(rhoc != rhov, T > Tmin)
-    ramp_fac = np.minimum((T[decomp]-Tmin[decomp])/(Tmin[decomp]+Tramp - Tmin[decomp]), 1.0)
+    ramp_fac = smoothStep(T, Tmin, decomp)
     val = np.zeros(rhoi.shape)
     val[decomp] = -kr[decomp] * ((rhoi[decomp] - rhoc[decomp]) / (rhov[decomp] - rhoc[decomp])) ** nr[decomp] \
                   * np.exp(-Ei[decomp] / T[decomp]) * ramp_fac
@@ -1117,7 +1158,7 @@ def ddrhodt_drho(mat, rhoi, Tj):
     T = np.repeat(Tj.reshape(-1, 1), repeats=len(mat.data.charRhoFrac0), axis=1)
     Tmin = np.repeat(mat.data.Tmin.reshape(-1, 3), repeats=len(Tj), axis=0)
     decomp = np.logical_and(rhoc != rhov, T > Tmin)
-    ramp_fac = np.minimum((T[decomp] - Tmin[decomp]) / (Tmin[decomp] + Tramp - Tmin[decomp]), 1.0)
+    ramp_fac = smoothStep(T, Tmin, decomp)
     val = np.zeros(rhoi.shape)
     val[decomp] = -kr[decomp] * nr[decomp] / (rhov[decomp] - rhoc[decomp]) *\
                   ((rhoi[decomp] - rhoc[decomp]) / (rhov[decomp] - rhoc[decomp])) ** (nr[decomp] - 1) \

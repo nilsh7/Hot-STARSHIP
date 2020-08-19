@@ -63,6 +63,10 @@ def hotstarship(args):
     # Initialize deltaTn guess with zero change
     deltaTn = np.zeros(len(Tnu))
 
+    # Calculate smoothing function for Tmin
+    if layers[0].ablative:
+        calculateSmoothStep()
+
     last_step = len(inputvars.ts) - 1
     for it, t in enumerate(inputvars.ts):
 
