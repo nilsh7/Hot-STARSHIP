@@ -80,14 +80,14 @@ class SolutionWriter:
             self.checkIfFileExists()
 
         with open(self.filepath, 'w') as f:
-            f.write('t [s]           ;'  # index 0
-                    'z [m]           ;'  # index 1
-                    'T [K]           ;'  # index 2
-                    'rho [kg/m^3]    ;'  # index 3
-                    'wv [-]          ;'  # index 4
-                    'beta [-]        ;'  # index 5
-                    'm_c [kg/(m^2*s)];'  # index 6
-                    'm_g [kg//m^2*s)]'   # index 7
+            f.write('t [s]       ;'  # index 0
+                    'z [m]       ;'  # index 1
+                    'T [K]       ;'  # index 2
+                    'rho [kg/m^3];'  # index 3
+                    'wv [-]      ;'  # index 4
+                    'beta [-]    ;'  # index 5
+                    'mc[kg/m^2/s];'  # index 6
+                    'mg[kg/m^2/s]'   # index 7
                     '\n')
 
     def checkIfFileExists(self):
@@ -185,6 +185,15 @@ class SolutionWriter:
             np.savetxt(f, writevars, delimiter=';', fmt='%.6E')
 
 
+def calc_weight(layers, rhonu):
+
+    weight = 0
+    for lay in layers:
+        weight += np.sum((lay.grid.zjp12 - lay.grid.zjm12) * rhonu)
+
+    return weight
+
+
 class SolutionReader:
     def __init__(self, file):
 
@@ -235,7 +244,7 @@ class SolutionReader:
     def plot(self, x, y, t=0.0, z=0.0, print_values=False):
 
         # For plot of s, use z coordinate of wall
-        if y in ('s', 'sdot'):
+        if y in ('s', 'sdot', 'mc'):
             z = np.array(['Wall'])
 
         # Manipulate parameter if needed (convert to numpy array)
@@ -353,10 +362,10 @@ class SolutionReader:
         #    linestyles = get_linestyles(yvals.shape[1])
         #    for i in range(yvals.shape[1]):
         #        plt.plot(xvals[:, i], yvals[:, i], linestyles[i])
-        #colors = ['#332288', '#88CCEE', '#44AA99', '#117733', '#999933', '#DDCC77', '#CC6677', '#882255', '#AA4499']
+        # colors = ['#332288', '#88CCEE', '#44AA99', '#117733', '#999933', '#DDCC77', '#CC6677', '#882255', '#AA4499']
         for i in range(yvals.shape[1]):
             to_plot = ~np.isnan(yvals[:, i])
-            plt.plot(xvals[to_plot, i], yvals[to_plot, i])#, c=colors[i], ls='solid')
+            plt.plot(xvals[to_plot, i], yvals[to_plot, i])  # , c=colors[i], ls='solid', marker='None')
         if yvals.shape[1] > 1:
             if location_dependent:
                 plt.legend(t.astype(str), title='t [s]')
@@ -365,6 +374,48 @@ class SolutionReader:
         plt.xlabel(self.labeldict[x])
         plt.ylabel(self.labeldict[y])
 
+        # data_exp = np.transpose(np.vstack((xvals[to_plot, i], yvals[to_plot, i])))
+        # np.savetxt('out.csv', data_exp, delimiter=';')
+
+    def calculate_mass(self, t=0.0):
+
+        # Get indices and times where time lies inbetween
+        iTplus = np.argmax(self.t.reshape(self.nts, 1) - t.reshape(1, -1) > 0, axis=0)
+        iTminus = iTplus - 1
+        tplus = self.t[iTplus]
+        tminus = self.t[iTminus]
+
+        # Construct weights for interpolation based on time
+        wminus = (tplus - t) / (tplus - tminus)
+        wplus = 1 - wminus
+
+        # Fill into global array
+        weights = np.zeros((len(t), self.nts))
+        weights[np.arange(weights.shape[0]), iTplus] = wplus
+        weights[np.arange(weights.shape[0]), iTminus] = wminus
+
+        # Calculate interpolated values
+        rho_at_t = np.dot(self.rho, weights.transpose())
+        z_at_t = np.dot(self.z, weights.transpose())
+
+        zjp12 = z_at_t[+1:, :]
+        zjm12 = z_at_t[:-1, :]
+
+        mass = np.sum(rho_at_t[:-1] * (zjp12 - zjm12), axis=0).flatten()
+
+        return mass
+
+    def get_max_back_T(self):
+
+        return np.max(self.T[-1, :])
+
+    def get_max_T(self):
+
+        return np.max(self.T)
+
+    def get_remaining_thickness(self):
+
+        return self.z[-1, -1] - self.z[0, -1]
 
 def get_linestyles(n):
     nAllowable = 4
