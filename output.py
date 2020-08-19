@@ -379,6 +379,9 @@ class SolutionReader:
 
     def calculate_mass(self, t=0.0):
 
+        if type(t) in (int, float):
+            t = np.array([t])
+
         # Get indices and times where time lies inbetween
         iTplus = np.argmax(self.t.reshape(self.nts, 1) - t.reshape(1, -1) > 0, axis=0)
         iTminus = iTplus - 1
