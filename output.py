@@ -185,11 +185,11 @@ class SolutionWriter:
             np.savetxt(f, writevars, delimiter=';', fmt='%.6E')
 
 
-def calc_weight(layers, rhonu):
+def calc_weight(layers, rhonu, rhomap):
 
     weight = 0
-    for lay in layers:
-        weight += np.sum((lay.grid.zjp12 - lay.grid.zjm12) * rhonu)
+    for lay, rhokey in zip(layers, rhomap):
+        weight += np.sum((lay.grid.zjp12 - lay.grid.zjm12) * rhonu[rhomap[rhokey]])
 
     return weight
 

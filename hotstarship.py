@@ -168,7 +168,7 @@ def get_mass(args):
     Tnu, rhonu, rhoimu, mgas = init_T_rho(Tnu, rhonu, rhoimu, Tmap, rhomap, layers, inputvars)
 
     # Get mass
-    mass = output.calc_weight(layers, rhonu)
+    mass = output.calc_weight(layers, rhonu, rhomap)
 
     return mass
 
