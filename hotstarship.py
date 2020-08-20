@@ -32,11 +32,6 @@ handles arguments passed to Hot-STARSHIP
     return args
 
 
-def savePreValues(layers):
-    layerspre = dill.copy(layers)
-    return layerspre
-
-
 def hotstarship(args):
 
     # Read input file
@@ -79,7 +74,8 @@ def hotstarship(args):
         Tn, rhon, rhoin = Tnu.copy(), rhonu.copy(), rhoimu.copy()
 
         # Save information about grid of previous time step
-        layerspre = savePreValues(layers)
+        gridpre_f = dill.copy(layers[0].grid) if layers[0].ablative else layers[0].grid
+        wvpre_f = layers[0].wv.copy() if layers[0].ablative else layers[0].wv
 
         # Set global iteration counter
         iteration = 0
@@ -101,7 +97,7 @@ def hotstarship(args):
                 deltaRhon = rhonu - rhon
 
             # Assemble Jacobian and function vector
-            J, f = assembleT(layers, layerspre, Tmap, Tnu, Tn, rhomap, rhonu, rhon, mgas, t, inputvars.tDelta, inputvars)
+            J, f = assembleT(layers, gridpre_f, wvpre_f, Tmap, Tnu, Tn, rhomap, rhonu, rhon, mgas, t, inputvars.tDelta, inputvars)
 
             # Solve for difference
             dT = spsolve(J, -f)
