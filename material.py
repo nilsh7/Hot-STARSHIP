@@ -188,7 +188,7 @@ class CorrugatedMaterial(Material):
         mw = self.mat_web
         mc = self.mat_core
         return (mw.rho(T) * self.dw + mc.rho(T) * (self.p * math.sin(self.theta) - self.dw)) / (
-                    self.p * math.sin(self.theta))
+                self.p * math.sin(self.theta))
 
     def cp(self, T, *ignoreargs):
         mw = self.mat_web
@@ -200,7 +200,7 @@ class CorrugatedMaterial(Material):
         mw = self.mat_web
         mc = self.mat_core
         return (mw.k(T) * self.dw + mc.k(T) * (self.p * math.sin(self.theta) - self.dw)) / (
-                    self.p * math.sin(self.theta))
+                self.p * math.sin(self.theta))
 
     def dkdT(self, T, *ignoreargs):
         mw = self.mat_web
@@ -405,9 +405,16 @@ reads csv file and stores data
 calculate pyrolysis gas composition and bprime table
         :param args: dictionary of arguments
         """
-        self.calculatePyroGasComposition(args)
 
-        self.calculateBPrimes(args)
+        if args["hgas"] is None:
+            self.calculatePyroGasComposition(args)
+        else:
+            self.readPyroGasComposition(args)
+
+        if args["bprime"] is None:
+            self.calculateBPrimes(args)
+        else:
+            self.readBPrimes(args)
 
         self.calculateHatmo(args)
 
@@ -464,6 +471,20 @@ calculates pyrolysis gas composition using mppequil
 
         # Calculate enthalpy
         self.gas.h = constructLinearSpline(x=htab.values[:, 0], y=htab.values[:, 1])
+        self.gas.cp = self.gas.h.derivative()
+
+    def readPyroGasComposition(self, args):
+
+        csvfile = args["hgas"]
+
+        with open(csvfile) as f:
+            data = pd.read_csv(f, sep=';', decimal='.', header=0, index_col=None).to_numpy()
+
+        Ts = data[:, 0]
+        hs = data[:, 1]
+
+        # Calculate enthalpy
+        self.gas.h = constructLinearSpline(x=Ts, y=hs)
         self.gas.cp = self.gas.h.derivative()
 
     def calculateBPrimes(self, args):
@@ -526,6 +547,33 @@ calculates bprime tables using bprime executable provided by mutation++
 
         self.data.Tforbprime = bhtab['Tw[K]'].values
         self.data.bg = b_vals
+
+        # Calculate interpolation functions
+        self.bc = ip.interp2d(self.data.bg[:-1], self.data.Tforbprime, self.data.bc[:, :-1])
+        self.hw = ip.interp2d(self.data.bg[:-1], self.data.Tforbprime, self.data.hw[:, :-1])
+
+        # Calculate gradient functions
+        self.dbcdT = lambda bg, T, tol=1.0e-8: (self.bc(bg, T + tol) - self.bc(bg, T - tol)) / (2 * tol)
+        self.dbcdbg = lambda bg, T, tol=1.0e-8: (self.bc(bg + tol, T) - self.bc(bg - tol, T)) / (2 * tol)
+        self.dhwdT = lambda bg, T, tol=1.0e-8: (self.hw(bg, T + tol) - self.hw(bg, T - tol)) / (2 * tol)
+        self.dhwdbg = lambda bg, T, tol=1.0e-8: (self.hw(bg + tol, T) - self.hw(bg - tol, T)) / (2 * tol)
+
+    def readBPrimes(self, args):
+
+        csvfile = args["bprime"]
+
+        with open(csvfile) as f:
+            data = pd.read_csv(f, sep=';', decimal='.', header=0, index_col=None)
+
+        data = data.apply(pd.to_numeric, errors='coerce').dropna().to_numpy()
+
+        # Get indices of time (where time changes first)
+        ibgs = np.vstack((0, np.argwhere(np.diff(data[:, 0]) != 0) + 1)).flatten()
+        self.data.bg = data[ibgs, 0]
+        self.data.Tforbprime = data[0:ibgs[1], 1]
+
+        self.data.bc = data[:, 2].reshape(len(self.data.bg), len(self.data.Tforbprime)).transpose()
+        self.data.hw = data[:, 3].reshape(len(self.data.bg), len(self.data.Tforbprime)).transpose()
 
         # Calculate interpolation functions
         self.bc = ip.interp2d(self.data.bg[:-1], self.data.Tforbprime, self.data.bc[:, :-1])
@@ -782,7 +830,7 @@ checks and corrects the input to material creation
 
 def createMaterial(inputdir, outfile=None, ablative=True, corrugated=False, Trange="300:100:6000", pressure=101325,
                    bg="0.01:0.3333:100",
-                   atmosphere="Earth", corrugated_vals=None):
+                   atmosphere="Earth", corrugated_vals=None, bprime=None, hgas=None):
     """
 creates a Material class object that holds various thermophysical properties
     :param corrugated_vals: saves information about corrugated layer properties
@@ -805,6 +853,8 @@ creates a Material class object that holds various thermophysical properties
     args["p"] = pressure
     args["bg"] = bg
     args["planet"] = atmosphere
+    args["bprime"] = bprime
+    args["hgas"] = hgas
 
     args = checkInput(args)
 
