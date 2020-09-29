@@ -1,5 +1,4 @@
 # Hot-STructure and Ablative Reaction SHIeld Program
-## Background
 This Python program calculates the thermal response of ablative and non-ablative rocket or spacecraft heat shields. The code is a 1D finite volume method.
 
 Some features include:
@@ -12,11 +11,11 @@ Some features include:
 
 The code was developed as part of the Master thesis of [Nils Henkel](https://www.linkedin.com/in/nilshenkel/) at the [Institute of Structural Mechanics and Lightweight Design](https://www.sla.rwth-aachen.de/cms/~fald/Institut-fuer-Strukturmechanik-und-Leichtbau/?lidx=1) at RWTH Aachen University. 
 
-## Requirements
+# Requirements
 - [Mutation++](https://github.com/mutationpp/Mutationpp) if you wish to construct own ablative materials
 - some Python packages (mainly numpy, scipy, dill)
 
-## Installation
+# Installation
 If you wish to use ablative materials and "create" materials on your own, install [Mutation++](https://github.com/mutationpp/Mutationpp) first. This is necessary for pyrolysis gas enthalpy data as well as surface chemistry data.
 
 For installation of Hot-STARSHIP open a terminal and navigate into the directory where you want to install Hot-STARSHIP using `cd`. Clone the repository using:
@@ -33,12 +32,12 @@ In order to be able to call the program from any location, add the installation 
 export PYTHONPATH=/Users/<user>/<your_path_to_hot_starship>:$PYTHONPATH
 ```
 
-## Usage
-### How to input your data
-#### Material properties
+# Usage
+## How to input your data
+### Material properties
 Material properties are specified by a set of ``.csv`` files that contain information on conductivity, specific heat capacity, emissivity and density.
 
-##### Non-ablative
+#### Non-ablative
 For materials that do not undergo pyrolysis or ablate, the material properties are set by a directory structure like the one below.
 ```bash
 Aluminium
@@ -58,7 +57,7 @@ Please not that the thermal expansion is not considered. It is therefore advisab
 
 Running ``material.py`` or ``hotstarship.py`` with the material as input will generate a `.matp` file in the directory of the material. This file is a ``dill``ed binary version of the ``Material`` object and contains all the information provided by the `.csv` files. The file can then be specified as input which significantly speeds up the process, especially for ablative materials.
 
-##### Ablative
+#### Ablative
 For ablative materials, the material properties of the virgin and char state might be different which is why there are two separate directories for these materials. In addition, information about the composition of the material and its decomposition reaction needs to be specified.
 ```bash
 PICA
@@ -103,14 +102,16 @@ The variables of the Arrhenius are those of the following equation:
 Please note that the definition of the c constant differs in literature and might need to be re-computed.
 The total density is the sum of the densities multiplied with their respective volume fractions:
 
+<p align="center">
 <a href="https://www.codecogs.com/eqnedit.php?latex=\rho&space;=&space;v_1&space;\rho_1&space;&plus;&space;...&space;&plus;&space;v_2&space;\rho_2" target="_blank"><img src="https://latex.codecogs.com/svg.latex?\rho&space;=&space;v_1&space;\rho_1&space;&plus;&space;...&space;&plus;&space;v_2&space;\rho_2" title="\rho = v_1 \rho_1 + ... + v_2 \rho_2" /></a>
+</p>
 
 The ``.xml`` and ``.matp`` files are generated as part of the program.
 
-#### Input file
+### Input file
 You can find a few sample input files in the ``Input/`` directory. They are xml files.
 
-##### Defining layers
+#### Defining layers
 The first thing to be defined are the different layer that the thermal protection system consists of. Specify the material and thickness of each layer and give it a number from 1 at the surface to higher numbers on the inside. The first layer will follow an exponential cell length distribution defined by the first cell length (which is actually halved) and the maximum growth factor. The program will then fit the cells such that the growth factor takes this value as maximum.
 
 The other layers use a constant growth factor, too, combined with the last cell thickness of the previous layer. The cells are fitted in the layer to achieve as little volume change as possible.
@@ -120,7 +121,7 @@ You can define ablative layers by using the ``ablative`` element. You may only d
 Corrugated layers can be defined using the ``corrugated`` element. These layers than use a rule of mixtures to homogenize the material properties. You will need to specify the core as well as the web materials and some dimenions (see the `Input/input_corrugated.xml` file for this).
 
 
-##### Boundary conditions
+#### Boundary conditions
 The first element in the option section are boundary conditions. For the front BC you may choose from ``heatflux``, `aerodynamic` and `recovery_enthalpy`.
 
 The ``heatflux`` BC will simply create a flux at the surface. For ablative materials a blowing correction is used for which you will need to specify the transfer coefficient <a href="https://www.codecogs.com/eqnedit.php?latex=\rho_e&space;u_e&space;C_{H0}" target="_blank"><img src="https://latex.codecogs.com/svg.latex?\rho_e&space;u_e&space;C_{H0}" title="\rho_e u_e C_{H0}" /></a>. 
@@ -131,26 +132,26 @@ The `recovery_enthalpy` BC specifies the recovery enthalpy of the boundary layer
 
 Note that all values can be specified as a numerical value or as a ``csv`` file that contains times in the first column and values in the second column in SI units. The first row is omitted when reading. 
 
-##### Time stepping
+#### Time stepping
 Specifying the time steps can be achieved in two ways:
 1. via ``start``, `end`, `delta` and `write_every` elements (the last one specifies how often the results shall be written)
 2. via ``file`` element that specifies a `csv` file in which each time step is listed (first row is omitted as always)
 
-##### Initilization
+#### Initilization
 Initilization is currently only possible with a constant temperature that is specified using the `init` element.
 
 
-##### Ambient conditions
+#### Ambient conditions
 The conditions of the environment are defined under the `ambient` element. This includes temperature that is part of the radiative exchange and pressure and atmosphere which the B' tables are generated with (only applicable for ablative materials; varying pressure not implemented yet). The `turbulent_flow` element is a boolean that affects the blowing correction.
 
-### How to run Hot-STARSHIP
+## How to run Hot-STARSHIP
 To run Hot-STARSHIP open a terminal window and type:
 ```
 python3 hotstarship.py <input_file>.xml <output_file>.csv
 ```
 You can use the ``-f`` option to force to overwrite the ouput file should it already exist. You will see some information about the number of necessary iterations in the console.
 
-### Hot to view results
+## Hot to view results
 Running Hot-STARSHIP generates an output ``csv`` file that can be opened and read. The first column indicates the time. For each time step all nodal locations as well as the value of the variables are given. The back face that is identical with the last node is included, too. After the output of all nodal values, the time is incremented.
 
 For ease of displaying results a number of functions is implemented in `output.py`. If you wish to use this libarary, type
@@ -190,9 +191,9 @@ In addition the following functions of the ``SolutionReader`` object are availab
 3. ```get_max_T()```: returns the global maximum temperature
 4. `get_remaining_thickness(t)`: returns the remaining TPS thickness at time `t` 
 
-## Sources
+# Sources
 - Amar, Adam Joseph. "Modeling of one-dimensional ablation with porous flow using finite control volume procedure." (2006).
 - Chen, Y-K., and Frank S. Milos. "Ablation and thermal response program for spacecraft heatshield analysis." Journal of Spacecraft and Rockets 36.3 (1999): 475-483.
 
-## Disclaimer
+# Disclaimer
 The author does not take any responsibility for the correctness of the results, nor is he liable for any damage using this program's results. This program was made to the author's best knowledge and belief. 
