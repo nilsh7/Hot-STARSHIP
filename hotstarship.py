@@ -118,20 +118,26 @@ def hotstarship(args):
 
             # Stop iterating if convergence in T (and possibly sdot) has been reached
             nonzero = Tnu > 1.0e-7
-            if np.max(np.abs(dT[nonzero]/Tnu[nonzero])) < 1.0e-8: #and iteration > 2:
+            if dT[nonzero].size == 0:
+                continue
+            elif np.max(np.abs(dT[nonzero]/Tnu[nonzero])) < 1.0e-8: #and iteration > 2:
             #if np.linalg.norm(dT/Tnu) < 1.0e-5:
                 print("Completed after %i iterations." % iteration)
                 deltaTn = Tnu - Tn
+
+                # Check if threshold of recession will be exceeded
+                if layers[0].ablative:
+                    if (layers[0].grid.s + Tnu[Tmap["sdot"]] * inputvars.tDelta) / layers[0].grid.length0 > 0.97:
+                        print("Material recession will probably exceed 97% in the next time step.\n"
+                              "Terminating here.")
+                        solwrite.write(t, layers, Tnu, rhonu, Tmap, rhomap, mgas)
+                        return False
+
+                # Check if step shall be written
                 if ((it+1) % inputvars.write_step) == 0 or (it == last_step):
                     solwrite.write(t, layers, Tnu, rhonu, Tmap, rhomap, mgas)
                 break
 
-        if layers[0].ablative:
-            if (layers[0].grid.s + Tnu[Tmap["sdot"]] * inputvars.tDelta) / layers[0].grid.length0 > 0.97:
-                print("Material recession will probably exceed 97% in the next time step.\n"
-                      "Terminating here.")
-                solwrite.write(t, layers, Tnu, rhonu, Tmap, rhomap, mgas)
-                return False
 
     # Option to compare test case to analytical profile
     # comp.compareToAnalytical(t, Tnu, inputvars)
