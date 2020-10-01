@@ -52,10 +52,9 @@ creates a Layer objects that holds various information about the TPS layer
             corrugated_vals = None
 
         # If ablative, check whether bprime or hg shall be read from file
-        if layerelem.find("bprime") is not None:
-            ablative_vals["bprime"] = layerelem.find("bprime").text
-        if layerelem.find("hgas") is not None:
-            ablative_vals["hgas"] = layerelem.find("hgas").text
+        if self.ablative:
+            ablative_vals["bprime"] = layerelem.find("bprime").text if layerelem.find("bprime") is not None else None
+            ablative_vals["hgas"] = layerelem.find("hgas").text if layerelem.find("hgas") is not None else None
 
         # Check if layer is not corrugated and ablative
         if self.ablative and self.corrugated:
