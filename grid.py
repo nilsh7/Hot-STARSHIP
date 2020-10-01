@@ -119,7 +119,7 @@ creates grid at inside layer of TPS
             eq_gr = lambda gr: length - lIni * (1 + 2 * (gr * (1 - gr ** ((self.nC - 1) / 2))) / (1 - gr))
         else:
             eq_gr = lambda gr: length - lIni * (1 + 2 * gr * (1 - gr**(nC/2-1))/(1-gr) + gr**(nC/2))
-        self.growth = newton(eq_gr, 1.01) if length / lIni > self.nC else newton(eq_gr, 0.99)
+        self.growth = newton(eq_gr, 1.00001) if length / lIni > self.nC else newton(eq_gr, 0.99999)
 
         # Calculate nodal positions
         gr = self.growth
