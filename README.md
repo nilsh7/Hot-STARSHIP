@@ -9,11 +9,11 @@ Some features include:
 - recovery enthalpy or heat flux boundary conditions
 - only adiabatic back face boundary condition (so far)
 
-The code was developed as part of the Master thesis of [Nils Henkel](https://www.linkedin.com/in/nilshenkel/) at the [Institute of Structural Mechanics and Lightweight Design](https://www.sla.rwth-aachen.de/cms/~fald/Institut-fuer-Strukturmechanik-und-Leichtbau/?lidx=1) at RWTH Aachen University. 
+The code was developed as part of the master thesis of [Nils Henkel](https://www.linkedin.com/in/nilshenkel/) at the [Institute of Structural Mechanics and Lightweight Design](https://www.sla.rwth-aachen.de/cms/~fald/Institut-fuer-Strukturmechanik-und-Leichtbau/?lidx=1) at RWTH Aachen University. 
 
 # Requirements
-- [Mutation++](https://github.com/mutationpp/Mutationpp) if you wish to construct own ablative materials
-- some Python packages (mainly numpy, scipy, dill)
+- [Mutation++](https://github.com/mutationpp/Mutationpp) if you wish to construct own ablative materials (currently only available for Linux and macOS)
+- Python 3 and some Python packages (mainly numpy, scipy, dill)
 
 # Installation
 If you wish to use ablative materials and "create" materials on your own, install [Mutation++](https://github.com/mutationpp/Mutationpp) first. This is necessary for pyrolysis gas enthalpy data as well as surface chemistry data.
@@ -21,6 +21,10 @@ If you wish to use ablative materials and "create" materials on your own, instal
 For installation of Hot-STARSHIP open a terminal and navigate into the directory where you want to install Hot-STARSHIP using `cd`. Clone the repository using:
 ```
 git clone https://github.com/nilsh7/Hot-STARSHIP.git
+```
+Install the required packages (possibly in your [virtual environment](https://docs.python.org/3/tutorial/venv.html)):
+```
+pip3 install -r requirements.txt
 ```
 
 Next, set the environment variable `HOTSTARSHIP_DIR` to the directory where you installed Hot-STARSHIP:
@@ -32,7 +36,16 @@ In order to be able to call the program from any location, add the installation 
 export PYTHONPATH=/Users/<user>/<your_path_to_hot_starship>:$PYTHONPATH
 ```
 
+Per default, the output uses a custom matplotlib style for plots. [It is designed to be colorblind-friendly](https://personal.sron.nl/~pault/) and can be read by monochrome people or in monochrome printouts. To use the style copy the `Templates/MA_Style.mplstyle` file to the according style directory of matplotlib. For more information on the location of this directory check the [matplotlib documentation](https://matplotlib.org/tutorials/introductory/customizing.html#the-matplotlibrc-file).
+
 # Usage
+Using the program consists of three steps:
+1. Preparing your case
+2. Running your case
+3. Viewing the results of your case
+
+These are described in the following
+
 ## How to input your data
 ### Material properties
 Material properties are specified by a set of ``.csv`` files that contain information on conductivity, specific heat capacity, emissivity and density.
@@ -92,7 +105,7 @@ What you need to include in addition is:
 2. the heats of formation of virgin and char material and gas and the temperature at which these are given in ``Heats_of_Formation.csv``
 3. properties related to the decomposition that is modelled by an Arrhenius law in ``Decomposition_Kinetics.csv`` 
 
-The variables of the Arrhenius are those of the following equation:
+The variables in the csv file are those of the following Arrhenius law equation:
 <!--<img src="https://render.githubusercontent.com/render/math?math=\frac{\operatorname{d}&space;\rho_i}{\operatorname{d}&space;t}&space;=&space;-c_i&space;\left(&space;\frac{\rho_i&space;-&space;\rho_{c,i}}{\rho_{v,i}&space;-&space;\rho_{c,i}}&space;\right)^{n_{r,i}}&space;\mathrm{e}^{-\frac{B_i}{T}}" target="_blank"><img src="https://latex.codecogs.com/svg.latex?\frac{\operatorname{d}&space;\rho_i}{\operatorname{d}&space;t}&space;=&space;-c_i&space;\left(&space;\frac{\rho_i&space;-&space;\rho_{c,i}}{\rho_{v,i}&space;-&space;\rho_{c,i}}&space;\right)^{n_{r,i}}&space;\mathrm{e}^{-\frac{B_i}{T}}" title="\frac{\operatorname{d} \rho_i}{\operatorname{d} t} = -c_i \left( \frac{\rho_i - \rho_{c,i}}{\rho_{v,i} - \rho_{c,i}} \right)^{n_{r,i}} \mathrm{e}^{-\frac{B_i}{T}}">-->
 
 <p align="center">
@@ -106,7 +119,7 @@ The total density is the sum of the densities multiplied with their respective v
 <a href="https://www.codecogs.com/eqnedit.php?latex=\rho&space;=&space;v_1&space;\rho_1&space;&plus;&space;...&space;&plus;&space;v_2&space;\rho_2" target="_blank"><img src="https://latex.codecogs.com/svg.latex?\rho&space;=&space;v_1&space;\rho_1&space;&plus;&space;...&space;&plus;&space;v_2&space;\rho_2" title="\rho = v_1 \rho_1 + ... + v_2 \rho_2" /></a>
 </p>
 
-The ``.xml`` and ``.matp`` files are generated as part of the program.
+The ``.xml`` and ``.matp`` files are generated as part of running the program.
 
 ### Input file
 You can find a few sample input files in the ``Input/`` directory. They are xml files.
@@ -196,4 +209,4 @@ In addition the following functions of the ``SolutionReader`` object are availab
 - Chen, Y-K., and Frank S. Milos. "Ablation and thermal response program for spacecraft heatshield analysis." Journal of Spacecraft and Rockets 36.3 (1999): 475-483.
 
 # Disclaimer
-The author does not take any responsibility for the correctness of the results, nor is he liable for any damage using this program's results. This program was made to the author's best knowledge and belief. 
+The author does not warrant the correctness of the results, nor is he liable for any damage using this program's results. This program was made to the author's best knowledge and belief. 
