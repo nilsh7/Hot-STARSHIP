@@ -3,6 +3,8 @@ import numpy as np
 from pathlib import Path
 from datetime import datetime
 from matplotlib import lines
+import os
+import warnings
 
 
 def plotT(layers, Tnu, Tmap, t, inputvars):
@@ -231,7 +233,7 @@ class SolutionReader:
                          'mg': self.mg}
 
         self.labeldict = {'t': 't [s]',
-                          'z': 'z [m]',
+                          'z': 'z [mm]',
                           'T': 'T [K]',
                           'rho': 'rho [kg/m^3]',
                           'wv': 'wv [-]',
@@ -314,9 +316,13 @@ class SolutionReader:
             if 'Wall' in zlist:
                 z_nowall = z[z != 'Wall'].astype(float)
                 walls = z == 'Wall'
+                z_legend = z
+                z_legend[z_legend != 'Wall'] = z_legend[z_legend != 'Wall'].astype(float)*1e3
             else:
                 z_nowall = z
                 walls = [False] * z.size
+                z_legend = z*1e3
+
 
             # Check if valid locations (in material at least at start)
             if any(z_nowall < self.z[0, 0]) or any(z_nowall > self.z[-1, 0]):
@@ -353,9 +359,23 @@ class SolutionReader:
                 xvals = np.repeat(self.t[:, np.newaxis], z.size, axis=1)
                 yvals = yvals.transpose()
 
-        # Plot graph
+        # Clear plot
         plt.clf()
-        plt.style.use("MA_Style")
+
+        # Get plot style
+        hs_dir = os.getenv("HOTSTARSHIP_DIR")
+        if hs_dir is not None:
+            try:
+                plt.style.use(str(Path.joinpath(Path(hs_dir), "Templates", "HS_Style.mplstyle")))
+            except OSError:
+                pass
+        else:
+            try:
+                plt.style.use("HS_Style")
+            except OSError:
+                warnings.warn("Could not locate HS_Style.mplstyle. Proceeding without.")
+
+        #plt.style.use("Templates/MA_Style")
         #if not vary_linestyle:
         #    plt.plot(self.t, yvals)
         #else:
@@ -363,14 +383,20 @@ class SolutionReader:
         #    for i in range(yvals.shape[1]):
         #        plt.plot(xvals[:, i], yvals[:, i], linestyles[i])
         # colors = ['#332288', '#88CCEE', '#44AA99', '#117733', '#999933', '#DDCC77', '#CC6677', '#882255', '#AA4499']
+
+        #  Generate plot
         for i in range(yvals.shape[1]):
             to_plot = ~np.isnan(yvals[:, i])
-            plt.plot(xvals[to_plot, i], yvals[to_plot, i])  # , c=colors[i], ls='solid', marker='None')
+            if location_dependent:
+                plt.plot(xvals[to_plot, i]*1e3, yvals[to_plot, i])  # , c=colors[i], ls='solid', marker='None')
+            else:
+                plt.plot(xvals[to_plot, i], yvals[to_plot, i])
         if yvals.shape[1] > 1:
             if location_dependent:
                 plt.legend(t.astype(str), title='t [s]')
             else:
-                plt.legend(z.astype(str), title='z [m]')
+                # TODO: add truncation for ints
+                plt.legend(z_legend.astype(str), title='z [mm]')
         plt.xlabel(self.labeldict[x])
         plt.ylabel(self.labeldict[y])
 

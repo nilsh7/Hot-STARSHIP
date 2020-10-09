@@ -36,7 +36,7 @@ In order to be able to call the program from any location, add the installation 
 export PYTHONPATH=/Users/<user>/<your_path_to_hot_starship>:$PYTHONPATH
 ```
 
-Per default, the output uses a custom matplotlib style for plots. [It is designed to be colorblind-friendly](https://personal.sron.nl/~pault/) and can be read by monochrome people or in monochrome printouts. To use the style copy the `Templates/MA_Style.mplstyle` file to the according style directory of matplotlib. For more information on the location of this directory check the [matplotlib documentation](https://matplotlib.org/tutorials/introductory/customizing.html#the-matplotlibrc-file).
+Per default, the output uses a custom matplotlib style for plots. [It is designed to be colorblind-friendly](https://personal.sron.nl/~pault/) and can be read by people with monochrome vision or in monochrome printouts. To use the style copy the `Templates/MA_Style.mplstyle` file to the according style directory of matplotlib. For more information on the location of this directory check the [matplotlib documentation](https://matplotlib.org/tutorials/introductory/customizing.html#the-matplotlibrc-file).
 
 # Usage
 Using the program consists of three steps:
@@ -47,6 +47,13 @@ Using the program consists of three steps:
 These are described in the following
 
 ## How to input your data
+The following sections describe how the input file is structured and what information needs to be specified. If files or directories are referred to in the input file, Hot-STARSHIP will look for this files in the following order (`<file>` describes the file or directory):
+1. in the absolute path (`<file>`)
+2. in the current working directory (`pwd/<file>`)
+3. in the directory specified by the Hot-STARSHIP environment variable (`$HOTSTARSHIP_DIR/<file>`)
+4. optional: in the directory specified by the Hot-STARSHIP environment variable plus the standard directory for this type, e.g. material: (`$HOTSTARSHIP_DIR/Data/Materials/<file>`)
+5. optional: for a material with `.matp` ending in the directory specified by the Hot-STARSHIP environment variable plus the standard material directory plus the directory with `.matp` removed from the name (for `<file>.matp` in `$HOTSTARSHIP_DIR/Data/Materials/<file>/<file>.matp`)
+
 ### Material properties
 Material properties are specified by a set of ``.csv`` files that contain information on conductivity, specific heat capacity, emissivity and density.
 

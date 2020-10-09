@@ -6,6 +6,8 @@ from scipy.interpolate import interp1d
 import pandas as pd
 import numpy as np
 import math
+from pathlib import Path
+import os
 
 
 class Layer:
@@ -63,16 +65,18 @@ creates a Layer objects that holds various information about the TPS layer
         # Construct material
         if not self.corrugated:
             matname = layerelem.find("material").text
-            self.material = readMaterial(matname, self.ablative, self.corrugated,
-                                     ablative_vals, corrugated_vals)
+            mat_path = find_existing(matname, "material")
+            self.material = readMaterial(mat_path, self.ablative, self.corrugated,
+                                         ablative_vals, corrugated_vals)
         else:
             self.material = mat_module.createMaterial("Corrugated_Mat", ablative=False, corrugated=True,
                                                       corrugated_vals=corrugated_vals)
 
         self.thickness = float(layerelem.find("thickness").text)
-        self.firstcell = float(layerelem.find("firstcell").text) if layerelem.find("firstcell") is not None else self.thickness/100.0
+        self.firstcell = float(layerelem.find("firstcell").text) if layerelem.find(
+            "firstcell") is not None else self.thickness / 100.0
         self.maxgrowth = float(layerelem.find("maxgrowth").text) if layerelem.find("maxgrowth") is not None else 1.1
-        self.number = int(layerelem.attrib["number"])-1
+        self.number = int(layerelem.attrib["number"]) - 1
 
 
 class Input:
@@ -92,10 +96,10 @@ reads the input xml file and stores the information
         if numLayers == 0:
             raise ValueError("You must specify at least one layer.")
         else:
-            self.layers = [None]*numLayers
+            self.layers = [None] * numLayers
             for layerelem in layerelems:
                 layer = Layer(layerelem, root)
-                self.layers[int(layerelem.attrib["number"])-1] = layer
+                self.layers[int(layerelem.attrib["number"]) - 1] = layer
 
         # Boundary conditions
         self.BCfrontType = root.find("options").find("BCs").find("front").attrib["type"]
@@ -106,7 +110,8 @@ reads the input xml file and stores the information
             except ValueError:
                 # Open file
                 csv_file = root.find("options").find("BCs").find("front").find("value").text
-                with open(csv_file) as f:
+                csv_path = find_existing(csv_file)
+                with open(csv_path) as f:
                     data = pd.read_csv(f, sep=';', decimal='.', header=0)
                 self.BCfrontValue = interp1d(data.values[:, 0], data.values[:, 1], kind='linear',
                                              fill_value=0.0, bounds_error=False)
@@ -117,7 +122,8 @@ reads the input xml file and stores the information
                 except ValueError:
                     # Open file
                     csv_file = root.find("options").find("BCs").find("front").find("coef").text
-                    with open(csv_file) as f:
+                    csv_path = find_existing(csv_file)
+                    with open(csv_path) as f:
                         data = pd.read_csv(f, sep=';', decimal='.', header=0)
                     self.aerocoef = interp1d(data.values[:, 0], data.values[:, 1], kind='linear',
                                              fill_value=0.0, bounds_error=False)
@@ -129,7 +135,8 @@ reads the input xml file and stores the information
             except ValueError:
                 # Open file
                 csv_file = root.find("options").find("BCs").find("front").find("value").text
-                with open(csv_file) as f:
+                csv_path = find_existing(csv_file)
+                with open(csv_path) as f:
                     data = pd.read_csv(f, sep=';', decimal='.', header=0)
                 self.BCfrontValue = interp1d(data.values[:, 0], data.values[:, 1], kind='linear',
                                              fill_value=0.0, bounds_error=False)
@@ -137,8 +144,9 @@ reads the input xml file and stores the information
             self.SurfT_at_t = float(root.find("options").find("BCs").find("front").find("Surface_Temperature").text)
             self.tforT = float(root.find("options").find("BCs").find("front").find("Time_of_Temperature").text)
             mat = self.layers[0].material
-            self.aerocoef = lambda t: self.BCfrontValue(self.tforT)/(mat.hatmo(self.BLEdgeT_at_t)-mat.hatmo(self.SurfT_at_t))
-            self.BLedge_h = lambda t: self.BCfrontValue(t)/self.aerocoef + mat.hatmo(self.SurfT_at_t)
+            self.aerocoef = lambda t: self.BCfrontValue(self.tforT) / (
+                        mat.hatmo(self.BLEdgeT_at_t) - mat.hatmo(self.SurfT_at_t))
+            self.BLedge_h = lambda t: self.BCfrontValue(t) / self.aerocoef(t) + mat.hatmo(self.SurfT_at_t)
 
         elif self.BCfrontType == "recovery_enthalpy":
             if not self.layers[0].ablative:
@@ -150,10 +158,11 @@ reads the input xml file and stores the information
                 except ValueError:
                     # Open file
                     csv_file = root.find("options").find("BCs").find("front").find("value").text
-                    with open(csv_file) as f:
+                    csv_path = find_existing(csv_file)
+                    with open(csv_path) as f:
                         data = pd.read_csv(f, sep=';', decimal='.', header=0)
                     self.BLedge_h = interp1d(data.values[:, 0], data.values[:, 1], kind='linear',
-                                                 fill_value=0.0, bounds_error=False)
+                                             fill_value=0.0, bounds_error=False)
 
                 try:
                     value = float(root.find("options").find("BCs").find("front").find("coef").text)
@@ -161,10 +170,11 @@ reads the input xml file and stores the information
                 except ValueError:
                     # Open file
                     csv_file = root.find("options").find("BCs").find("front").find("coef").text
-                    with open(csv_file) as f:
+                    csv_path = csv_file
+                    with open(csv_path) as f:
                         data = pd.read_csv(f, sep=';', decimal='.', header=0)
                     self.aerocoef = interp1d(data.values[:, 0], data.values[:, 1], kind='linear',
-                                                 fill_value=0.0, bounds_error=False)
+                                             fill_value=0.0, bounds_error=False)
         else:
             raise ValueError("Unsupported front BC %s" % self.BCfrontType)
         self.BCbackType = root.find("options").find("BCs").find("back").attrib["type"]
@@ -174,7 +184,8 @@ reads the input xml file and stores the information
         # Time stepping
         if root.find("options").find("time").find("file") is not None:
             f = root.find("options").find("time").find("file").text
-            self.ts = pd.read_csv(f, sep=';', decimal='.', header=0).to_numpy().flatten()
+            f_path = find_existing(f)
+            self.ts = pd.read_csv(f_path, sep=';', decimal='.', header=0).to_numpy().flatten()
             self.tStart = self.ts[0]
             self.tEnd = self.ts[1]
             self.ts = self.ts[1:]
@@ -182,7 +193,7 @@ reads the input xml file and stores the information
             self.tStart = float(root.find("options").find("time").find("start").text)
             self.tEnd = float(root.find("options").find("time").find("end").text)
             self.tDelta = float(root.find("options").find("time").find("delta").text)
-            self.ts = np.arange(self.tStart+self.tDelta, self.tEnd + 1e-8, self.tDelta)
+            self.ts = np.arange(self.tStart + self.tDelta, self.tEnd + 1e-8, self.tDelta)
         self.write_step = int(root.find("options").find("time").find("write_every").text)
 
         # Initialization
@@ -196,7 +207,7 @@ reads the input xml file and stores the information
 
 def readMaterial(matname, ablative, corrugated, ablative_vals=None, corrugated_vals=None):
     # Read .matp file if it was specified
-    if matname[-5:] == ".matp":
+    if matname.name[-5:] == ".matp":
         with open(matname, 'rb') as matpfile:
             material = dill.load(matpfile)
         # if it is an ablative material check whether the data was generated for the right pressure and atmosphere
@@ -226,6 +237,42 @@ def readMaterial(matname, ablative, corrugated, ablative_vals=None, corrugated_v
     return material
 
 
-if __name__ == "__main__":
+directory_map = {"material": "Data/Materials"}
 
+
+def find_existing(name, kind=None):
+    # Check if absolute path
+    if Path.exists(Path(name)):
+        return Path(name)
+    # Check if in cwd
+    elif Path.exists(Path.joinpath(Path.cwd(), name)):
+        return Path.joinpath(Path.cwd(), name)
+
+    # For further checks environment variable needs to be set
+    hs_dir = os.getenv("HOTSTARSHIP_DIR")
+    if hs_dir is None:
+        raise ValueError(
+            "Environment variable HOTSTARSHIP_DIR is not set and directory %s could not be located." % name)
+
+    # Check if in HS_DIR
+    if Path.exists(Path.joinpath(Path(hs_dir), name)):
+        return Path.joinpath(Path(hs_dir), name)
+
+    try:
+        directory_map[kind]
+    except KeyError:
+        raise ValueError("Directory %s could not be located." % name)
+
+    # Check if in Hot-STARSHIP standard directory
+    if Path.exists(Path.joinpath(Path(hs_dir), directory_map[kind], name)):
+        return Path.joinpath(Path(hs_dir), directory_map[kind], name)
+    # Check if in Hot-STARSHIP standard directory and ".matp" exists in same name folder
+    elif kind == "material" and name[-5:] == ".matp" and Path.exists(
+            Path.joinpath(Path(hs_dir), directory_map[kind], name[:-5], name)):
+        return Path.joinpath(Path(hs_dir), directory_map[kind], name[:-5], name)
+    else:
+        raise ValueError("Directory %s could not be located." % name)
+
+
+if __name__ == "__main__":
     input = Input("/Users/nils/PycharmProjects/H_STARSHIP/Input/input.xml")
