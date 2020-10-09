@@ -231,7 +231,7 @@ class SolutionReader:
                          'mg': self.mg}
 
         self.labeldict = {'t': 't [s]',
-                          'z': 'z [m]',
+                          'z': 'z [mm]',
                           'T': 'T [K]',
                           'rho': 'rho [kg/m^3]',
                           'wv': 'wv [-]',
@@ -314,9 +314,13 @@ class SolutionReader:
             if 'Wall' in zlist:
                 z_nowall = z[z != 'Wall'].astype(float)
                 walls = z == 'Wall'
+                z_legend = z
+                z_legend[z_legend != 'Wall'] = z_legend[z_legend != 'Wall'].astype(float)*1e3
             else:
                 z_nowall = z
                 walls = [False] * z.size
+                z_legend = z*1e3
+
 
             # Check if valid locations (in material at least at start)
             if any(z_nowall < self.z[0, 0]) or any(z_nowall > self.z[-1, 0]):
@@ -365,12 +369,16 @@ class SolutionReader:
         # colors = ['#332288', '#88CCEE', '#44AA99', '#117733', '#999933', '#DDCC77', '#CC6677', '#882255', '#AA4499']
         for i in range(yvals.shape[1]):
             to_plot = ~np.isnan(yvals[:, i])
-            plt.plot(xvals[to_plot, i], yvals[to_plot, i])  # , c=colors[i], ls='solid', marker='None')
+            if location_dependent:
+                plt.plot(xvals[to_plot, i]*1e3, yvals[to_plot, i])  # , c=colors[i], ls='solid', marker='None')
+            else:
+                plt.plot(xvals[to_plot, i], yvals[to_plot, i])
         if yvals.shape[1] > 1:
             if location_dependent:
                 plt.legend(t.astype(str), title='t [s]')
             else:
-                plt.legend(z.astype(str), title='z [m]')
+                # TODO: add truncation for ints
+                plt.legend(z_legend.astype(str), title='z [mm]')
         plt.xlabel(self.labeldict[x])
         plt.ylabel(self.labeldict[y])
 
