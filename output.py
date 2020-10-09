@@ -366,14 +366,14 @@ class SolutionReader:
         hs_dir = os.getenv("HOTSTARSHIP_DIR")
         if hs_dir is not None:
             try:
-                plt.style.use(str(Path.joinpath(Path(hs_dir), "Templates", "MA_Style.mplstyle")))
+                plt.style.use(str(Path.joinpath(Path(hs_dir), "Templates", "HS_Style.mplstyle")))
             except OSError:
                 pass
         else:
             try:
-                plt.style.use("MA_Style")
+                plt.style.use("HS_Style")
             except OSError:
-                warnings.warn("Could not locate MA_Style.mplstyle. Proceeding without.")
+                warnings.warn("Could not locate HS_Style.mplstyle. Proceeding without.")
 
         #plt.style.use("Templates/MA_Style")
         #if not vary_linestyle:
