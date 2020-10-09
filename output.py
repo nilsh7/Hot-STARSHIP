@@ -3,6 +3,8 @@ import numpy as np
 from pathlib import Path
 from datetime import datetime
 from matplotlib import lines
+import os
+import warnings
 
 
 def plotT(layers, Tnu, Tmap, t, inputvars):
@@ -357,9 +359,23 @@ class SolutionReader:
                 xvals = np.repeat(self.t[:, np.newaxis], z.size, axis=1)
                 yvals = yvals.transpose()
 
-        # Plot graph
+        # Clear plot
         plt.clf()
-        plt.style.use("MA_Style")
+
+        # Get plot style
+        hs_dir = os.getenv("HOTSTARSHIP_DIR")
+        if hs_dir is not None:
+            try:
+                plt.style.use(str(Path.joinpath(Path(hs_dir), "Templates", "MA_Style.mplstyle")))
+            except OSError:
+                pass
+        else:
+            try:
+                plt.style.use("MA_Style")
+            except OSError:
+                warnings.warn("Could not locate MA_Style.mplstyle. Proceeding without.")
+
+        #plt.style.use("Templates/MA_Style")
         #if not vary_linestyle:
         #    plt.plot(self.t, yvals)
         #else:
@@ -367,6 +383,8 @@ class SolutionReader:
         #    for i in range(yvals.shape[1]):
         #        plt.plot(xvals[:, i], yvals[:, i], linestyles[i])
         # colors = ['#332288', '#88CCEE', '#44AA99', '#117733', '#999933', '#DDCC77', '#CC6677', '#882255', '#AA4499']
+
+        #  Generate plot
         for i in range(yvals.shape[1]):
             to_plot = ~np.isnan(yvals[:, i])
             if location_dependent:
