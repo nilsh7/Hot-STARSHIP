@@ -219,6 +219,7 @@ class SolutionReader:
         self.beta = loadvars[:, 5].reshape(self.nVals, self.nts, order='F')
         self.mc = loadvars[:, 6].reshape(self.nVals, self.nts, order='F')
         self.mg = loadvars[:, 7].reshape(self.nVals, self.nts, order='F')
+        self.x = self.z - np.tile(self.z[0, :], (self.nVals, 1))
 
         # Construct dicts for plotting
         self.namedict = {'t': self.t,
@@ -230,7 +231,8 @@ class SolutionReader:
                          's': self.z,
                          'sdot': self.z,
                          'mc': self.mc,
-                         'mg': self.mg}
+                         'mg': self.mg,
+                         'x': self.x}
 
         self.labeldict = {'t': r'$t$ [s]',
                           'z': r'$z$ [mm]',
@@ -244,14 +246,15 @@ class SolutionReader:
                           'mg': r'$\dot{m}_g$ $\left[ \frac{kg}{m^2 \cdot s} \right]$',
                           'x': r'$x$ [mm]'}
 
-    def plot(self, x, y, t=0.0, z=0.0, print_values=False):
+    def plot(self, x_axis, y_axis, t=None, z=None, x=None, print_values=False):
 
         # For plot of s, use z coordinate of wall
-        if y in ('s', 'sdot', 'mc'):
-            z = np.array(['Wall'])
+        if y_axis in ('s', 'sdot', 'mc'):
+            loc = 'Wall'
+            self.loc = self.z
 
         # Manipulate parameter if needed (convert to numpy array)
-        if 'z' == x:
+        if x_axis in ('z', 'x'):
             location_dependent = True
             if type(t) is float or type(t) is int:
                 t = np.array([t])
@@ -261,27 +264,36 @@ class SolutionReader:
                 t = np.array(t)
             else:
                 raise ValueError("Unknown input type %s" % type(t))
-        elif 't' == x:
+        elif 't' == x_axis:
             location_dependent = False
-            if type(z) is float or type(z) is int:
-                z = np.array([z])
-            elif type(z) is np.ndarray:
-                z = z.flatten()
-            elif type(z) is list:
-                z = np.array(z)
-            elif z == 'Wall':
-                z = np.array([z])
+            if z is not None:
+                loc = z
+                self.loc = self.z
+                leg = self.labeldict['z']
+            elif x is not None:
+                loc = x
+                self.loc = self.x
+                leg = self.labeldict['x']
+
+            if type(loc) is float or type(loc) is int:
+                loc = np.array([loc])
+            elif type(loc) is np.ndarray:
+                loc = loc.flatten()
+            elif type(loc) is list:
+                loc = np.array(loc)
+            elif loc == 'Wall':
+                loc = np.array([loc])
             else:
-                raise ValueError("Unknown input type %s" % type(z))
+                raise ValueError("Unknown input type %s" % type(loc))
         else:
-            raise ValueError('%s cannot be on x axis' % x)
+            raise ValueError('%s cannot be on x axis' % x_axis)
 
         # Get variables
-        xvar = self.namedict[x]
-        yvar = self.namedict[y]
+        xvar = self.namedict[x_axis]
+        yvar = self.namedict[y_axis]
 
         # Calculate sdot if selected
-        if y == 'sdot':
+        if y_axis == 'sdot':
             yvar = np.gradient(yvar[0, :], xvar)
 
         # For plots over z
@@ -313,41 +325,45 @@ class SolutionReader:
         else:
 
             # Check if 'Wall' is part of list
-            zlist = z.tolist()
-            if 'Wall' in zlist:
-                z_nowall = z[z != 'Wall'].astype(float)
-                walls = z == 'Wall'
-                z_legend = z
-                z_legend[z_legend != 'Wall'] = z_legend[z_legend != 'Wall'].astype(float)*1e3
+            loclist = loc.tolist()
+            if 'Wall' in loclist:
+                loc_nowall = loc[loc != 'Wall'].astype(float)
+                walls = loc == 'Wall'
+                loc_legend = loc
+                loc_legend[loc_legend != 'Wall'] = loc_legend[loc_legend != 'Wall'].astype(float)*1e3
             else:
-                z_nowall = z
-                walls = [False] * z.size
-                z_legend = z*1e3
+                loc_nowall = loc
+                walls = [False] * loc.size
+                loc_legend = loc * 1e3
 
 
             # Check if valid locations (in material at least at start)
-            if any(z_nowall < self.z[0, 0]) or any(z_nowall > self.z[-1, 0]):
+            if any(loc_nowall < self.loc[0, 0]) or any(loc_nowall > self.loc[-1, 0]):
                 raise ValueError('Location out of bounds.')
             else:
 
                 # Get indices of location and z coordinate where points lay inbetween
-                iZplus = np.argmax(self.z.reshape(self.nVals, self.nts, 1) - z_nowall.reshape(1, 1, -1) > 0, axis=0)
+                iZplus = np.argmax(self.loc.reshape(self.nVals, self.nts, 1) - loc_nowall.reshape(1, 1, -1) > 0, axis=0)
                 iZminus = iZplus - 1
-                zplus = self.z[iZplus, np.repeat(np.arange(self.nts)[:, np.newaxis], len(z_nowall), axis=1)]
-                zminus = self.z[iZminus, np.repeat(np.arange(self.nts)[:, np.newaxis], len(z_nowall), axis=1)]
+                locplus = self.loc[iZplus, np.repeat(np.arange(self.nts)[:, np.newaxis], len(loc_nowall), axis=1)]
+                locminus = self.loc[iZminus, np.repeat(np.arange(self.nts)[:, np.newaxis], len(loc_nowall), axis=1)]
 
                 # Calculate weights
-                wminus = (zplus - z_nowall) / (zplus - zminus)
+                wminus = (locplus - loc_nowall) / (locplus - locminus)
                 wplus = 1 - wminus
 
                 # Remove points when the material is gone
-                wplus[wminus < 0], wminus[wminus < 0] = (np.nan, np.nan)
+                with np.errstate(invalid='ignore'):
+                    wplus[wminus < 0], wminus[wminus < 0] = (np.nan, np.nan)
+                    wplus[wminus > 1], wminus[wminus > 1] = (np.nan, np.nan)
+                    wplus[wplus < 0], wminus[wplus < 0] = (np.nan, np.nan)
+                    wplus[wplus > 1], wminus[wplus > 1] = (np.nan, np.nan)
 
                 # Fill global weights array and compute interpolated values
-                weights = np.zeros((z.size, self.nVals, self.nts))
-                yvals = np.zeros((z.size, self.nts))
+                weights = np.zeros((loc.size, self.nVals, self.nts))
+                yvals = np.zeros((loc.size, self.nts))
                 wall_occurences = 0
-                for i, wall in zip(np.arange(z.size), walls):
+                for i, wall in zip(np.arange(loc.size), walls):
                     if wall:
                         weights[i, 0, np.arange(self.nts)] = 1.0
                         wall_occurences += 1
@@ -357,7 +373,7 @@ class SolutionReader:
                         weights[i, iZminus[:, i-wo], np.arange(self.nts)] = wminus[:, i-wo]
                     yvals[i, :] = np.sum(yvar*weights[i, :, :], axis=0)
 
-                xvals = np.repeat(self.t[:, np.newaxis], z.size, axis=1)
+                xvals = np.repeat(self.t[:, np.newaxis], loc.size, axis=1)
                 yvals = yvals.transpose()
 
 
@@ -402,9 +418,9 @@ class SolutionReader:
                 plt.legend(t.astype(str), title=r'$t$ [s]')
             else:
                 # TODO: add truncation for ints
-                plt.legend(z_legend.astype(str), title='z [mm]')
-        plt.xlabel(self.labeldict[x])
-        plt.ylabel(self.labeldict[y])
+                plt.legend(loc_legend.astype(str), title=leg)
+        plt.xlabel(self.labeldict[x_axis])
+        plt.ylabel(self.labeldict[y_axis])
 
         # data_exp = np.transpose(np.vstack((xvals[to_plot, i], yvals[to_plot, i])))
         # np.savetxt('out.csv', data_exp, delimiter=';')
