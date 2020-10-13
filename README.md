@@ -196,6 +196,8 @@ sr.plot('z', 'beta', t=[20, 100, 200])
 ```
 This plots the degree of char through the material after 20, 100 and 200 seconds.
 
+There are two different coordinate systems which are shifted by the recession amount ``s``. The coordinate system with the coordinate `z` is fixed in space. Therefore this coordinate refers to actual stationary physical locations. However some of these locations near the surface may be "eaten up" by the receding surface. On the other hand, the origin of the coordinate system with coordinate `x` moves with the surface. Therefore these locations are at a fixed depth from the surface. Large values might therefore be moving out of the material.  
+
 Dependent variables include:
 - `T`: temperature
 - `rho`: density
