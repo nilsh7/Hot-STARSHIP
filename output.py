@@ -232,16 +232,17 @@ class SolutionReader:
                          'mc': self.mc,
                          'mg': self.mg}
 
-        self.labeldict = {'t': 't [s]',
-                          'z': 'z [mm]',
-                          'T': 'T [K]',
-                          'rho': 'rho [kg/m^3]',
-                          'wv': 'wv [-]',
-                          'beta': 'beta [-]',
-                          's': 's [m]',
-                          'sdot': 'sdot [m/s]',
-                          'mc': 'mdot_c [kg/(m^2*s)]',
-                          'mg': 'mdot_g [kg/(m^2*s)]'}
+        self.labeldict = {'t': r'$t$ [s]',
+                          'z': r'$z$ [mm]',
+                          'T': r'$T$ [K]',
+                          'rho': r'$\rho$ $\left[ \frac{kg}{m^3} \right]$',
+                          'wv': r'$w_v$ [-]',
+                          'beta': r'$\beta$ [-]',
+                          's': '$s$ [mm]',
+                          'sdot': r'$\dot{s}$ [mm/s]',
+                          'mc': r'$\dot{m}_c$ $\left[ \frac{kg}{m^2 \cdot s} \right]$',
+                          'mg': r'$\dot{m}_g$ $\left[ \frac{kg}{m^2 \cdot s} \right]$',
+                          'x': r'$x$ [mm]'}
 
     def plot(self, x, y, t=0.0, z=0.0, print_values=False):
 
@@ -359,8 +360,6 @@ class SolutionReader:
                 xvals = np.repeat(self.t[:, np.newaxis], z.size, axis=1)
                 yvals = yvals.transpose()
 
-        # Clear plot
-        plt.clf()
 
         # Get plot style
         hs_dir = os.getenv("HOTSTARSHIP_DIR")
@@ -384,16 +383,23 @@ class SolutionReader:
         #        plt.plot(xvals[:, i], yvals[:, i], linestyles[i])
         # colors = ['#332288', '#88CCEE', '#44AA99', '#117733', '#999933', '#DDCC77', '#CC6677', '#882255', '#AA4499']
 
+        # Clear plot
+        plt.plot(1, 1)  # dummy plot
+        plt.clf()
+
         #  Generate plot
         for i in range(yvals.shape[1]):
             to_plot = ~np.isnan(yvals[:, i])
             if location_dependent:
                 plt.plot(xvals[to_plot, i]*1e3, yvals[to_plot, i])  # , c=colors[i], ls='solid', marker='None')
             else:
-                plt.plot(xvals[to_plot, i], yvals[to_plot, i])
+                if y_axis in ('sdot', 's'):
+                    plt.plot(xvals[to_plot, i], yvals[to_plot, i]*1e3)
+                else:
+                    plt.plot(xvals[to_plot, i], yvals[to_plot, i])
         if yvals.shape[1] > 1:
             if location_dependent:
-                plt.legend(t.astype(str), title='t [s]')
+                plt.legend(t.astype(str), title=r'$t$ [s]')
             else:
                 # TODO: add truncation for ints
                 plt.legend(z_legend.astype(str), title='z [mm]')
