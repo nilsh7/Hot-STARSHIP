@@ -36,8 +36,6 @@ In order to be able to call the program from any location, add the installation 
 export PYTHONPATH=/Users/<user>/<your_path_to_hot_starship>:$PYTHONPATH
 ```
 
-Per default, the output uses a custom matplotlib style for plots. [It is designed to be colorblind-friendly](https://personal.sron.nl/~pault/) and can be read by people with monochrome vision or in monochrome printouts. To use the style copy the `Templates/MA_Style.mplstyle` file to the according style directory of matplotlib. For more information on the location of this directory check the [matplotlib documentation](https://matplotlib.org/tutorials/introductory/customizing.html#the-matplotlibrc-file).
-
 # Usage
 Using the program consists of three steps:
 1. Preparing your case
@@ -174,7 +172,7 @@ You can use the ``-f`` option to force to overwrite the ouput file should it alr
 ## Hot to view results
 Running Hot-STARSHIP generates an output ``csv`` file that can be opened and read. The first column indicates the time. For each time step all nodal locations as well as the value of the variables are given. The back face that is identical with the last node is included, too. After the output of all nodal values, the time is incremented.
 
-For ease of displaying results a number of functions is implemented in `output.py`. If you wish to use this libarary, type
+For ease of displaying results, a number of functions is implemented in `output.py`. Per default, the output uses a custom matplotlib style for plots. [It is designed to be colorblind-friendly](https://personal.sron.nl/~pault/) and can be read by people with monochrome vision or in monochrome printouts. If you wish to use the output library, type
 ```
 python3
 ```
@@ -190,7 +188,7 @@ The ``SolutionReader`` objects provides plot tools that can be called using for 
 ```
 sr.plot('t', 'T', z=['Wall', 0.02, 0.05])
 ```
-which will plot temperature as a function of time at the wall, 2 cm into the material and 5 cm into the material. If you rather wish to plot as function of location, go ahead:
+which will plot temperature as a function of time at the wall, 2 cm and 5 cm into the material. If you rather wish to plot as function of location, go ahead:
 ```
 sr.plot('z', 'beta', t=[20, 100, 200])
 ```
