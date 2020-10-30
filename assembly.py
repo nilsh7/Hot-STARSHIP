@@ -1085,7 +1085,15 @@ def updateRho(lay, rhoimu, rhoin, rhonu, rhomap, Tnu, Tmap, tDelta):
     rhv, rhc = (mat.data.rhov0, mat.data.rhoc0)
     lay.wv = rhv/(rhv-rhc) * (1-rhc/rhonu[ablativeCells]) if rhv != rhc else np.ones(len(rhonu[ablativeCells]))
 
-    mgas = -np.sum(frac*drhodt(mat, rhoimu_abl, Tj), axis=1) * (gr.zjp12-gr.zjm12)
+    drdt = np.sum(frac*drhodt(mat, rhoimu_abl, Tj), axis=1)
+
+    mgas = -(gr.dzjm/2 * (3/4 * drdt + 1/4 * m1(drdt)) + gr.dzjp/2 * (3/4*drdt + 1/4*p1(drdt)))
+
+    if type(gr) is grid.FrontGrid:
+        mgas[0] = -gr.dzjp[0]/2 * (3/4*drdt[0] + 1/4 * drdt[1])
+        mgas[-1] = -(gr.dzjm[-1]/2 * (3/4 * drdt[-1] + 1/4 * drdt[-2]) + gr.dzjp[-1]/2 * drdt[-1])
+    else:
+        raise UserWarning("DeepGrid at front is not supported yet.")
 
     return rhonu, rhoimu, mgas
 
