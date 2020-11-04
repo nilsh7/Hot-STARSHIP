@@ -88,7 +88,7 @@ reads the input xml file and stores the information
         :param xmlfile: path to xml file
         """
         # Read xml file
-        tree = ET.parse(xmlfile)
+        tree = ET.parse(find_existing(xmlfile))
 
         root = tree.getroot()
 
