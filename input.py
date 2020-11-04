@@ -38,9 +38,11 @@ creates a Layer objects that holds various information about the TPS layer
         if layerelem.find("corrugated") is not None:
             if layerelem.find("corrugated").text == "True":
                 self.corrugated = True
+                mat_core_name = layerelem.find("material_core").text
+                mat_web_name = layerelem.find("material_web").text
                 corrugated_vals = {
-                    "mat_core": layerelem.find("material_core").text,
-                    "mat_web": layerelem.find("material_web").text,
+                    "mat_core": find_existing(mat_core_name, "material"),
+                    "mat_web": find_existing(mat_web_name, "material"),
                     "dc": float(layerelem.find("thickness").text),
                     "dw": float(layerelem.find("web_thickness").text),
                     "p": float(layerelem.find("half_cell_length").text),
@@ -55,8 +57,8 @@ creates a Layer objects that holds various information about the TPS layer
 
         # If ablative, check whether bprime or hg shall be read from file
         if self.ablative:
-            ablative_vals["bprime"] = layerelem.find("bprime").text if layerelem.find("bprime") is not None else None
-            ablative_vals["hgas"] = layerelem.find("hgas").text if layerelem.find("hgas") is not None else None
+            ablative_vals["bprime"] = find_existing(layerelem.find("bprime").text) if layerelem.find("bprime") is not None else None
+            ablative_vals["hgas"] = find_existing(layerelem.find("hgas").text) if layerelem.find("hgas") is not None else None
 
         # Check if layer is not corrugated and ablative
         if self.ablative and self.corrugated:
