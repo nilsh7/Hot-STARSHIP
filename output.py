@@ -422,6 +422,8 @@ class SolutionReader:
         plt.xlabel(self.labeldict[x_axis])
         plt.ylabel(self.labeldict[y_axis])
 
+        plt.show()
+
         # data_exp = np.transpose(np.vstack((xvals[to_plot, i], yvals[to_plot, i])))
         # np.savetxt('out.csv', data_exp, delimiter=';')
 
