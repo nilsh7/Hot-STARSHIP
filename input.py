@@ -219,7 +219,8 @@ def readMaterial(matname, ablative, corrugated, ablative_vals=None, corrugated_v
                 print("Using %s" % matname)  # nothing has changed, continue
             else:
                 # if not, run material generation again
-                material = mat_module.createMaterial(matname, ablative=True, corrugated=False,
+                print("Pressure or atmosphere not matching. Constructing material again...")
+                material = mat_module.createMaterial(matname.parent, ablative=True, corrugated=False,
                                                      pressure=ablative_vals["pressure"],
                                                      atmosphere=ablative_vals["atmosphere"])
         else:
