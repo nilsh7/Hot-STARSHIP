@@ -9,7 +9,7 @@
             <ablative>True</ablative>
         </layer>
         <layer number="2">
-            <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Test_1</material>
+            <material>Data/Materials/Test_1</material>
             <thickness>0.01</thickness>
         </layer>
     </layers>

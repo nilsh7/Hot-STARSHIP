@@ -2,7 +2,7 @@
 <input>
     <layers>
         <layer number="1">
-            <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/TACOT_3.0/TACOT_3.0.matp</material>
+            <material>Data/Materials/TACOT_3.0/TACOT_3.0.matp</material>
             <thickness>0.05</thickness>
             <firstcell>0.0001</firstcell>
             <maxgrowth>1.03</maxgrowth>
@@ -12,8 +12,8 @@
     <options>
         <BCs>
             <front type="recovery_enthalpy">
-                <value>/Users/nils/PycharmProjects/H_STARSHIP/Data/Recovery_Enthalpy/Test_25MJ_Ablation_Test_Case_2.csv</value>
-                <coef>/Users/nils/PycharmProjects/H_STARSHIP/Data/Recovery_Enthalpy/Test_Transfer_Coeff_Ablation_Test_Case_2.csv</coef>
+                <value>Data/Recovery_Enthalpy/Test_25MJ_Ablation_Test_Case_2.csv</value>
+                <coef>Data/Recovery_Enthalpy/Test_Transfer_Coeff_Ablation_Test_Case_2.csv</coef>
             </front>
             <!--front type="aerodynamic">
                 <value>3.7e6</value>
