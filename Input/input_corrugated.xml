@@ -2,15 +2,15 @@
 <input>
     <layers>
         <layer number="1">
-            <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Test_2</material>
+            <material>Data/Materials/Test_2</material>
             <thickness>0.002</thickness>
             <firstcell>0.00002</firstcell>
             <maxgrowth>1.03</maxgrowth>
             <ablative>False</ablative>
         </layer>
         <layer number="2">
-            <material_core>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Test_1</material_core>
-            <material_web>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Aluminium</material_web>
+            <material_core>Data/Materials/Test_1</material_core>
+            <material_web>Data/Materials/Aluminium</material_web>
             <thickness>0.05</thickness>
             <web_thickness>5e-4</web_thickness>
             <half_cell_length>100</half_cell_length>
@@ -18,7 +18,7 @@
             <corrugated>True</corrugated>
         </layer>
         <layer number="3">
-            <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Test_2</material>
+            <material>Data/Materials/Test_2</material>
             <thickness>0.002</thickness>
         </layer>
     </layers>
