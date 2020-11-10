@@ -3,6 +3,7 @@ import numpy as np
 from pathlib import Path
 from datetime import datetime
 from matplotlib import lines
+from matplotlib.colors import LinearSegmentedColormap
 import os
 import warnings
 
@@ -426,6 +427,79 @@ class SolutionReader:
 
         # data_exp = np.transpose(np.vstack((xvals[to_plot, i], yvals[to_plot, i])))
         # np.savetxt('out.csv', data_exp, delimiter=';')
+
+    def plot_gradient(self, t):
+
+        if type(t) is float or type(t) is int:
+            t = np.array([t])
+        elif type(t) is np.ndarray:
+            t = t.flatten()
+        elif type(t) is list:
+            t = np.array(t)
+        else:
+            raise ValueError("Unknown input type %s" % type(t))
+
+        num_t = len(t)
+
+        # Get variables
+        xvar = self.namedict['z']
+        yvar = self.namedict['beta']
+
+        if any(t < self.t[0]) or any(t > self.t[-1]):
+            raise ValueError('Time out of bounds.')
+        else:
+
+            # Get indices and times where time lies inbetween
+            iTplus = np.argmax(self.t.reshape(self.nts, 1) - t.reshape(1, -1) > 0, axis=0)
+            iTminus = iTplus - 1
+            tplus = self.t[iTplus]
+            tminus = self.t[iTminus]
+
+            # Construct weights for interpolation based on time
+            wminus = (tplus - t) / (tplus - tminus)
+            wplus = 1 - wminus
+
+            # Fill into global array
+            weights = np.zeros((len(t), self.nts))
+            weights[np.arange(weights.shape[0]), iTplus] = wplus
+            weights[np.arange(weights.shape[0]), iTminus] = wminus
+
+            # Calculate interpolated values
+            xvals = np.dot(xvar, weights.transpose())
+            yvals = np.dot(yvar, weights.transpose())
+
+        height = np.max(xvals)
+        width = height/2
+
+        # Colormap
+        cvals = [0, 1]
+        colors = ["#cac4a9", "black"]
+        norm = plt.Normalize(min(cvals), max(cvals))
+        tuples = list(zip(map(norm, cvals), colors))
+        cmap = LinearSegmentedColormap.from_list("", tuples)
+
+        # Subplots
+        fig = plt.figure(1)
+        for it, cur_t in enumerate(t):
+            X, Y = np.meshgrid(np.array([0, width]), xvals[:, it])
+            Z = np.tile(yvals[:, it], (2, 1)).transpose()
+
+            ax = fig.add_subplot(1, num_t, it+1)
+            ax.contourf(X, Y, Z, levels=998, cmap=cmap, vmin=0, vmax=1)
+            ax.set_aspect('equal', adjustable='box')
+            plt.xlim([0, width])
+            plt.ylim([0, height])
+            ax.invert_yaxis()
+            plt.xticks([])
+            plt.yticks([])
+            plt.box(False)
+            if int(cur_t) == cur_t:
+                ax.set_xlabel('%s s' % int(cur_t))
+            else:
+                ax.set_xlabel('%s s' % cur_t)
+
+        plt.show()
+
 
     def calculate_mass(self, t=0.0):
 
