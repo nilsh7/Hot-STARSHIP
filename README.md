@@ -215,7 +215,7 @@ In addition the following functions of the ``SolutionReader`` object are availab
 1. ``calculate_mass(t)``: returns the mass per unit area at time `t`
 2.  ``get_max_back_T()``: returns the maximum back face temperature
 3. ```get_max_T()```: returns the global maximum temperature
-4. `get_remaining_thickness()`: returns the remaining TPS thickness at time `t` 
+4. `get_remaining_thickness()`: returns the remaining TPS thickness at the end
 
 # Sources
 - Amar, Adam Joseph. "Modeling of one-dimensional ablation with porous flow using finite control volume procedure." (2006).
