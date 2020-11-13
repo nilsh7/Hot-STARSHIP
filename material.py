@@ -810,17 +810,19 @@ checks and corrects the input to material creation
     :param args: dictionary of arguments
     :return: corrected dictionary of arguments
     """
-    # Construct input directory path
-    if not args["input_dir"] or args["input_dir"] == ".":
-        args["input_dir"] = Path.cwd()
-    else:
-        args["input_dir"] = input.find_existing(args["input_dir"], "material")
 
-    # Construct output file path
-    if not args["output_file"]:
-        args["output_file"] = Path.joinpath(args["input_dir"], args["input_dir"].name + ".matp")
-    else:
-        args["output_file"] = Path.joinpath(Path.cwd(), args["output_file"])
+    if not args["corrugated"]:
+        # Construct input directory path
+        if not args["input_dir"] or args["input_dir"] == ".":
+            args["input_dir"] = Path.cwd()
+        else:
+            args["input_dir"] = input.find_existing(args["input_dir"], "material")
+
+        # Construct output file path
+        if not args["output_file"]:
+            args["output_file"] = Path.joinpath(args["input_dir"], args["input_dir"].name + ".matp")
+        else:
+            args["output_file"] = Path.joinpath(Path.cwd(), args["output_file"])
 
     # Check whether pressure is in correct format
     try:
