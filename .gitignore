@@ -13,3 +13,6 @@ Data/HeatFlux/
 Data/Materials/
 Testing/
 /*.csv
+Working/
+Input/**/*.xml
+Input/**/output.csv
