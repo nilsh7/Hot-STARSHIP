@@ -145,6 +145,10 @@ def plotGrids(*grids):
 plots the passed grids
     :param grids: variable number of grids
     """
+
+    # Clear plot
+    plt.clf()
+
     # Check types
     for grid in grids:
         if not issubclass(type(grid), Grid):
