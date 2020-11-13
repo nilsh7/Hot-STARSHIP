@@ -2,7 +2,7 @@
 <input>
     <layers>
         <layer number="1">
-            <material>/Users/nils/PycharmProjects/H_STARSHIP/Data/Materials/Carbon_Phenolic/Carbon_Phenolic.matp</material>
+            <material>Data/Materials/Carbon_Phenolic/Carbon_Phenolic.matp</material>
             <thickness>0.01</thickness>
             <firstcell>0.0001</firstcell>
             <maxgrowth>1.1</maxgrowth>
@@ -19,7 +19,7 @@
                 <value>7.5e5</value>
             </front-->
             <front type="aerodynamic">
-                <value>/Users/nils/PycharmProjects/H_STARSHIP/Data/HeatFlux/Test_cos_750kW.csv</value>
+                <value>Data/HeatFlux/Test_cos_750kW.csv</value>
                 <BL_Edge_Temperature>1500</BL_Edge_Temperature>
                 <Surface_Temperature>800</Surface_Temperature>
                 <Time_of_Temperature>25.0</Time_of_Temperature>
