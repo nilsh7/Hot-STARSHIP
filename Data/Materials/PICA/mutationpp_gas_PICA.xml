@@ -1,0 +1,12 @@
+<!-- Mixtures template for Mutation++ -->
+<mixture thermo_db="NASA-9" >
+
+    <species>
+       {gases with C, H, O, e-}
+    </species>
+
+    <element_compositions default="PICA_Gas">
+        <composition name="PICA_Gas" type="mole">C:0.26976541236671214, H:0.6265412761893611, O:0.10369331144392688</composition>
+    </element_compositions>
+
+</mixture>

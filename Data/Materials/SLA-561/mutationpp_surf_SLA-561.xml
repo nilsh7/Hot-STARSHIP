@@ -1,0 +1,16 @@
+<!-- Mixtures template for Mutation++ -->
+<mixture thermo_db="NASA-9" state_model="EquilTP" mechanism="none">
+
+    <species>
+       {gases with C, H, N, O, e-, Ar} C(gr)
+    </species>
+
+    <element_compositions default="Char">
+        <composition name="Char" type="mole">C(gr):1.0</composition>
+        <composition name="SLA-561_Gas" type="mole">C:0.0062267881316455855, H:0.8518056101728751, O:0.1419676016954792</composition>
+        <composition name="Earth" type="mole">N:0.79, O:0.21</composition>
+        <composition name="Venus" type="mole">CO2:0.965, N2:0.035</composition>
+        <composition name="Mars" type="mole">CO2:0.9532, N2:0.027, Ar:0.016</composition>
+    </element_compositions>
+
+</mixture>

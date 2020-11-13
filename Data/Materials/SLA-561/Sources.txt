@@ -1,0 +1,15 @@
+Conductivity, Emissivity, heat capacity:
+Thermal protection materials: Thermophysical property data; Williams, S. D., Curry, Donald M.
+
+Minimum decomposition temperature, char yield:
+Evaluation of a polyurethane foam for ablative protection at low heating rates.
+Pope, Ronald B.
+Riccitiello, Salvatore R.
+Parker, John A.
+
+Composition:
+C2H6OSi
+http://www.goodfellow.com/A/Silicone-Elastomer.html
+https://en.wikipedia.org/wiki/Silicone_rubber
+
+
