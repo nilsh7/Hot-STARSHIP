@@ -245,7 +245,7 @@ directory_map = {"material": "Data/Materials"}
 
 def find_existing(name, kind=None):
     # Check if absolute path
-    if Path.exists(Path(name)):
+    if Path(name).root != '' and Path.exists(Path(name)):
         return Path(name)
     # Check if in cwd
     elif Path.exists(Path.joinpath(Path.cwd(), name)):
