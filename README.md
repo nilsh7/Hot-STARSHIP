@@ -75,6 +75,12 @@ Please not that the thermal expansion is not considered. It is therefore advisab
 
 Running ``material.py`` or ``hotstarship.py`` with the material as input will generate a `.matp` file in the directory of the material. This file is a ``dill``ed binary version of the ``Material`` object and contains all the information provided by the `.csv` files. The file can then be specified as input which significantly speeds up the process, especially for ablative materials.
 
+If you wish to construct ``.matp`` files beforehand, e.g. for constructing ablative materials on a Linux machine and using them on a Windows PC, you can use `material.py`. Construct these using:
+```
+python3 material.py -i "<path_to_material_directory>"
+```
+Type ``python3 material.py -h`` for a list of available options.
+
 #### Ablative
 For ablative materials, the material properties of the virgin and char state might be different which is why there are two separate directories for these materials. In addition, information about the composition of the material and its decomposition reaction needs to be specified.
 ```bash
@@ -182,7 +188,7 @@ from hotstarship import output
 ```
 Read your solution file using:
 ```
-sr = output.SolutionReader(<path_to_your_solution_file>)
+sr = output.SolutionReader("<path_to_your_solution_file>")
 ```
 The ``SolutionReader`` objects provides plot tools that can be called using for instance
 ```
@@ -206,10 +212,10 @@ Dependent variables include:
 - ```mg```: pyrolysis gas mass flux
 
 In addition the following functions of the ``SolutionReader`` object are available:
-1. ``calculate_mass(t)``: returns the mass per unit area at time `t
+1. ``calculate_mass(t)``: returns the mass per unit area at time `t`
 2.  ``get_max_back_T()``: returns the maximum back face temperature
 3. ```get_max_T()```: returns the global maximum temperature
-4. `get_remaining_thickness(t)`: returns the remaining TPS thickness at time `t` 
+4. `get_remaining_thickness()`: returns the remaining TPS thickness at time `t` 
 
 # Sources
 - Amar, Adam Joseph. "Modeling of one-dimensional ablation with porous flow using finite control volume procedure." (2006).
