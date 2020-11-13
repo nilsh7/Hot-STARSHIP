@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<input>
+    <layers>
+        <layer number="1">
+            <material>Ti-6Al-4V.matp</material>
+            <thickness>**t_f**</thickness>
+            <firstcell>**firstcell_f**</firstcell>
+            <maxgrowth>1.03</maxgrowth>
+            <ablative>False</ablative>
+        </layer>
+        <layer number="2">
+            <material_core>Pyrogel_XTE.matp</material_core>
+            <material_web>Ti-6Al-4V.matp</material_web>
+            <thickness>**t_c**</thickness>
+            <web_thickness>**t_w**</web_thickness>
+            <half_cell_length>**p**</half_cell_length>
+            <corrugation_angle>**Theta**</corrugation_angle>
+            <corrugated>True</corrugated>
+        </layer>
+        <layer number="3">
+            <material>Ti-6Al-4V.matp</material>
+            <thickness>**t_b**</thickness>
+        </layer>
+    </layers>
+    <options>
+        <BCs>
+            <front type="heatflux">
+                <value>side_heat_flux.csv</value>
+            </front>
+            <back type="adiabatic"></back>
+        </BCs>
+        <time>
+            <file>Timesteps.csv</file>
+            <write_every>5</write_every>
+        </time>
+        <init type="Temperature">
+            <value>300.0</value>
+        </init>
+        <ambient>
+            <temperature>300</temperature>
+            <pressure>101325</pressure>
+            <atmosphere>Earth</atmosphere>
+            <turbulent_flow>True</turbulent_flow>
+        </ambient>
+    </options>
+</input>

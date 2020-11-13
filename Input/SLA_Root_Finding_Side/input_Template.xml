@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<input>
+    <layers>
+        <layer number="1">
+            <material>SLA-561.matp</material>
+            <thickness>**thickness**</thickness>
+            <firstcell>**firstcell**</firstcell>
+            <maxgrowth>1.01</maxgrowth>
+            <ablative>True</ablative>
+        </layer>
+    </layers>
+    <options>
+        <BCs>
+            <front type="heatflux">
+                <value>side_heat_flux.csv</value>
+                <coef>transfer_coeff.csv</coef>
+            </front>
+            <back type="adiabatic"></back>
+        </BCs>
+        <time>
+            <file>Timesteps.csv</file>
+            <write_every>5</write_every>
+        </time>
+        <init type="Temperature">
+            <value>300.0</value>
+        </init>
+        <ambient>
+            <temperature>300</temperature>
+            <pressure>101325</pressure>
+            <atmosphere>Earth</atmosphere>
+            <turbulent_flow>False</turbulent_flow>
+        </ambient>
+    </options>
+</input>
