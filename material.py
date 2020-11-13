@@ -68,7 +68,7 @@ loops over directories to be read and initiates reading procedure
                     raise IOError("Located more than one csv file in %s" % d)
 
                 else:
-                    self.readFile(iDir, globdir, csv_files)
+                    self.readFile(iDir, args["input_dir"], csv_files)
 
 
 class State:
@@ -272,7 +272,7 @@ reads csv file and stores data
 
         else:
             # Read heats of formation
-            hof_file = Path.joinpath(globdir, "Heats_of_Formation.csv")
+            hof_file = Path.joinpath(globdir, "Combined", "Heats_of_Formation.csv")
 
             # Open file
             with open(hof_file) as f:
@@ -288,7 +288,7 @@ reads csv file and stores data
             checkForNonSI(hof_data, hof_file)
 
             # Read Decomposition Kinetics
-            dec_file = Path.joinpath(globdir, "Decomposition_Kinetics.csv")
+            dec_file = Path.joinpath(globdir, "Combined", "Decomposition_Kinetics.csv")
 
             # Open file
             with open(dec_file) as f:
@@ -790,7 +790,14 @@ adds an argument parser and stores passed information
                         default='0.01:0.3333:100')
     parser.add_argument('--planet', action='store', dest='planet',
                         help="planet whose atmospheric data is used (default Earth)", default="Earth")
+    parser.add_argument('--bprime', action='store', dest='bprime',
+                        help='Bprime table file to read (optional)', default=None)
+    parser.add_argument('--hgas', action='store', dest='hgas',
+                        help='Gas enthalpy values to read (optional)', default=None)
     args = vars(parser.parse_args())
+
+    args["corrugated"] = False
+    args["corrugated_vals"] = None
 
     args = checkInput(args)
 
@@ -804,10 +811,10 @@ checks and corrects the input to material creation
     :return: corrected dictionary of arguments
     """
     # Construct input directory path
-    if not args["input_dir"]:
+    if not args["input_dir"] or args["input_dir"] == ".":
         args["input_dir"] = Path.cwd()
     else:
-        args["input_dir"] = Path.joinpath(Path.cwd(), args["input_dir"])
+        args["input_dir"] = input.find_existing(args["input_dir"], "material")
 
     # Construct output file path
     if not args["output_file"]:
@@ -824,6 +831,13 @@ checks and corrects the input to material creation
     # Check if valid atmosphere
     if args["planet"] not in ('Earth', 'Mars', 'Venus'):
         raise IOError("Unimplemented planet %s" % args["planet"])
+
+    # Construct bprime and hgas path
+    if args["bprime"] is not None:
+        args["bprime"] = input.find_existing(args["bprime"])
+    if args["hgas"] is not None:
+        args["hgas"] = input.find_existing(args["hgas"])
+
 
     return args
 
@@ -882,7 +896,11 @@ if __name__ == "__main__":
     # Read and store material information
     material = AblativeMaterial(args) if args["ablative"] else NonAblativeMaterial(args)
 
+    print("Writing .matp file to %s..." % args["output_file"])
+
     # Write to .matp file
     with open(args["output_file"], 'wb') as outfile:
         # save using dill, recurse=True necessary for enabling pickling lambdify function from sympy
         dill.dump(material, outfile, recurse=True)
+
+    print("Wrote material.")
