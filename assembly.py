@@ -107,7 +107,7 @@ def init_T_rho(T, rho, rhoi, Tmap, rhomap, layers, inputvars):
     else:
         raise ValueError("Unimplemented initialization type %s", inputvars.initType)
     for layerKey, layer in zip(rhomap, layers):
-        if type(layer.material) is material.AblativeMaterial:
+        if layer.ablative:
             rho[rhomap[layerKey]] = np.repeat(np.dot(layer.material.data.virginRhoFrac0, layer.material.data.frac),
                                               len(rhomap[layerKey]))
             rhoi[rhomap[layerKey], :] = np.repeat(layer.material.data.virginRhoFrac0.reshape(1, -1), repeats=len(rhomap[layerKey]), axis=0)
