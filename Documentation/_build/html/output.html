@@ -166,35 +166,97 @@
 <dt id="output.SolutionReader">
 <em class="property">class </em><code class="sig-prename descclassname">output.</code><code class="sig-name descname">SolutionReader</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file</span></em><span class="sig-paren">)</span><a class="headerlink" href="#output.SolutionReader" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>reads solution csv file and stores the information in arrays</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>file</strong> (<em>str</em>) – file to read</p>
+</dd>
+</dl>
 <dl class="py method">
 <dt id="output.SolutionReader.calculate_mass">
 <code class="sig-name descname">calculate_mass</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span><span class="o">=</span><span class="default_value">0.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#output.SolutionReader.calculate_mass" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>calculates TPS mass at specified time</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>t</strong> (<em>float</em>) – time (Default value = 0.0)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>TPS mass</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt id="output.SolutionReader.get_max_T">
 <code class="sig-name descname">get_max_T</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#output.SolutionReader.get_max_T" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>returns maximum global temperature over time</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>maximum global temperature</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt id="output.SolutionReader.get_max_back_T">
 <code class="sig-name descname">get_max_back_T</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#output.SolutionReader.get_max_back_T" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>returns maximum back face temperature over time</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>maximum back face temperature</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt id="output.SolutionReader.get_remaining_thickness">
 <code class="sig-name descname">get_remaining_thickness</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#output.SolutionReader.get_remaining_thickness" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>calculates remaining thickness of TPS at end of calculation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>returns remaining thickness of TPS</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt id="output.SolutionReader.plot">
-<code class="sig-name descname">plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x_axis</span></em>, <em class="sig-param"><span class="n">y_axis</span></em>, <em class="sig-param"><span class="n">t</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">z</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">x</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">print_values</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#output.SolutionReader.plot" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<code class="sig-name descname">plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x_axis</span></em>, <em class="sig-param"><span class="n">y_axis</span></em>, <em class="sig-param"><span class="n">t</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">z</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">x</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#output.SolutionReader.plot" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_axis</strong> (<em>str</em>) – variable to plot on x axis</p></li>
+<li><p><strong>y_axis</strong> (<em>str</em>) – variable to plot on y axis</p></li>
+<li><p><strong>t</strong> (<em>float</em><em>, </em><em>np.ndarray</em>) – time(s) at which to plot (Default value = None)</p></li>
+<li><p><strong>z</strong> (<em>float</em><em>, </em><em>np.ndarray</em>) – stationary location(s) at which to plot (Default value = None)</p></li>
+<li><p><strong>x</strong> (<em>float</em><em>, </em><em>np.ndarray</em>) – moving location(s) at which to plot (Default value = None)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt id="output.SolutionReader.plot_gradient">
 <code class="sig-name descname">plot_gradient</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#output.SolutionReader.plot_gradient" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>plots the material cross section to give a visual hint of where the material has pyrolyzed</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>t</strong> (<em>float</em><em>, </em><em>np.ndarray</em>) – time(s) at which to plot</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -202,37 +264,117 @@
 <dt id="output.SolutionWriter">
 <em class="property">class </em><code class="sig-prename descclassname">output.</code><code class="sig-name descname">SolutionWriter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">inputvars</span></em>, <em class="sig-param"><span class="n">force_write</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#output.SolutionWriter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="simple">
+<dt>checks if file exists, creates file and writes header</dt><dd><dl class="simple">
+<dt>file<span class="classifier">str</span></dt><dd><p>path to file</p>
+</dd>
+<dt>layers<span class="classifier">list</span></dt><dd><p>list of layers</p>
+</dd>
+<dt>Tmap<span class="classifier">dict</span></dt><dd><p>maps layers to indices in Tnu array</p>
+</dd>
+<dt>inputvars<span class="classifier">Input</span></dt><dd><p>input variables</p>
+</dd>
+<dt>force_write<span class="classifier">bool</span></dt><dd><p>True if existing files shall be overwritten, False if the user shall be asked first</p>
+</dd>
+</dl>
+</dd>
+</dl>
 <dl class="py method">
 <dt id="output.SolutionWriter.checkIfFileExists">
 <code class="sig-name descname">checkIfFileExists</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#output.SolutionWriter.checkIfFileExists" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>checks if output file already exists, else prompts user to specify a different file</p>
+</dd></dl>
 
 <dl class="py method">
 <dt id="output.SolutionWriter.write">
 <code class="sig-name descname">write</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em><span class="sig-paren">)</span><a class="headerlink" href="#output.SolutionWriter.write" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><dl class="simple">
+<dt>writes to output file</dt><dd><dl class="simple">
+<dt>t<span class="classifier">float</span></dt><dd><p>time at which to write</p>
+</dd>
+<dt>layers<span class="classifier">list</span></dt><dd><p>list of layers</p>
+</dd>
+<dt>Tnu<span class="classifier">np.ndarray</span></dt><dd><p>contains solved temperature solution</p>
+</dd>
+<dt>rhonu<span class="classifier">np.ndarray</span></dt><dd><p>contains solved density solution</p>
+</dd>
+<dt>Tmap<span class="classifier">dict</span></dt><dd><p>maps layers to indices in Tnu array</p>
+</dd>
+<dt>rhomap<span class="classifier">dict</span></dt><dd><p>maps layers to indices in rhonu array</p>
+</dd>
+<dt>mgas<span class="classifier">np.ndarray</span></dt><dd><p>gas mass flux array</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="py function">
 <dt id="output.calc_weight">
 <code class="sig-prename descclassname">output.</code><code class="sig-name descname">calc_weight</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em><span class="sig-paren">)</span><a class="headerlink" href="#output.calc_weight" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><dl class="simple">
+<dt>calculates weight of TPS</dt><dd><dl class="simple">
+<dt>layers<span class="classifier">list</span></dt><dd><p>list of layers</p>
+</dd>
+<dt>rhonu<span class="classifier">np.ndarray</span></dt><dd><p>solved densities</p>
+</dd>
+<dt>rhomap :</dt><dd><p>maps layers to indices in rhonu array</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="output.get_linestyles">
 <code class="sig-prename descclassname">output.</code><code class="sig-name descname">get_linestyles</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">n</span></em><span class="sig-paren">)</span><a class="headerlink" href="#output.get_linestyles" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><dl class="simple">
+<dt>depreceated</dt><dd><p>n :</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="output.plotBeta">
 <code class="sig-prename descclassname">output.</code><code class="sig-name descname">plotBeta</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#output.plotBeta" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>plots extent of reaction (only to be used while running Hot-STARSHIP,
+for post-processing use SolutionReader and its plot capability)</p>
+<blockquote>
+<div><dl class="simple">
+<dt>layers<span class="classifier">list</span></dt><dd><p>list of layers</p>
+</dd>
+<dt>rhonu<span class="classifier">np.ndarray</span></dt><dd><p>nodal densities</p>
+</dd>
+<dt>rhomap<span class="classifier">dict</span></dt><dd><p>maps layers to indices in rhonu array</p>
+</dd>
+<dt>t<span class="classifier">float</span></dt><dd><p>time</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
 
 <dl class="py function">
 <dt id="output.plotT">
 <code class="sig-prename descclassname">output.</code><code class="sig-name descname">plotT</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">inputvars</span></em><span class="sig-paren">)</span><a class="headerlink" href="#output.plotT" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>plots internal temperatures (only to be used while running Hot-STARSHIP,
+for post-processing use SolutionReader and its plot capability)</p>
+<blockquote>
+<div><dl class="simple">
+<dt>layers<span class="classifier">list</span></dt><dd><p>list of layers</p>
+</dd>
+<dt>Tnu<span class="classifier">np.ndarray</span></dt><dd><p>recession rate and temperature array</p>
+</dd>
+<dt>Tmap<span class="classifier">dict</span></dt><dd><p>maps layers to indices in Tnu array</p>
+</dd>
+<dt>t<span class="classifier">float</span></dt><dd><p>time at which to plot</p>
+</dd>
+<dt>inputvars<span class="classifier">Input</span></dt><dd><p>input variables object</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
 
 </div>
 

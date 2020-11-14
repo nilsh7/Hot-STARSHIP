@@ -12,11 +12,18 @@ import os
 
 class Layer:
     def __init__(self, layerelem, root):
-        """
-creates a Layer objects that holds various information about the TPS layer
+        """creates a Layer objects that holds various information about the TPS layer
 
-        :param layerelem: layer element from xml tree
-        :param root: xml root element
+        Parameters
+        ----------
+        layerelem : xml.etree.ElementTree.Element
+            layer element from xml tree
+        root : xml.etree.ElementTree.Element
+            xml root element
+
+        Returns
+        -------
+
         """
 
         # Check if layer is ablative
@@ -85,10 +92,16 @@ creates a Layer objects that holds various information about the TPS layer
 
 class Input:
     def __init__(self, xmlfile):
-        """
-reads the input xml file and stores the information
+        """reads the input xml file and stores the information
 
-        :param xmlfile: path to xml file
+        Parameters
+        ----------
+        xmlfile : str
+            path to xml file
+
+        Returns
+        -------
+
         """
         # Read xml file
         tree = ET.parse(find_existing(xmlfile))
@@ -215,21 +228,27 @@ reads the input xml file and stores the information
 
 
 def readMaterial(matname, ablative, corrugated, ablative_vals=None, corrugated_vals=None):
-    """
-checks whether there is an existing material properties file with the right settings,
-if not, it initiates the material creation with the according parameters
+    """checks whether there is an existing material properties file with the right settings,
+    if not, it initiates the material creation with the according parameters
 
-    :param matname: path to material file
-    :param ablative: ablative material flag
-    :type ablative: bool
-    :param corrugated: corrugated material flag
-    :type corrugated: bool
-    :param ablative_vals: ablative material information (pressure, atmosphere, etc.)
-    :type ablative_vals: dict
-    :param corrugated_vals: corrugated material information (geometry)
-    :type corrugated_vals: dict
-    :return: created or read material
-    :rtype: :py:mod:`material.AblativeMaterial`, :py:mod:`material.NonAblativeMaterial` or :py:mod:`material.CorrugatedMaterial`
+    Parameters
+    ----------
+    matname : Path
+        path to material file
+    ablative : bool
+        ablative material flag
+    corrugated : bool
+        corrugated material flag
+    ablative_vals : dict
+        ablative material information (pressure, atmosphere, etc.) (Default value = None)
+    corrugated_vals : dict
+        corrugated material information (geometry) (Default value = None)
+
+    Returns
+    -------
+    material.Material
+        created or read material
+
     """
     # Read .matp file if it was specified
     if matname.name[-5:] == ".matp":
@@ -268,17 +287,36 @@ directory_map = {"material": "Data/Materials"}
 
 def find_existing(name, kind=None):
     """
-tries to find existing file or directory in a number of default directories; these are:
-1. in the absolute path (`<file>`)
-2. in the current working directory (`pwd/<file>`)
-3. in the directory specified by the Hot-STARSHIP environment variable (`$HOTSTARSHIP_DIR/<file>`)
-4. optional: in the directory specified by the Hot-STARSHIP environment variable plus the standard directory for this type, e.g. material: (`$HOTSTARSHIP_DIR/Data/Materials/<file>`)
-5. optional: for a material with `.matp` ending in the directory specified by the Hot-STARSHIP environment variable plus the standard material directory plus the directory with `.matp` removed from the name (for `<file>.matp` in `$HOTSTARSHIP_DIR/Data/Materials/<file>/<file>.matp`)
-If the file or directory cannot be located, an error will be raised.
+    tries to find existing file or directory in a number
+    of default directories; these are (in the following order):
 
-    :param name: path to find
-    :param kind: string that specifies kind of directory to look out for, important for 4 and 5
-    :return: path to existing file
+    - in the absolute path (`<file>`)
+
+    - in the current working directory (`pwd/<file>`)
+
+    - in the directory specified by the Hot-STARSHIP
+      environment variable (`$HOTSTARSHIP_DIR/<file>`)
+    - optional: in the directory specified by the Hot-STARSHIP environment variable
+      plus the standard directory for this type, e.g. material: (`$HOTSTARSHIP_DIR/Data/Materials/<file>`)
+    - optional: for a material with `.matp` ending in the directory specified by the
+      Hot-STARSHIP environment variable plus the standard material directory
+      plus the directory with `.matp` removed from the name
+      (for `<file>.matp` in `$HOTSTARSHIP_DIR/Data/Materials/<file>/<file>.matp`)
+
+    If the file or directory cannot be located, an error will be raised.
+
+    Parameters
+    ----------
+    name : str
+        path to find
+    kind : str
+        specifies kind of directory to look out for, important for 4 and 5 (Default value = None)
+
+    Returns
+    -------
+    Path
+        path to existing file
+
     """
     # Check if absolute path
     if Path(name).root != '' and Path.exists(Path(name)):

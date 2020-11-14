@@ -9,6 +9,26 @@ import warnings
 
 
 def plotT(layers, Tnu, Tmap, t, inputvars):
+    """
+plots internal temperatures (only to be used while running Hot-STARSHIP,
+for post-processing use SolutionReader and its plot capability)
+    Parameters
+    ----------
+    layers : list
+        list of layers
+    Tnu : np.ndarray
+        recession rate and temperature array
+    Tmap : dict
+        maps layers to indices in Tnu array
+    t : float
+        time at which to plot
+    inputvars : Input
+        input variables object
+
+    Returns
+    -------
+
+    """
 
     plt.clf()
     ztot = np.array([])
@@ -37,6 +57,24 @@ def plotT(layers, Tnu, Tmap, t, inputvars):
 
 
 def plotBeta(layers, rhonu, rhomap, t):
+    """
+plots extent of reaction (only to be used while running Hot-STARSHIP,
+for post-processing use SolutionReader and its plot capability)
+    Parameters
+    ----------
+    layers : list
+        list of layers
+    rhonu : np.ndarray
+        nodal densities
+    rhomap : dict
+        maps layers to indices in rhonu array
+    t : float
+        time
+
+    Returns
+    -------
+
+    """
 
     lay = layers[0]
     if not lay.ablative:
@@ -60,8 +98,23 @@ def plotBeta(layers, rhonu, rhomap, t):
 
 
 class SolutionWriter:
+    """ """
     def __init__(self, file, layers, Tmap, inputvars, force_write=False):
-
+        """
+checks if file exists, creates file and writes header
+        Parameters
+        ----------
+        file : str
+            path to file
+        layers : list
+            list of layers
+        Tmap : dict
+            maps layers to indices in Tnu array
+        inputvars : Input
+            input variables
+        force_write : bool
+            True if existing files shall be overwritten, False if the user shall be asked first
+        """
         # Construct path to write to
         self.cwd = Path.cwd()
         if file is None:
@@ -94,6 +147,7 @@ class SolutionWriter:
                     '\n')
 
     def checkIfFileExists(self):
+        """ checks if output file already exists, else prompts user to specify a different file"""
 
         # Check if file exists
         if self.filepath.is_file():
@@ -119,6 +173,29 @@ class SolutionWriter:
                 self.checkIfFileExists()
 
     def write(self, t, layers, Tnu, rhonu, Tmap, rhomap, mgas):
+        """
+writes to output file
+        Parameters
+        ----------
+        t : float
+            time at which to write
+        layers : list
+            list of layers
+        Tnu : np.ndarray
+            contains solved temperature solution
+        rhonu : np.ndarray
+            contains solved density solution
+        Tmap : dict
+            maps layers to indices in Tnu array
+        rhomap : dict
+            maps layers to indices in rhonu array
+        mgas : np.ndarray
+            gas mass flux array
+
+        Returns
+        -------
+
+        """
 
         # Allocate space for variables to be written
         writevars = np.empty((self.nVals, 8))
@@ -189,6 +266,21 @@ class SolutionWriter:
 
 
 def calc_weight(layers, rhonu, rhomap):
+    """
+calculates weight of TPS
+    Parameters
+    ----------
+    layers : list
+        list of layers
+    rhonu : np.ndarray
+        solved densities
+    rhomap :
+        maps layers to indices in rhonu array
+
+    Returns
+    -------
+
+    """
 
     weight = 0
     for lay, rhokey in zip(layers, rhomap):
@@ -199,7 +291,14 @@ def calc_weight(layers, rhonu, rhomap):
 
 class SolutionReader:
     def __init__(self, file):
+        """
+        reads solution csv file and stores the information in arrays
 
+        Parameters
+        ----------
+        file : str
+            file to read
+        """
         # Construct path to read from
         cwd = Path.cwd()
         self.filepath = Path.joinpath(cwd, file)
@@ -247,7 +346,26 @@ class SolutionReader:
                           'mg': r'$\dot{m}_g$ $\left[ \frac{kg}{m^2 \cdot s} \right]$',
                           'x': r'$x$ [mm]'}
 
-    def plot(self, x_axis, y_axis, t=None, z=None, x=None, print_values=False):
+    def plot(self, x_axis, y_axis, t=None, z=None, x=None):
+        """
+
+        Parameters
+        ----------
+        x_axis : str
+            variable to plot on x axis
+        y_axis : str
+            variable to plot on y axis
+        t : float, np.ndarray
+            time(s) at which to plot (Default value = None)
+        z : float, np.ndarray
+            stationary location(s) at which to plot (Default value = None)
+        x : float, np.ndarray
+            moving location(s) at which to plot (Default value = None)
+
+        Returns
+        -------
+
+        """
 
         # For plot of s, use z coordinate of wall
         if y_axis in ('s', 'sdot', 'mc'):
@@ -429,6 +547,18 @@ class SolutionReader:
         # np.savetxt('out.csv', data_exp, delimiter=';')
 
     def plot_gradient(self, t):
+        """
+        plots the material cross section to give a visual hint of where the material has pyrolyzed
+
+        Parameters
+        ----------
+        t : float, np.ndarray
+            time(s) at which to plot
+
+        Returns
+        -------
+
+        """
 
         if type(t) is float or type(t) is int:
             t = np.array([t])
@@ -502,6 +632,19 @@ class SolutionReader:
 
 
     def calculate_mass(self, t=0.0):
+        """
+        calculates TPS mass at specified time
+
+        Parameters
+        ----------
+        t : float
+            time (Default value = 0.0)
+
+        Returns
+        -------
+        float
+            TPS mass
+        """
 
         if type(t) in (int, float):
             t = np.array([t])
@@ -533,18 +676,54 @@ class SolutionReader:
         return mass
 
     def get_max_back_T(self):
+        """
+        returns maximum back face temperature over time
+
+        Returns
+        -------
+        float
+            maximum back face temperature
+        """
 
         return np.max(self.T[-1, :])
 
     def get_max_T(self):
+        """
+        returns maximum global temperature over time
+
+        Returns
+        -------
+        float
+            maximum global temperature
+        """
 
         return np.max(self.T)
 
     def get_remaining_thickness(self):
+        """
+        calculates remaining thickness of TPS at end of calculation
+
+        Returns
+        -------
+        float
+            returns remaining thickness of TPS
+        """
 
         return self.z[-1, -1] - self.z[0, -1]
 
+
 def get_linestyles(n):
+    """
+depreceated
+    Parameters
+    ----------
+    n :
+        
+
+    Returns
+    -------
+
+    """
     nAllowable = 4
     possible_styles = list(lines.lineStyles.keys())[:nAllowable]
     return [possible_styles[i % nAllowable] for i in range(n)]

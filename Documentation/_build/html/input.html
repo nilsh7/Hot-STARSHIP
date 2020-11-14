@@ -167,37 +167,61 @@
 <dt id="input.Input">
 <em class="property">class </em><code class="sig-prename descclassname">input.</code><code class="sig-name descname">Input</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">xmlfile</span></em><span class="sig-paren">)</span><a class="headerlink" href="#input.Input" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>reads the input xml file and stores the information</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>xmlfile</strong> (<em>str</em>) – path to xml file</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py class">
 <dt id="input.Layer">
 <em class="property">class </em><code class="sig-prename descclassname">input.</code><code class="sig-name descname">Layer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layerelem</span></em>, <em class="sig-param"><span class="n">root</span></em><span class="sig-paren">)</span><a class="headerlink" href="#input.Layer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>creates a Layer objects that holds various information about the TPS layer</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>layerelem</strong> (<em>xml.etree.ElementTree.Element</em>) – layer element from xml tree</p></li>
+<li><p><strong>root</strong> (<em>xml.etree.ElementTree.Element</em>) – xml root element</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt id="input.find_existing">
 <code class="sig-prename descclassname">input.</code><code class="sig-name descname">find_existing</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">kind</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#input.find_existing" title="Permalink to this definition">¶</a></dt>
-<dd><p>tries to find existing file or directory in a number of default directories; these are:
-1. in the absolute path (<cite>&lt;file&gt;</cite>)
-2. in the current working directory (<cite>pwd/&lt;file&gt;</cite>)
-3. in the directory specified by the Hot-STARSHIP environment variable (<cite>$HOTSTARSHIP_DIR/&lt;file&gt;</cite>)
-4. optional: in the directory specified by the Hot-STARSHIP environment variable plus the standard directory for this type, e.g. material: (<cite>$HOTSTARSHIP_DIR/Data/Materials/&lt;file&gt;</cite>)
-5. optional: for a material with <cite>.matp</cite> ending in the directory specified by the Hot-STARSHIP environment variable plus the standard material directory plus the directory with <cite>.matp</cite> removed from the name (for <cite>&lt;file&gt;.matp</cite> in <cite>$HOTSTARSHIP_DIR/Data/Materials/&lt;file&gt;/&lt;file&gt;.matp</cite>)
-If the file or directory cannot be located, an error will be raised.</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">param name</dt>
-<dd class="field-odd"><p>path to find</p>
+<dd><p>tries to find existing file or directory in a number
+of default directories; these are (in the following order):</p>
+<ul class="simple">
+<li><p>in the absolute path (<cite>&lt;file&gt;</cite>)</p></li>
+<li><p>in the current working directory (<cite>pwd/&lt;file&gt;</cite>)</p></li>
+<li><p>in the directory specified by the Hot-STARSHIP
+environment variable (<cite>$HOTSTARSHIP_DIR/&lt;file&gt;</cite>)</p></li>
+<li><p>optional: in the directory specified by the Hot-STARSHIP environment variable
+plus the standard directory for this type, e.g. material: (<cite>$HOTSTARSHIP_DIR/Data/Materials/&lt;file&gt;</cite>)</p></li>
+<li><p>optional: for a material with <cite>.matp</cite> ending in the directory specified by the
+Hot-STARSHIP environment variable plus the standard material directory
+plus the directory with <cite>.matp</cite> removed from the name
+(for <cite>&lt;file&gt;.matp</cite> in <cite>$HOTSTARSHIP_DIR/Data/Materials/&lt;file&gt;/&lt;file&gt;.matp</cite>)</p></li>
+</ul>
+<p>If the file or directory cannot be located, an error will be raised.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – path to find</p></li>
+<li><p><strong>kind</strong> (<em>str</em>) – specifies kind of directory to look out for, important for 4 and 5 (Default value = None)</p></li>
+</ul>
 </dd>
-<dt class="field-even">param kind</dt>
-<dd class="field-even"><p>string that specifies kind of directory to look out for, important for 4 and 5</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>path to existing file</p>
 </dd>
-<dt class="field-odd">return</dt>
-<dd class="field-odd"><p>path to existing file</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Path</p>
 </dd>
 </dl>
-</div></blockquote>
 </dd></dl>
 
 <dl class="py function">
@@ -205,43 +229,23 @@ If the file or directory cannot be located, an error will be raised.</p>
 <code class="sig-prename descclassname">input.</code><code class="sig-name descname">readMaterial</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">matname</span></em>, <em class="sig-param"><span class="n">ablative</span></em>, <em class="sig-param"><span class="n">corrugated</span></em>, <em class="sig-param"><span class="n">ablative_vals</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">corrugated_vals</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#input.readMaterial" title="Permalink to this definition">¶</a></dt>
 <dd><p>checks whether there is an existing material properties file with the right settings,
 if not, it initiates the material creation with the according parameters</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">param matname</dt>
-<dd class="field-odd"><p>path to material file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>matname</strong> (<em>Path</em>) – path to material file</p></li>
+<li><p><strong>ablative</strong> (<em>bool</em>) – ablative material flag</p></li>
+<li><p><strong>corrugated</strong> (<em>bool</em>) – corrugated material flag</p></li>
+<li><p><strong>ablative_vals</strong> (<em>dict</em>) – ablative material information (pressure, atmosphere, etc.) (Default value = None)</p></li>
+<li><p><strong>corrugated_vals</strong> (<em>dict</em>) – corrugated material information (geometry) (Default value = None)</p></li>
+</ul>
 </dd>
-<dt class="field-even">param ablative</dt>
-<dd class="field-even"><p>ablative material flag</p>
-</dd>
-<dt class="field-odd">type ablative</dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-<dt class="field-even">param corrugated</dt>
-<dd class="field-even"><p>corrugated material flag</p>
-</dd>
-<dt class="field-odd">type corrugated</dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-<dt class="field-even">param ablative_vals</dt>
-<dd class="field-even"><p>ablative material information (pressure, atmosphere, etc.)</p>
-</dd>
-<dt class="field-odd">type ablative_vals</dt>
-<dd class="field-odd"><p>dict</p>
-</dd>
-<dt class="field-even">param corrugated_vals</dt>
-<dd class="field-even"><p>corrugated material information (geometry)</p>
-</dd>
-<dt class="field-odd">type corrugated_vals</dt>
-<dd class="field-odd"><p>dict</p>
-</dd>
-<dt class="field-even">return</dt>
+<dt class="field-even">Returns</dt>
 <dd class="field-even"><p>created or read material</p>
 </dd>
-<dt class="field-odd">rtype</dt>
-<dd class="field-odd"><p><a class="reference internal" href="material.html#material.AblativeMaterial" title="material.AblativeMaterial"><code class="xref py py-mod docutils literal notranslate"><span class="pre">material.AblativeMaterial</span></code></a>, <a class="reference internal" href="material.html#material.NonAblativeMaterial" title="material.NonAblativeMaterial"><code class="xref py py-mod docutils literal notranslate"><span class="pre">material.NonAblativeMaterial</span></code></a> or <a class="reference internal" href="material.html#material.CorrugatedMaterial" title="material.CorrugatedMaterial"><code class="xref py py-mod docutils literal notranslate"><span class="pre">material.CorrugatedMaterial</span></code></a></p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="material.html#material.Material" title="material.Material">material.Material</a></p>
 </dd>
 </dl>
-</div></blockquote>
 </dd></dl>
 
 </div>

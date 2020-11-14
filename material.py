@@ -31,22 +31,29 @@ except KeyError:
 
 
 class Material:
+    """ """
     def __init__(self):
         self.data = Data()
 
     def readFile(self):
-        pass  # to be intitiated in Ablative or NonAblativeMaterial
+        """ """
+        pass  # to be initiated in Ablative or NonAblativeMaterial
 
     def calculateVariables(self):
-        """
-creates functions for thermophysical properties
-        """
-        pass  # to be intitiated in Ablative or NonAblativeMaterial
+        """creates functions for thermophysical properties"""
+        pass  # to be initiated in Ablative or NonAblativeMaterial
 
     def readData(self, args):
-        """
-loops over directories to be read and initiates reading procedure
-        :param args: dictionary of arguments
+        """loops over directories to be read and initiates reading procedure
+
+        Parameters
+        ----------
+        args : dict
+            dictionary of input arguments
+
+        Returns
+        -------
+
         """
         # Construct path to current material and check existent
         if not Path.is_dir(args["input_dir"]):
@@ -72,17 +79,28 @@ loops over directories to be read and initiates reading procedure
 
 
 class State:
+    """for allocating variables to save data to """
     def __init__(self):
         self.data = Data()
 
 
 class Data:
+    """provides a place to save data """
     def __init__(self):
         pass
 
 
 class NonAblativeMaterial(Material):
+    """ """
     def __init__(self, args):
+        """
+        saves non-ablative material properties
+
+        Parameters
+        ----------
+        args : dict
+            dictionary of input variables
+        """
 
         print("Constructing non-ablative material \"%s\"..." % args["input_dir"].name)
 
@@ -98,11 +116,20 @@ class NonAblativeMaterial(Material):
         self.calculateVariables()
 
     def readFile(self, iDir, globdir, csv_files):
-        """
-reads csv file and stores data
-        :param iDir: directory number
-        :param globdir: global path to directory
-        :param csv_files: csv files in directory
+        """reads csv file and stores data
+
+        Parameters
+        ----------
+        iDir : int
+            directory number
+        globdir : str
+            global path to directory
+        csv_files : list
+            csv files in directory
+
+        Returns
+        -------
+
         """
         # Determine csv file
         csv_file = Path.joinpath(globdir, csv_files[0])
@@ -130,6 +157,7 @@ reads csv file and stores data
             self.data.rho = data.values[:, 1]
 
     def calculateVariables(self):
+        """constructs splines for each material property (cp, k, eps, ...) """
 
         # cp
         self.data.cpLin = constructLinearSpline(self.data.Tforcp, self.data.cp)
@@ -149,28 +177,140 @@ reads csv file and stores data
         self.data.e = self.data.cpLin.antiderivative(1)
 
     def cp(self, T, *ignoreargs):
+        """
+        heat capacity
+
+        Parameters
+        ----------
+        T : np.ndarray
+            temperature array
+            
+        *ignoreargs :
+            
+
+        Returns
+        -------
+
+        """
         return self.data.cpLin(T)
 
     def k(self, T, *ignoreargs):
+        """
+        conductivity
+
+        Parameters
+        ----------
+        T : np.ndarray
+            temperature array
+            
+        *ignoreargs :
+            
+
+        Returns
+        -------
+
+        """
         return self.data.kLin(T)
 
     def eps(self, T, *ignoreargs):
+        """
+        emissivity
+
+        Parameters
+        ----------
+        T : np.ndarray
+            temperature array
+            
+        *ignoreargs :
+            
+
+        Returns
+        -------
+
+        """
         return self.data.epsLin(T)
 
     def depsdT(self, T, *ignoreargs):
+        """
+        emissivity gradient
+
+        Parameters
+        ----------
+        T : np.ndarray
+            temperature array
+            
+        *ignoreargs :
+            
+
+        Returns
+        -------
+
+        """
         return self.data.depsdTLin(T)
 
     def rho(self, T, *ignoreargs):
+        """
+        density
+
+        Parameters
+        ----------
+        T : np.ndarray
+            temperature array
+            
+        *ignoreargs :
+            
+
+        Returns
+        -------
+
+        """
         return self.data.rhoLin(T)
 
     def dkdT(self, T, *ignoreargs):
+        """
+        conductivity gradient
+
+        Parameters
+        ----------
+        T : np.ndarray
+            temperature array
+            
+        *ignoreargs :
+            
+
+        Returns
+        -------
+
+        """
         return self.data.dkdTLin(T)
 
     def e(self, T, *ignoreargs):
+        """
+        internal energy
+
+        Parameters
+        ----------
+        T : np.ndarray
+            temperature array
+            
+        *ignoreargs :
+            
+
+        Returns
+        -------
+
+        """
         return self.data.e(T)
 
 
 class CorrugatedMaterial(Material):
+    """save material properties for corrugated sandwich cores;
+    For the used formulas, see eqs. 1-3 in:
+    Gogu, C., Bapanapalli, S. K., Haftka, R. T., & Sankar,B. V. (2009).
+    Comparison of materials for an integrated thermal protection system for spacecraft reentry.
+    Journal of Spacecraft and Rockets, 46(3), 501–513. https://doi.org/10.2514/1.35669
+
+    """
     def __init__(self, args):
         corrugated_vals = args["corrugated_vals"]
 
@@ -185,43 +325,149 @@ class CorrugatedMaterial(Material):
     # B. V. (2009). Comparison of materials for an integrated thermal protection system for spacecraft reentry.
     # Journal of Spacecraft and Rockets, 46(3), 501–513. https://doi.org/10.2514/1.35669
     def rho(self, T, *ignoreargs):
+        """
+        volume weighted density
+
+        Parameters
+        ----------
+        T : np.ndarray
+            temperature array
+            
+        *ignoreargs :
+            
+
+        Returns
+        -------
+
+        """
         mw = self.mat_web
         mc = self.mat_core
         return (mw.rho(T) * self.dw + mc.rho(T) * (self.p * math.sin(self.theta) - self.dw)) / (
                 self.p * math.sin(self.theta))
 
     def cp(self, T, *ignoreargs):
+        """
+        mass weighted heat capacity
+
+        Parameters
+        ----------
+        T : np.ndarray
+            temperature array
+            
+        *ignoreargs :
+            
+
+        Returns
+        -------
+
+        """
         mw = self.mat_web
         mc = self.mat_core
         return (mw.rho(T) * mw.cp(T) * self.dw + mc.rho(T) * mc.cp(T) * (self.p * math.sin(self.theta) - self.dw)) / \
                (mw.rho(T) * self.dw + mc.rho(T) * (self.p * math.sin(self.theta) - self.dw))
 
     def k(self, T, *ignoreargs):
+        """
+        area weighted conductivity
+
+        Parameters
+        ----------
+        T : np.ndarray
+            temperature array
+            
+        *ignoreargs :
+            
+
+        Returns
+        -------
+
+        """
         mw = self.mat_web
         mc = self.mat_core
         return (mw.k(T) * self.dw + mc.k(T) * (self.p * math.sin(self.theta) - self.dw)) / (
                 self.p * math.sin(self.theta))
 
     def dkdT(self, T, *ignoreargs):
+        """
+        area weighted conductivity gradient
+
+        Parameters
+        ----------
+        T : np.ndarray
+            temperature array
+            
+        *ignoreargs :
+            
+
+        Returns
+        -------
+
+        """
         mw = self.mat_web
         mc = self.mat_core
         return (mw.dkdT(T) * self.dw + mc.dkdT(T) * (self.p * math.sin(self.theta) - self.dw)) / (
                 self.p * math.sin(self.theta))
 
     def e(self, T, *ignoreargs):
+        """
+        mass weighted internal energy
+
+        Parameters
+        ----------
+        T : np.ndarray
+            temperature array
+            
+        *ignoreargs :
+            
+
+        Returns
+        -------
+
+        """
         mw = self.mat_web
         mc = self.mat_core
         return (mw.rho(T) * mw.e(T) * self.dw + mc.rho(T) * mc.e(T) * (self.p * math.sin(self.theta) - self.dw)) / \
                (mw.rho(T) * self.dw + mc.rho(T) * (self.p * math.sin(self.theta) - self.dw))
 
     def eps(self, T, *ignoreargs):
+        """
+        core emissivity
+
+        Parameters
+        ----------
+        T : np.ndarray
+            temperature array
+            
+        *ignoreargs :
+            
+
+        Returns
+        -------
+
+        """
         return self.mat_core.eps(T)
 
     def depsdT(self, T, *ignoreargs):
+        """
+        core emissivity gradient
+
+        Parameters
+        ----------
+        T : np.ndarray
+            temperature array
+            
+        *ignoreargs :
+            
+
+        Returns
+        -------
+
+        """
         return self.mat_core.depsdT(T)
 
 
 class AblativeMaterial(Material):
+    """stores ablative material properties """
     def __init__(self, args):
 
         print("Constructing ablative material \"%s\"..." % args["input_dir"].name)
@@ -250,11 +496,20 @@ class AblativeMaterial(Material):
         self.calculateEnergies()
 
     def readFile(self, iDir, globdir, csv_files):
-        """
-reads csv file and stores data
-        :param iDir: directory number
-        :param globdir: global path to directory
-        :param csv_files: csv files in directory
+        """reads csv file and stores data
+
+        Parameters
+        ----------
+        iDir : int
+            directory number
+        globdir : str
+            global path to directory
+        csv_files : list
+            csv files in directory
+
+        Returns
+        -------
+
         """
         # Open files and read data
         if iDir != 7:
@@ -352,6 +607,7 @@ reads csv file and stores data
             self.data.rhoc0 = np.sum(self.data.charRhoFrac0 * self.data.frac)
 
     def calculateVariables(self):
+        """creates splines for each material property (cp, k, eps, ...), virgin and char """
         ### Virgin ###
         # cp
         self.virgin.cp = constructLinearSpline(self.virgin.data.Tforcp, self.virgin.data.cp)
@@ -401,9 +657,16 @@ reads csv file and stores data
         # to be calculated later
 
     def calculateAblativeProperties(self, args):
-        """
-calculate pyrolysis gas composition and bprime table
-        :param args: dictionary of arguments
+        """calculate pyrolysis gas composition and bprime table
+
+        Parameters
+        ----------
+        args : dict
+            dictionary of arguments
+
+        Returns
+        -------
+
         """
 
         if args["hgas"] is None:
@@ -419,9 +682,16 @@ calculate pyrolysis gas composition and bprime table
         self.calculateHatmo(args)
 
     def calculatePyroGasComposition(self, args):
-        """
-calculates pyrolysis gas composition using mppequil
-        :param args: dictionary of arguments
+        """calculates pyrolysis gas composition using mppequil
+
+        Parameters
+        ----------
+        args : dict
+            dictionary of arguments
+
+        Returns
+        -------
+
         """
 
         print("Calculating pyrolysis gas composition using mppequil...")
@@ -474,6 +744,19 @@ calculates pyrolysis gas composition using mppequil
         self.gas.cp = self.gas.h.derivative()
 
     def readPyroGasComposition(self, args):
+        """
+        reads pyrolysis gas enthalpy from csv file (first column T, second column hgas)
+
+        Parameters
+        ----------
+        args : dict
+            dictionary of input arguments
+            
+
+        Returns
+        -------
+
+        """
 
         csvfile = args["hgas"]
 
@@ -488,9 +771,16 @@ calculates pyrolysis gas composition using mppequil
         self.gas.cp = self.gas.h.derivative()
 
     def calculateBPrimes(self, args):
-        """
-calculates bprime tables using bprime executable provided by mutation++
-        :param args: dictionary of arguments
+        """calculates bprime tables using bprime executable provided by mutation++
+
+        Parameters
+        ----------
+        args : dict
+            dictionary of arguments
+
+        Returns
+        -------
+
         """
 
         print("Calculating wall gas composition using bprime (from Mutation++ library)...")
@@ -559,6 +849,19 @@ calculates bprime tables using bprime executable provided by mutation++
         self.dhwdbg = lambda bg, T, tol=1.0e-8: (self.hw(bg + tol, T) - self.hw(bg - tol, T)) / (2 * tol)
 
     def readBPrimes(self, args):
+        """
+        reads bprime table from csv file
+
+        Parameters
+        ----------
+        args : dict
+            dictionary of input arguments
+            
+
+        Returns
+        -------
+
+        """
 
         csvfile = args["bprime"]
 
@@ -586,9 +889,7 @@ calculates bprime tables using bprime executable provided by mutation++
         self.dhwdbg = lambda bg, T, tol=1.0e-8: (self.hw(bg + tol, T) - self.hw(bg - tol, T)) / (2 * tol)
 
     def plotBc(self):
-        """
-plots Bc over T table with Bg as parameter
-        """
+        """plots Bc over T table with Bg as parameter"""
         for ib, bg in enumerate(self.data.bg):
             plt.semilogy(self.data.Tforbprime, self.data.bc[:, ib], label='%.2g' % bg)
 
@@ -601,9 +902,7 @@ plots Bc over T table with Bg as parameter
         plt.show()
 
     def plot_hw(self):
-        """
-plots wall enthalpy hw over T with Bg as parameter
-        :return:
+        """plots wall enthalpy hw over T with Bg as parameter
         """
         for ib, bg in enumerate(self.data.bg):
             plt.plot(self.data.Tforbprime, self.data.hw[:, ib], label='%.2g' % bg)
@@ -616,14 +915,23 @@ plots wall enthalpy hw over T with Bg as parameter
         plt.show()
 
     def storeVariables(self, args):
-        """
-stores pressure and atmosphere values
-        :param args: dictionary of arguments
+        """stores pressure and atmosphere values
+
+        Parameters
+        ----------
+        args : dict
+            dictionary of arguments
+
+        Returns
+        -------
+
         """
         self.pressure = float(args["p"])
         self.atmosphere = args["planet"]
 
     def calculateEnergies(self):
+        """shifts virgin and char internal energies so that heat of formations are correct
+         with respect to those calculated by Mutation++"""
 
         # Calculate shifts at Tref
         Tref = self.data.Tref
@@ -646,6 +954,19 @@ stores pressure and atmosphere values
         self.e = lambda T, wv: wv * self.virgin.e(T) + (1 - wv) * self.char.e(T)
 
     def calculateHatmo(self, args):
+        """
+        calculates atmospheric enthalpy
+
+        Parameters
+        ----------
+        args : dict
+            input arguments
+            
+
+        Returns
+        -------
+
+        """
 
         print("Calculating enthalpy of atmosphere...")
 
@@ -671,11 +992,20 @@ stores pressure and atmosphere values
 
 
 def constructLinearSpline(x, y):
-    """
-constructs a piecewise linear spline through data
-    :param x: x data as array (variable)
-    :param y: y data as array (dependent)
-    :return: spline
+    """constructs a piecewise linear spline through data
+
+    Parameters
+    ----------
+    x : np.ndarray
+        x data as array (variable)
+    y : np.ndarray
+        y data as array (dependent)
+
+    Returns
+    -------
+    type : ip.UnivariateSpline
+        spline that is equal at nodes, and linear in-between
+
     """
     if len(x) != len(y):
         raise ValueError("Arrays should have same length.")
@@ -691,6 +1021,22 @@ constructs a piecewise linear spline through data
 
 
 def constructE(Tforcp, cp, shift=0):
+    """
+    depreceated
+
+    Parameters
+    ----------
+    Tforcp :
+        
+    cp :
+        
+    shift :
+         (Default value = 0)
+
+    Returns
+    -------
+
+    """
     if len(cp) == 1:
         cp = np.repeat(cp, 2)
         Tforcp = np.hstack((Tforcp, Tforcp * 2))
@@ -708,10 +1054,18 @@ def constructE(Tforcp, cp, shift=0):
 
 
 def dropnafromboth(x):
-    """
-removes NaN rows and columns from pandas DataFrame
-    :param x:
-    :return: cleared DataFrame
+    """removes NaN rows and columns from pandas DataFrame
+
+    Parameters
+    ----------
+    x : pandas.core.frame.DataFrame
+        cleared DataFrame
+
+    Returns
+    -------
+    x : pandas.core.frame.DataFrame
+        cleared DataFrame
+
     """
     if type(x) is pd.DataFrame:
         x = x.dropna(how='all', axis=0)
@@ -722,11 +1076,18 @@ removes NaN rows and columns from pandas DataFrame
 
 
 def checkForNonSI(data, file):
-    """
-checks whether the user provided data might contain any non-SI units (safety measure)
-    :param data: numpy dataframe to be checked
-    :param file: file name used to issue warning
-    :return:
+    """checks whether the user provided data might contain any non-SI units (safety measure)
+
+    Parameters
+    ----------
+    data : pandas.core.frame.DataFrame
+        pandas dataframe to be checked
+    file : str
+        file name used to issue warning
+
+    Returns
+    -------
+
     """
     # Concat row and column names
     names = '\t'.join(data.columns.values.astype(str)).upper() + '\t' + '\t'.join(data.index.values.astype(str)).upper()
@@ -763,9 +1124,16 @@ checks whether the user provided data might contain any non-SI units (safety mea
 
 
 def handleArguments():
-    """
-adds an argument parser and stores passed information
-    :return: dictionary of arguments
+    """adds an argument parser and stores passed information
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    args : dict
+        arguments in dictionary form
+
     """
     # Create argument paser with respective options
     parser = argparse.ArgumentParser(description='Create material properties file (.matp) '
@@ -805,10 +1173,18 @@ adds an argument parser and stores passed information
 
 
 def checkInput(args):
-    """
-checks and corrects the input to material creation
-    :param args: dictionary of arguments
-    :return: corrected dictionary of arguments
+    """checks and corrects the input to material creation
+
+    Parameters
+    ----------
+    args : dict
+        dictionary of arguments
+
+    Returns
+    -------
+    args : dict
+        corrected dictionary of arguments
+
     """
 
     if not args["corrugated"]:
@@ -847,17 +1223,38 @@ checks and corrects the input to material creation
 def createMaterial(inputdir, outfile=None, ablative=True, corrugated=False, Trange="300:100:6000", pressure=101325,
                    bg="0.01:0.3333:100",
                    atmosphere="Earth", corrugated_vals=None, bprime=None, hgas=None):
-    """
-creates a Material class object that holds various thermophysical properties
-    :param corrugated_vals: saves information about corrugated layer properties
-    :param inputdir: input directory
-    :param outfile: output file
-    :param ablative: ablative material flag
-    :param Trange: range of temperature for bprime calculation in K (format: min:step:max)
-    :param pressure: pressure for bprime calculation in Pa
-    :param bg: range of non-dimensional gas-blowing rate (format: min:orderOfMagnitudePerStep:max)
-    :param atmosphere: string that specifies the atmosphere
-    :return: Material instance
+    """creates a Material class object that holds various thermophysical properties
+
+    Parameters
+    ----------
+    corrugated_vals :
+        saves information about corrugated layer properties (Default value = None)
+    inputdir :
+        input directory
+    outfile :
+        output file (Default value = None)
+    ablative :
+        ablative material flag (Default value = True)
+    Trange :
+        range of temperature for bprime calculation in K (format: min:step:max) (Default value = "300:100:6000")
+    pressure :
+        pressure for bprime calculation in Pa (Default value = 101325)
+    bg :
+        range of non-dimensional gas-blowing rate (format: min:orderOfMagnitudePerStep:max) (Default value = "0.01:0.3333:100")
+    atmosphere :
+        string that specifies the atmosphere (Default value = "Earth")
+    corrugated :
+         (Default value = False)
+    bprime :
+         (Default value = None)
+    hgas :
+         (Default value = None)
+
+    Returns
+    -------
+    mat : material.Material
+        Material instance
+
     """
     args = {}
     args["input_dir"] = inputdir
@@ -892,6 +1289,7 @@ creates a Material class object that holds various thermophysical properties
 
 
 if __name__ == "__main__":
+
     # Get arguments
     args = handleArguments()
 

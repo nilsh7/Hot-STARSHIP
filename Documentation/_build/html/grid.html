@@ -167,21 +167,40 @@
 <dt id="grid.DeepGrid">
 <em class="property">class </em><code class="sig-prename descclassname">grid.</code><code class="sig-name descname">DeepGrid</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">length</span></em>, <em class="sig-param"><span class="n">lIni</span></em>, <em class="sig-param"><span class="n">z0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#grid.DeepGrid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#grid.Grid" title="grid.Grid"><code class="xref py py-class docutils literal notranslate"><span class="pre">grid.Grid</span></code></a></p>
+<p>creates grid at inside layer of TPS</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>length</strong> – thickness of layer</p></li>
+<li><p><strong>lIni</strong> – control volume thickness of last cell of previous layer (to avoid large changes in volume),
+taken as thickness of first volume</p></li>
+<li><p><strong>z0</strong> – coordinate of upper edge</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py class">
 <dt id="grid.FrontGrid">
 <em class="property">class </em><code class="sig-prename descclassname">grid.</code><code class="sig-name descname">FrontGrid</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">length</span></em>, <em class="sig-param"><span class="n">l0</span></em>, <em class="sig-param"><span class="n">maxgrowth</span><span class="o">=</span><span class="default_value">1.1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#grid.FrontGrid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#grid.Grid" title="grid.Grid"><code class="xref py py-class docutils literal notranslate"><span class="pre">grid.Grid</span></code></a></p>
+<p>creates grid at front of TPS</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>length</strong> – thickness of layer</p></li>
+<li><p><strong>l0</strong> – l0/2 is the thickness of the first volume</p></li>
+<li><p><strong>maxgrowth</strong> – maximum allowable growth factor</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt id="grid.FrontGrid.updateZ">
 <code class="sig-name descname">updateZ</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">delta_s</span></em><span class="sig-paren">)</span><a class="headerlink" href="#grid.FrontGrid.updateZ" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>adds recession amount and recalculates nodal positions</dt><dd><dl class="field-list simple">
-<dt class="field-odd">param delta_s</dt>
-<dd class="field-odd"><p>difference in recession amount since last update</p>
-</dd>
-</dl>
+<dd><p>adds recession amount and recalculates nodal positions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>delta_s</strong> – difference in recession amount since last update</p>
 </dd>
 </dl>
 </dd></dl>
@@ -192,18 +211,18 @@
 <dt id="grid.Grid">
 <em class="property">class </em><code class="sig-prename descclassname">grid.</code><code class="sig-name descname">Grid</code><a class="headerlink" href="#grid.Grid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>initializes grid with None values</p>
 <dl class="py method">
 <dt id="grid.Grid.calculateProperties">
 <code class="sig-name descname">calculateProperties</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">calceta</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#grid.Grid.calculateProperties" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>calculates a few auxiliary properties such as control volume boundary location or constant eta coordinate</dt><dd><dl class="field-list simple">
-<dt class="field-odd">param length</dt>
-<dd class="field-odd"><p>length of grid</p>
-</dd>
-<dt class="field-even">param z0</dt>
-<dd class="field-even"><p>initial position of left boundary</p>
-</dd>
-</dl>
+<dd><p>calculates a few auxiliary properties such as control volume boundary location or constant eta coordinate</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>length</strong> – length of grid</p></li>
+<li><p><strong>z0</strong> – initial position of left boundary</p></li>
+<li><p><strong>calceta</strong> – (Default value = False)</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -211,12 +230,10 @@
 <dl class="py method">
 <dt id="grid.Grid.setMaterial">
 <code class="sig-name descname">setMaterial</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mat</span></em><span class="sig-paren">)</span><a class="headerlink" href="#grid.Grid.setMaterial" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>sets the material property</dt><dd><dl class="field-list simple">
-<dt class="field-odd">param mat</dt>
-<dd class="field-odd"><p>material to be set</p>
-</dd>
-</dl>
+<dd><p>sets the material property</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mat</strong> – material to be set</p>
 </dd>
 </dl>
 </dd></dl>
@@ -232,15 +249,16 @@
 <dl class="py function">
 <dt id="grid.generateGrids">
 <code class="sig-prename descclassname">grid.</code><code class="sig-name descname">generateGrids</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layers</span></em><span class="sig-paren">)</span><a class="headerlink" href="#grid.generateGrids" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>adds grids based to a list of layers (see input.py)</dt><dd><dl class="field-list simple">
-<dt class="field-odd">param layers</dt>
-<dd class="field-odd"><p>list of layers</p>
+<dd><p>adds grids based on properties to a list of layers (see input)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>layers</strong> (<em>list</em>) – list of layers</p>
 </dd>
-<dt class="field-even">return</dt>
-<dd class="field-even"><p>modified list of layers</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>type</strong> – modified list of layers</p>
 </dd>
-</dl>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
 </dd>
 </dl>
 </dd></dl>
@@ -258,12 +276,10 @@
 <dl class="py function">
 <dt id="grid.plotGrids">
 <code class="sig-prename descclassname">grid.</code><code class="sig-name descname">plotGrids</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">grids</span></em><span class="sig-paren">)</span><a class="headerlink" href="#grid.plotGrids" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>plots the passed grids</dt><dd><dl class="field-list simple">
-<dt class="field-odd">param grids</dt>
-<dd class="field-odd"><p>variable number of grids</p>
-</dd>
-</dl>
+<dd><p>plots the passed grids</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>*grids</strong> – variable number of grids</p>
 </dd>
 </dl>
 </dd></dl>

@@ -8,7 +8,11 @@ p1 = lambda f: np.roll(f, shift=-1)
 m1 = lambda f: np.roll(f, shift=+1)
 
 class Grid:
+    """ """
     def __init__(self):
+        """
+initializes grid with None values
+        """
         self.nC = None
         self.growth = None
         self.zj = None
@@ -17,17 +21,34 @@ class Grid:
         self.mat = None
 
     def setMaterial(self, mat):
-        """
-sets the material property
-        :param mat: material to be set
+        """sets the material property
+
+        Parameters
+        ----------
+        mat :
+            material to be set
+
+        Returns
+        -------
+
         """
         self.mat = mat
 
     def calculateProperties(self, calceta=False):
-        """
-calculates a few auxiliary properties such as control volume boundary location or constant eta coordinate
-        :param length: length of grid
-        :param z0: initial position of left boundary
+        """calculates a few auxiliary properties such as control volume boundary location or constant eta coordinate
+
+        Parameters
+        ----------
+        length :
+            length of grid
+        z0 :
+            initial position of left boundary
+        calceta :
+             (Default value = False)
+
+        Returns
+        -------
+
         """
         # Calculate positions at control volume boundaries
         self.zjp12 = np.concatenate(((self.zj[:-1] + self.zj[1:]) / 2, np.array([self.length + self.z0])))
@@ -40,9 +61,7 @@ calculates a few auxiliary properties such as control volume boundary location o
         self.dzjm = self.zj - m1(self.zj)
 
     def setXtoZ(self):
-        """
-sets moving coordinates x to stationary coordinates z
-        """
+        """sets moving coordinates x to stationary coordinates z"""
         self.xj = self.zj
         self.xjp12 = self.zjp12
         self.xjm12 = self.zjm12
@@ -53,11 +72,20 @@ sets moving coordinates x to stationary coordinates z
 class FrontGrid(Grid):
 
     def __init__(self, length, l0, maxgrowth=1.1):
-        """
-creates grid at front of TPS
-        :param length: thickness of layer
-        :param l0: l0/2 is the thickness of the first volume
-        :param maxgrowth: maximum allowable growth factor
+        """creates grid at front of TPS
+
+        Parameters
+        ----------
+        length :
+            thickness of layer
+        l0 :
+            l0/2 is the thickness of the first volume
+        maxgrowth :
+            maximum allowable growth factor
+
+        Returns
+        -------
+
         """
         self.length0 = length
         self.length = length
@@ -78,9 +106,16 @@ creates grid at front of TPS
         self.s = 0  # Recession amount
 
     def updateZ(self, delta_s):
-        """
-adds recession amount and recalculates nodal positions
-        :param delta_s: difference in recession amount since last update
+        """adds recession amount and recalculates nodal positions
+
+        Parameters
+        ----------
+        delta_s :
+            difference in recession amount since last update
+
+        Returns
+        -------
+
         """
         self.s += delta_s
         self.z0 += delta_s
@@ -92,11 +127,21 @@ adds recession amount and recalculates nodal positions
 class DeepGrid(Grid):
 
     def __init__(self, length, lIni, z0):
-        """
-creates grid at inside layer of TPS
-        :param length: thickness of layer
-        :param lIni: control volume thickness of previous layer (to avoid large changes in volume)
-        :param z0: coordinate of upper edge
+        """creates grid at inside layer of TPS
+
+        Parameters
+        ----------
+        length :
+            thickness of layer
+        lIni :
+            control volume thickness of last cell of previous layer (to avoid large changes in volume),
+            taken as thickness of first volume
+        z0 :
+            coordinate of upper edge
+
+        Returns
+        -------
+
         """
         self.length = length
         self.z0 = z0
@@ -141,9 +186,16 @@ creates grid at inside layer of TPS
 
 
 def plotGrids(*grids):
-    """
-plots the passed grids
-    :param grids: variable number of grids
+    """plots the passed grids
+
+    Parameters
+    ----------
+    *grids :
+        variable number of grids
+
+    Returns
+    -------
+
     """
 
     # Clear plot
@@ -191,10 +243,18 @@ plots the passed grids
 
 
 def generateGrids(layers):
-    """
-adds grids based to a list of layers (see input.py)
-    :param layers: list of layers
-    :return: modified list of layers
+    """adds grids based on properties to a list of layers (see input)
+
+    Parameters
+    ----------
+    layers : list
+        list of layers
+
+    Returns
+    -------
+    type : list
+        modified list of layers
+
     """
     # Generate DeepGrid for remaining grids
     for il, layer in enumerate(layers):
