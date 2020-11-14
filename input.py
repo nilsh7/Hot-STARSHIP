@@ -14,6 +14,7 @@ class Layer:
     def __init__(self, layerelem, root):
         """
 creates a Layer objects that holds various information about the TPS layer
+
         :param layerelem: layer element from xml tree
         :param root: xml root element
         """
@@ -26,6 +27,7 @@ creates a Layer objects that holds various information about the TPS layer
                 raise ValueError("Material at layer no. %i cannot be ablative. Only the first layer can."
                                  % int(layerelem.attrib["number"]))
 
+        # If layer is ablative, find necessary information
         if self.ablative:
             ablative_vals = {
                 "pressure": float(root.find("options").find("ambient").find("pressure").text),
@@ -85,6 +87,7 @@ class Input:
     def __init__(self, xmlfile):
         """
 reads the input xml file and stores the information
+
         :param xmlfile: path to xml file
         """
         # Read xml file
@@ -105,6 +108,8 @@ reads the input xml file and stores the information
 
         # Boundary conditions
         self.BCfrontType = root.find("options").find("BCs").find("front").attrib["type"]
+
+        # Heat flux BC
         if self.BCfrontType in ("heatflux",):
             try:
                 value = float(root.find("options").find("BCs").find("front").find("value").text)
@@ -130,6 +135,7 @@ reads the input xml file and stores the information
                     self.aerocoef = interp1d(data.values[:, 0], data.values[:, 1], kind='linear',
                                              fill_value=0.0, bounds_error=False)
 
+        # Aerodynamic BC
         elif self.BCfrontType in ("aerodynamic",):
             try:
                 value = float(root.find("options").find("BCs").find("front").find("value").text)
@@ -150,6 +156,7 @@ reads the input xml file and stores the information
                         mat.hatmo(self.BLEdgeT_at_t) - mat.hatmo(self.SurfT_at_t))
             self.BLedge_h = lambda t: self.BCfrontValue(t) / self.aerocoef(t) + mat.hatmo(self.SurfT_at_t)
 
+        # Recovery enthalpy BC
         elif self.BCfrontType == "recovery_enthalpy":
             if not self.layers[0].ablative:
                 raise ValueError("Reovery enthalpy BC not implemented for non-ablative cases.")
@@ -208,6 +215,22 @@ reads the input xml file and stores the information
 
 
 def readMaterial(matname, ablative, corrugated, ablative_vals=None, corrugated_vals=None):
+    """
+checks whether there is an existing material properties file with the right settings,
+if not, it initiates the material creation with the according parameters
+
+    :param matname: path to material file
+    :param ablative: ablative material flag
+    :type ablative: bool
+    :param corrugated: corrugated material flag
+    :type corrugated: bool
+    :param ablative_vals: ablative material information (pressure, atmosphere, etc.)
+    :type ablative_vals: dict
+    :param corrugated_vals: corrugated material information (geometry)
+    :type corrugated_vals: dict
+    :return: created or read material
+    :rtype: :py:mod:`material.AblativeMaterial`, :py:mod:`material.NonAblativeMaterial` or :py:mod:`material.CorrugatedMaterial`
+    """
     # Read .matp file if it was specified
     if matname.name[-5:] == ".matp":
         with open(matname, 'rb') as matpfile:
@@ -239,11 +262,24 @@ def readMaterial(matname, ablative, corrugated, ablative_vals=None, corrugated_v
 
     return material
 
-
+# Dictionary for default directories for certain kinds, e.g. materials are usually located in Data/Materials
 directory_map = {"material": "Data/Materials"}
 
 
 def find_existing(name, kind=None):
+    """
+tries to find existing file or directory in a number of default directories; these are:
+1. in the absolute path (`<file>`)
+2. in the current working directory (`pwd/<file>`)
+3. in the directory specified by the Hot-STARSHIP environment variable (`$HOTSTARSHIP_DIR/<file>`)
+4. optional: in the directory specified by the Hot-STARSHIP environment variable plus the standard directory for this type, e.g. material: (`$HOTSTARSHIP_DIR/Data/Materials/<file>`)
+5. optional: for a material with `.matp` ending in the directory specified by the Hot-STARSHIP environment variable plus the standard material directory plus the directory with `.matp` removed from the name (for `<file>.matp` in `$HOTSTARSHIP_DIR/Data/Materials/<file>/<file>.matp`)
+If the file or directory cannot be located, an error will be raised.
+
+    :param name: path to find
+    :param kind: string that specifies kind of directory to look out for, important for 4 and 5
+    :return: path to existing file
+    """
     # Check if absolute path
     if Path(name).root != '' and Path.exists(Path(name)):
         return Path(name)
@@ -253,6 +289,8 @@ def find_existing(name, kind=None):
 
     # For further checks environment variable needs to be set
     hs_dir = os.getenv("HOTSTARSHIP_DIR")
+
+    # If environment variable is not set, the directory could not be located
     if hs_dir is None:
         raise ValueError(
             "Environment variable HOTSTARSHIP_DIR is not set and directory %s could not be located." % name)
@@ -261,6 +299,7 @@ def find_existing(name, kind=None):
     if Path.exists(Path.joinpath(Path(hs_dir), name)):
         return Path.joinpath(Path(hs_dir), name)
 
+    # Check if there is a default directory for this kind
     try:
         directory_map[kind]
     except KeyError:
@@ -274,8 +313,6 @@ def find_existing(name, kind=None):
             Path.joinpath(Path(hs_dir), directory_map[kind], name[:-5], name)):
         return Path.joinpath(Path(hs_dir), directory_map[kind], name[:-5], name)
     else:
+        # Directory could not be found after all
         raise ValueError("Directory %s could not be located." % name)
 
-
-if __name__ == "__main__":
-    input = Input("/Users/nils/PycharmProjects/H_STARSHIP/Input/input.xml")

@@ -1,0 +1,622 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>material module &mdash; Hot-STARSHIP  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="output module" href="output.html" />
+    <link rel="prev" title="input module" href="input.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> Hot-STARSHIP
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">H_STARSHIP</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="assembly.html">assembly module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grid.html">grid module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hotstarship.html">hotstarship module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="input.html">input module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">material module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output.html">output module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Hot-STARSHIP</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="modules.html">H_STARSHIP</a> &raquo;</li>
+        
+      <li>material module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/material.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-material">
+<span id="material-module"></span><h1>material module<a class="headerlink" href="#module-material" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="material.AblativeMaterial">
+<em class="property">class </em><code class="sig-prename descclassname">material.</code><code class="sig-name descname">AblativeMaterial</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.AblativeMaterial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#material.Material" title="material.Material"><code class="xref py py-class docutils literal notranslate"><span class="pre">material.Material</span></code></a></p>
+<dl class="py method">
+<dt id="material.AblativeMaterial.calculateAblativeProperties">
+<code class="sig-name descname">calculateAblativeProperties</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.AblativeMaterial.calculateAblativeProperties" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>calculate pyrolysis gas composition and bprime table</dt><dd><dl class="field-list simple">
+<dt class="field-odd">param args</dt>
+<dd class="field-odd"><p>dictionary of arguments</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="material.AblativeMaterial.calculateBPrimes">
+<code class="sig-name descname">calculateBPrimes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.AblativeMaterial.calculateBPrimes" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>calculates bprime tables using bprime executable provided by mutation++</dt><dd><dl class="field-list simple">
+<dt class="field-odd">param args</dt>
+<dd class="field-odd"><p>dictionary of arguments</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="material.AblativeMaterial.calculateEnergies">
+<code class="sig-name descname">calculateEnergies</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#material.AblativeMaterial.calculateEnergies" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="material.AblativeMaterial.calculateHatmo">
+<code class="sig-name descname">calculateHatmo</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.AblativeMaterial.calculateHatmo" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="material.AblativeMaterial.calculatePyroGasComposition">
+<code class="sig-name descname">calculatePyroGasComposition</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.AblativeMaterial.calculatePyroGasComposition" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>calculates pyrolysis gas composition using mppequil</dt><dd><dl class="field-list simple">
+<dt class="field-odd">param args</dt>
+<dd class="field-odd"><p>dictionary of arguments</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="material.AblativeMaterial.calculateVariables">
+<code class="sig-name descname">calculateVariables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#material.AblativeMaterial.calculateVariables" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates functions for thermophysical properties</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="material.AblativeMaterial.plotBc">
+<code class="sig-name descname">plotBc</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#material.AblativeMaterial.plotBc" title="Permalink to this definition">¶</a></dt>
+<dd><p>plots Bc over T table with Bg as parameter</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="material.AblativeMaterial.plot_hw">
+<code class="sig-name descname">plot_hw</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#material.AblativeMaterial.plot_hw" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>plots wall enthalpy hw over T with Bg as parameter</dt><dd><dl class="field-list simple">
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="material.AblativeMaterial.readBPrimes">
+<code class="sig-name descname">readBPrimes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.AblativeMaterial.readBPrimes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="material.AblativeMaterial.readFile">
+<code class="sig-name descname">readFile</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">iDir</span></em>, <em class="sig-param"><span class="n">globdir</span></em>, <em class="sig-param"><span class="n">csv_files</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.AblativeMaterial.readFile" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>reads csv file and stores data</dt><dd><dl class="field-list simple">
+<dt class="field-odd">param iDir</dt>
+<dd class="field-odd"><p>directory number</p>
+</dd>
+<dt class="field-even">param globdir</dt>
+<dd class="field-even"><p>global path to directory</p>
+</dd>
+<dt class="field-odd">param csv_files</dt>
+<dd class="field-odd"><p>csv files in directory</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="material.AblativeMaterial.readPyroGasComposition">
+<code class="sig-name descname">readPyroGasComposition</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.AblativeMaterial.readPyroGasComposition" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="material.AblativeMaterial.storeVariables">
+<code class="sig-name descname">storeVariables</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.AblativeMaterial.storeVariables" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>stores pressure and atmosphere values</dt><dd><dl class="field-list simple">
+<dt class="field-odd">param args</dt>
+<dd class="field-odd"><p>dictionary of arguments</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="material.CorrugatedMaterial">
+<em class="property">class </em><code class="sig-prename descclassname">material.</code><code class="sig-name descname">CorrugatedMaterial</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.CorrugatedMaterial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#material.Material" title="material.Material"><code class="xref py py-class docutils literal notranslate"><span class="pre">material.Material</span></code></a></p>
+<dl class="py method">
+<dt id="material.CorrugatedMaterial.cp">
+<code class="sig-name descname">cp</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">ignoreargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.CorrugatedMaterial.cp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="material.CorrugatedMaterial.depsdT">
+<code class="sig-name descname">depsdT</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">ignoreargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.CorrugatedMaterial.depsdT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="material.CorrugatedMaterial.dkdT">
+<code class="sig-name descname">dkdT</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">ignoreargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.CorrugatedMaterial.dkdT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="material.CorrugatedMaterial.e">
+<code class="sig-name descname">e</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">ignoreargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.CorrugatedMaterial.e" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="material.CorrugatedMaterial.eps">
+<code class="sig-name descname">eps</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">ignoreargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.CorrugatedMaterial.eps" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="material.CorrugatedMaterial.k">
+<code class="sig-name descname">k</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">ignoreargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.CorrugatedMaterial.k" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="material.CorrugatedMaterial.rho">
+<code class="sig-name descname">rho</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">ignoreargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.CorrugatedMaterial.rho" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="material.Data">
+<em class="property">class </em><code class="sig-prename descclassname">material.</code><code class="sig-name descname">Data</code><a class="headerlink" href="#material.Data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="material.Material">
+<em class="property">class </em><code class="sig-prename descclassname">material.</code><code class="sig-name descname">Material</code><a class="headerlink" href="#material.Material" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="material.Material.calculateVariables">
+<code class="sig-name descname">calculateVariables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#material.Material.calculateVariables" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates functions for thermophysical properties</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="material.Material.readData">
+<code class="sig-name descname">readData</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.Material.readData" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>loops over directories to be read and initiates reading procedure</dt><dd><dl class="field-list simple">
+<dt class="field-odd">param args</dt>
+<dd class="field-odd"><p>dictionary of arguments</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="material.Material.readFile">
+<code class="sig-name descname">readFile</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#material.Material.readFile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="material.NonAblativeMaterial">
+<em class="property">class </em><code class="sig-prename descclassname">material.</code><code class="sig-name descname">NonAblativeMaterial</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.NonAblativeMaterial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#material.Material" title="material.Material"><code class="xref py py-class docutils literal notranslate"><span class="pre">material.Material</span></code></a></p>
+<dl class="py method">
+<dt id="material.NonAblativeMaterial.calculateVariables">
+<code class="sig-name descname">calculateVariables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#material.NonAblativeMaterial.calculateVariables" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates functions for thermophysical properties</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="material.NonAblativeMaterial.cp">
+<code class="sig-name descname">cp</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">ignoreargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.NonAblativeMaterial.cp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="material.NonAblativeMaterial.depsdT">
+<code class="sig-name descname">depsdT</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">ignoreargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.NonAblativeMaterial.depsdT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="material.NonAblativeMaterial.dkdT">
+<code class="sig-name descname">dkdT</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">ignoreargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.NonAblativeMaterial.dkdT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="material.NonAblativeMaterial.e">
+<code class="sig-name descname">e</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">ignoreargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.NonAblativeMaterial.e" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="material.NonAblativeMaterial.eps">
+<code class="sig-name descname">eps</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">ignoreargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.NonAblativeMaterial.eps" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="material.NonAblativeMaterial.k">
+<code class="sig-name descname">k</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">ignoreargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.NonAblativeMaterial.k" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="material.NonAblativeMaterial.readFile">
+<code class="sig-name descname">readFile</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">iDir</span></em>, <em class="sig-param"><span class="n">globdir</span></em>, <em class="sig-param"><span class="n">csv_files</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.NonAblativeMaterial.readFile" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>reads csv file and stores data</dt><dd><dl class="field-list simple">
+<dt class="field-odd">param iDir</dt>
+<dd class="field-odd"><p>directory number</p>
+</dd>
+<dt class="field-even">param globdir</dt>
+<dd class="field-even"><p>global path to directory</p>
+</dd>
+<dt class="field-odd">param csv_files</dt>
+<dd class="field-odd"><p>csv files in directory</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="material.NonAblativeMaterial.rho">
+<code class="sig-name descname">rho</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">ignoreargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.NonAblativeMaterial.rho" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="material.State">
+<em class="property">class </em><code class="sig-prename descclassname">material.</code><code class="sig-name descname">State</code><a class="headerlink" href="#material.State" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="material.checkForNonSI">
+<code class="sig-prename descclassname">material.</code><code class="sig-name descname">checkForNonSI</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">file</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.checkForNonSI" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>checks whether the user provided data might contain any non-SI units (safety measure)</dt><dd><dl class="field-list simple">
+<dt class="field-odd">param data</dt>
+<dd class="field-odd"><p>numpy dataframe to be checked</p>
+</dd>
+<dt class="field-even">param file</dt>
+<dd class="field-even"><p>file name used to issue warning</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="material.checkInput">
+<code class="sig-prename descclassname">material.</code><code class="sig-name descname">checkInput</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.checkInput" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>checks and corrects the input to material creation</dt><dd><dl class="field-list simple">
+<dt class="field-odd">param args</dt>
+<dd class="field-odd"><p>dictionary of arguments</p>
+</dd>
+<dt class="field-even">return</dt>
+<dd class="field-even"><p>corrected dictionary of arguments</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="material.constructE">
+<code class="sig-prename descclassname">material.</code><code class="sig-name descname">constructE</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">Tforcp</span></em>, <em class="sig-param"><span class="n">cp</span></em>, <em class="sig-param"><span class="n">shift</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.constructE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="material.constructLinearSpline">
+<code class="sig-prename descclassname">material.</code><code class="sig-name descname">constructLinearSpline</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.constructLinearSpline" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>constructs a piecewise linear spline through data</dt><dd><dl class="field-list simple">
+<dt class="field-odd">param x</dt>
+<dd class="field-odd"><p>x data as array (variable)</p>
+</dd>
+<dt class="field-even">param y</dt>
+<dd class="field-even"><p>y data as array (dependent)</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>spline</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="material.convertf">
+<code class="sig-prename descclassname">material.</code><code class="sig-name descname">convertf</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">st</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.convertf" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="material.createMaterial">
+<code class="sig-prename descclassname">material.</code><code class="sig-name descname">createMaterial</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">inputdir</span></em>, <em class="sig-param"><span class="n">outfile</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">ablative</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">corrugated</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">Trange</span><span class="o">=</span><span class="default_value">'300:100:6000'</span></em>, <em class="sig-param"><span class="n">pressure</span><span class="o">=</span><span class="default_value">101325</span></em>, <em class="sig-param"><span class="n">bg</span><span class="o">=</span><span class="default_value">'0.01:0.3333:100'</span></em>, <em class="sig-param"><span class="n">atmosphere</span><span class="o">=</span><span class="default_value">'Earth'</span></em>, <em class="sig-param"><span class="n">corrugated_vals</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">bprime</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hgas</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.createMaterial" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>creates a Material class object that holds various thermophysical properties</dt><dd><dl class="field-list simple">
+<dt class="field-odd">param corrugated_vals</dt>
+<dd class="field-odd"><p>saves information about corrugated layer properties</p>
+</dd>
+<dt class="field-even">param inputdir</dt>
+<dd class="field-even"><p>input directory</p>
+</dd>
+<dt class="field-odd">param outfile</dt>
+<dd class="field-odd"><p>output file</p>
+</dd>
+<dt class="field-even">param ablative</dt>
+<dd class="field-even"><p>ablative material flag</p>
+</dd>
+<dt class="field-odd">param Trange</dt>
+<dd class="field-odd"><p>range of temperature for bprime calculation in K (format: min:step:max)</p>
+</dd>
+<dt class="field-even">param pressure</dt>
+<dd class="field-even"><p>pressure for bprime calculation in Pa</p>
+</dd>
+<dt class="field-odd">param bg</dt>
+<dd class="field-odd"><p>range of non-dimensional gas-blowing rate (format: min:orderOfMagnitudePerStep:max)</p>
+</dd>
+<dt class="field-even">param atmosphere</dt>
+<dd class="field-even"><p>string that specifies the atmosphere</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>Material instance</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="material.dropnafromboth">
+<code class="sig-prename descclassname">material.</code><code class="sig-name descname">dropnafromboth</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.dropnafromboth" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>removes NaN rows and columns from pandas DataFrame</dt><dd><dl class="field-list simple">
+<dt class="field-odd">param x</dt>
+<dd class="field-odd"><p></p></dd>
+<dt class="field-even">return</dt>
+<dd class="field-even"><p>cleared DataFrame</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="material.handleArguments">
+<code class="sig-prename descclassname">material.</code><code class="sig-name descname">handleArguments</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#material.handleArguments" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>adds an argument parser and stores passed information</dt><dd><dl class="field-list simple">
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>dictionary of arguments</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="output.html" class="btn btn-neutral float-right" title="output module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="input.html" class="btn btn-neutral float-left" title="input module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Nils Henkel
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,430 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>assembly module &mdash; Hot-STARSHIP  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="grid module" href="grid.html" />
+    <link rel="prev" title="H_STARSHIP" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> Hot-STARSHIP
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">H_STARSHIP</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">assembly module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grid.html">grid module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hotstarship.html">hotstarship module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="input.html">input module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="material.html">material module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output.html">output module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Hot-STARSHIP</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="modules.html">H_STARSHIP</a> &raquo;</li>
+        
+      <li>assembly module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/assembly.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-assembly">
+<span id="assembly-module"></span><h1>assembly module<a class="headerlink" href="#module-assembly" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="assembly.Diags">
+<em class="property">class </em><code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">Diags</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nVals</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.Diags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="assembly.Diags.assignFluxes">
+<code class="sig-name descname">assignFluxes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fluxes</span></em>, <em class="sig-param"><span class="n">signs</span></em>, <em class="sig-param"><span class="n">offsets</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.Diags.assignFluxes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addAerodynamicMatrix">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addAerodynamicMatrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">diags</span></em>, <em class="sig-param"><span class="n">first_col</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">inputvars</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addAerodynamicMatrix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addAerodynamicVector">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addAerodynamicVector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fnu</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">inputvars</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addAerodynamicVector" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addBcMatrix">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addBcMatrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">diags</span></em>, <em class="sig-param"><span class="n">first_col</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">inputvars</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addBcMatrix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addBcVector">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addBcVector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fnu</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">inputvars</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addBcVector" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addConductionMatrixInner">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addConductionMatrixInner</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">diags</span></em>, <em class="sig-param"><span class="n">first_col</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">tDelta</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addConductionMatrixInner" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addConductionMatrixOuter">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addConductionMatrixOuter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">diags</span></em>, <em class="sig-param"><span class="n">first_col</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">tDelta</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addConductionMatrixOuter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addConductionVectorInner">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addConductionVectorInner</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fnu</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">key</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addConductionVectorInner" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addConductionVectorOuter">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addConductionVectorOuter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fnu</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">key</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addConductionVectorOuter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addEnergyMatrix">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addEnergyMatrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">diags</span></em>, <em class="sig-param"><span class="n">first_col</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">tDelta</span></em>, <em class="sig-param"><span class="n">inputvars</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addEnergyMatrix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addEnergyVector">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addEnergyVector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fnu</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tn</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhon</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">gridpre_f</span></em>, <em class="sig-param"><span class="n">wvpre_f</span></em>, <em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">tDelta</span></em>, <em class="sig-param"><span class="n">inputvars</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addEnergyVector" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addGridMatrix">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addGridMatrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">diags</span></em>, <em class="sig-param"><span class="n">first_col</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">key</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addGridMatrix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addGridVector">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addGridVector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fnu</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">key</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addGridVector" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addHeatFluxMatrixAblative">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addHeatFluxMatrixAblative</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">first_col</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">inputvars</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addHeatFluxMatrixAblative" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addHeatFluxVector">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addHeatFluxVector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fnu</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">inputvars</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addHeatFluxVector" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addPyroMatrix">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addPyroMatrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">diags</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">inputvars</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addPyroMatrix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addPyroVector">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addPyroVector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fnu</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">inputvars</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addPyroVector" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addRadiationMatrix">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addRadiationMatrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">diags</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">inputvars</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addRadiationMatrix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addRadiationVector">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addRadiationVector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fnu</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">inputvars</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addRadiationVector" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addVariables">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addVariables</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layers</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addVariables" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addWallBlowMatrix">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addWallBlowMatrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">diags</span></em>, <em class="sig-param"><span class="n">first_col</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">inputvars</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addWallBlowMatrix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.addWallBlowVector">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addWallBlowVector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fnu</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">inputvars</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addWallBlowVector" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.assembleT">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">assembleT</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">gridpre_f</span></em>, <em class="sig-param"><span class="n">wvpre_f</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tn</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhon</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">tDelta</span></em>, <em class="sig-param"><span class="n">inputvars</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.assembleT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.assembleTMatrix">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">assembleTMatrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">tDelta</span></em>, <em class="sig-param"><span class="n">inputvars</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.assembleTMatrix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.assembleTVector">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">assembleTVector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">gridpre_f</span></em>, <em class="sig-param"><span class="n">wvpre_f</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tn</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhon</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">tDelta</span></em>, <em class="sig-param"><span class="n">inputvars</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.assembleTVector" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.blowFromPhi">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">blowFromPhi</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">phi</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.blowFromPhi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.calculateSmoothStep">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">calculateSmoothStep</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#assembly.calculateSmoothStep" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.createGlobFlux">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">createGlobFlux</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">flux</span></em>, <em class="sig-param"><span class="n">length</span></em>, <em class="sig-param"><span class="n">iStart</span></em>, <em class="sig-param"><span class="n">iEnd</span></em>, <em class="sig-param"><span class="n">offset</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.createGlobFlux" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.createGlobFluxes">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">createGlobFluxes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fluxes</span></em>, <em class="sig-param"><span class="n">length</span></em>, <em class="sig-param"><span class="n">iStart</span></em>, <em class="sig-param"><span class="n">iEnd</span></em>, <em class="sig-param"><span class="n">offsets</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.createGlobFluxes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.createUnknownVectors">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">createUnknownVectors</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layers</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.createUnknownVectors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.dblowdsdotFromPhi">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">dblowdsdotFromPhi</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">phi</span></em>, <em class="sig-param"><span class="n">rhow</span></em>, <em class="sig-param"><span class="n">lam</span></em>, <em class="sig-param"><span class="n">aerocoef</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.dblowdsdotFromPhi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.ddrhodt_drho">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">ddrhodt_drho</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mat</span></em>, <em class="sig-param"><span class="n">rhoi</span></em>, <em class="sig-param"><span class="n">Tj</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.ddrhodt_drho" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.drhodt">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">drhodt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mat</span></em>, <em class="sig-param"><span class="n">rhoi</span></em>, <em class="sig-param"><span class="n">Tj</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.drhodt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.init_T_rho">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">init_T_rho</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="n">rho</span></em>, <em class="sig-param"><span class="n">rhoi</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">inputvars</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.init_T_rho" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.m1">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">m1</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">f</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.m1" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.m12">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">m12</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">f</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.m12" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.p1">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">p1</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">f</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.p1" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.p12">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">p12</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">f</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.p12" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.smoothStep">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">smoothStep</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="n">Tmin</span></em>, <em class="sig-param"><span class="n">decomp</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.smoothStep" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="assembly.updateRho">
+<code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">updateRho</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">lay</span></em>, <em class="sig-param"><span class="n">rhoimu</span></em>, <em class="sig-param"><span class="n">rhoin</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">tDelta</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.updateRho" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="grid.html" class="btn btn-neutral float-right" title="grid module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="modules.html" class="btn btn-neutral float-left" title="H_STARSHIP" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Nils Henkel
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

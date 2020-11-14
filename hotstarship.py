@@ -13,7 +13,7 @@ import output
 def handleArguments():
     """
 handles arguments passed to Hot-STARSHIP
-    :return: dictionary of arguments
+    :return: args, dictionary of arguments
     """
     # Create argument paser with respective options
     parser = argparse.ArgumentParser(description='Pass an input.xml file for calculation with Hot-STARSHIP')
@@ -33,7 +33,11 @@ handles arguments passed to Hot-STARSHIP
 
 
 def hotstarship(args):
-
+    """
+main function, calculates the heat transfer in thermal protection systems
+    :param args: input arguments from handleArguments() that specify the input and output file
+    :return: True for full run until specified end time, False for premature failure
+    """
     # Read input file
     print("Reading input file %s..." % args["input_file"])
     inputvars = input.Input(args["input_file"])
@@ -151,6 +155,11 @@ def hotstarship(args):
 
 
 def get_mass(args):
+    """
+calculates the initial mass per unit area of the TPS from input arguments
+    :param args: input arguments
+    :return: mass per unit area
+    """
 
     # Read input file
     print("Reading input file %s..." % args["input_file"])
@@ -175,9 +184,11 @@ def get_mass(args):
     return mass
 
 
+# Main function that is run for calculation
 if __name__ == "__main__":
 
     # Save input arguments
     args = handleArguments()
 
+    # Run Hot-STARSHIP
     hotstarship(args)
