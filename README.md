@@ -217,6 +217,9 @@ In addition the following functions of the ``SolutionReader`` object are availab
 3. ```get_max_T()```: returns the global maximum temperature
 4. `get_remaining_thickness()`: returns the remaining TPS thickness at the end
 
+# Documentation
+The documentation is available [here](https://nilsh7.github.io/Hot-STARSHIP/).
+
 # Sources
 - Amar, Adam Joseph. "Modeling of one-dimensional ablation with porous flow using finite control volume procedure." (2006).
 - Chen, Y-K., and Frank S. Milos. "Ablation and thermal response program for spacecraft heatshield analysis." Journal of Spacecraft and Rockets 36.3 (1999): 475-483.
