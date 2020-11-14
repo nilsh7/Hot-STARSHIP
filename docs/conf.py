@@ -27,7 +27,7 @@ author = 'Nils Henkel'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx_rtd_theme', 'sphinx.ext.autodoc', 'sphinx.ext.napoleon'
+extensions = ['sphinx_rtd_theme', 'sphinx.ext.autodoc', 'sphinx.ext.napoleon', 'sphinx.ext.githubpages'
 ]
 
 #napoleon_google_docstring = False
