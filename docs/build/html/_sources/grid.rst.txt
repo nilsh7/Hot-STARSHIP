@@ -1,5 +1,5 @@
-grid module
-===========
+grid
+====
 
 .. automodule:: grid
    :members:

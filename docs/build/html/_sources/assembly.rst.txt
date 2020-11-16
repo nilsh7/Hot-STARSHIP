@@ -1,5 +1,5 @@
-assembly module
-===============
+assembly
+========
 
 .. automodule:: assembly
    :members:

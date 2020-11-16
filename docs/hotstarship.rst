@@ -1,5 +1,5 @@
-hotstarship module
-==================
+hotstarship
+===========
 
 .. automodule:: hotstarship
    :members:

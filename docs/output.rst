@@ -1,5 +1,5 @@
-output module
-=============
+output
+======
 
 .. automodule:: output
    :members:

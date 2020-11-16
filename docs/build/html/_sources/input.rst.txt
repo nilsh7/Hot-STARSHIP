@@ -1,5 +1,5 @@
-input module
-============
+input
+=====
 
 .. automodule:: input
    :members:

@@ -1,5 +1,5 @@
-material module
-===============
+material
+========
 
 .. automodule:: material
    :members:

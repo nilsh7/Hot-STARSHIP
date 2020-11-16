@@ -1,0 +1,290 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Introduction to code &mdash; Hot-STARSHIP  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Code documentation" href="modules.html" />
+    <link rel="prev" title="Welcome to Hot-STARSHIP’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> Hot-STARSHIP
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction to code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Code documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Hot-STARSHIP</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Introduction to code</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/Introduction.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="introduction-to-code">
+<h1>Introduction to code<a class="headerlink" href="#introduction-to-code" title="Permalink to this headline">¶</a></h1>
+<p>The code is implemented in Python and uses an implicit Newton-Raphson scheme
+for solving the energy equation. To get an understanding of the general solution procedure that is
+implemented in <a class="reference external" href="hotstarship.html#hotstarship.hotstarship">hotstarship.hotstarship(args)</a>,
+see figure below.</p>
+<img alt="_images/Solution_Procedure.png" src="_images/Solution_Procedure.png" />
+<p>The following descriptions shall focus on some of the main variables that
+are used which appear throughout the program. To get an undeerstanding of what
+happens in the code, it is recommended to start at <a class="reference external" href="hotstarship.html#hotstarship.hotstarship">hotstarship.hotstarship(args)</a>
+and find the above procedure reflected in the code. A lot of this is related to reading the input file,
+reading material properties, constructing the grid, initializing variables, etc.
+The actual finite volume “magic” happens inside <a class="reference external" href="assembly.html">assembly.py</a>
+that constructs all the derivatives and function values mentioned in the thesis.</p>
+<p>The solution vectors are split up into several parts in order to be able to differentiate between
+different material properties.
+For solution of the energy equation, the vector of unknowns is <code class="docutils literal notranslate"><span class="pre">Tnu</span></code>.
+For an ablative case, the first entry is the recession rate sdot. After that,
+there is an entry for the temperature of each cell node. For an interface, there is an
+additional temperature in-between. See the example below for an ablative case with three layers with 10, 16 and 53 cells
+in each layer respectively.</p>
+<div class="math notranslate nohighlight">
+\[T^\nu = [\dot{s}, T_0, T_1, T_2, ..., T_9, T_{int,0}, T_{10}, T_{11},..., T_{25}, T_{int,1}, T_{26}, ..., T_{78}]^T\]</div>
+<p>The vector of unknown densities <code class="docutils literal notranslate"><span class="pre">rhonu</span></code> simply has all the nodal densities stored:</p>
+<div class="math notranslate nohighlight">
+\[\rho^\nu = [\rho_0, \rho_1, ..., \rho_{78}]^T\]</div>
+<p>In order to get a relation between each layer or interface and the respective cells,
+<code class="docutils literal notranslate"><span class="pre">Tmap</span></code> is used. This dictionary maps string keys to the respective locations in the <code class="docutils literal notranslate"><span class="pre">Tnu</span></code> array:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>sdot -&gt; [0]
+lay0 -&gt; [1, 2, ..., 10]
+int0 -&gt; [11]
+lay1 -&gt; [12, 13, ..., 27]
+int1 -&gt; [28]
+lay2 -&gt; [29, 30, ..., 81]
+</pre></div>
+</div>
+<p>Similarly, <code class="docutils literal notranslate"><span class="pre">rhomap</span></code> looks like this for the used example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">lay0</span> <span class="o">-&gt;</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="mi">9</span><span class="p">]</span>
+<span class="n">lay1</span> <span class="o">-&gt;</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="mi">25</span><span class="p">]</span>
+<span class="n">lay2</span> <span class="o">-&gt;</span> <span class="p">[</span><span class="mi">26</span><span class="p">,</span> <span class="mi">27</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="mi">78</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Thus obtaining temperatures in the last layer would be performed using</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Tnu</span><span class="p">[</span><span class="n">Tmap</span><span class="p">[</span><span class="s2">&quot;lay2&quot;</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">layers</span></code> array contains information about the material and grid
+of each layer. Thus, conductivity of the material in layer with index 1
+at 400 K and virgin weight fraction of 0.3 can simply be accessed using:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">layers</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">material</span><span class="o">.</span><span class="n">k</span><span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>or the coordinate of the cell node with index 5:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">layers</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">zj</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>For assembling the Jacobi matrix and function vector for Newton-Raphson scheme,
+the keys of <code class="docutils literal notranslate"><span class="pre">Tmap</span></code> are used and looped over to add each part associated with it.
+For internal cells (key starts with “lay”) these are conduction, internal energy,
+pyrolysis gas convection and grid movement. For the interface (key starts with “int”),
+this is the equality of conduction fluxes. For “sdot” many things have to be considered
+in addition to the terms for internal cells such as radiation, input heat flux and ablation
+product outflow.</p>
+<p>The function vector is directly stored in <code class="docutils literal notranslate"><span class="pre">fnu</span></code> whereas the individual diagonals of the
+Jacobian <code class="docutils literal notranslate"><span class="pre">J</span></code> are stored in separate arrays. The actual matrix is assembled at the very end,
+as this a lot faster than creating a lot of matrices and adding them together.</p>
+<p>Updating densities is a lot easier, as there is no connection between adjacent cells.
+Thus each cell can be updated individually. All it requires is solving the Arrhenius law,
+which itself depends on density. Thus an implicit scheme is used for solving the
+Arrhenius law, too. For decomposition, there is a minimum decomposition temperature under
+which some materials or material components do not decompose. Thus a smoothstep function that
+scales the decomposition rate between 0 and 1 in a short interval around that temperature
+is used for stability.</p>
+<p>Iteration is done until the temperature solution has converged. If the user has specified
+to write a time step, this is performed with help of the
+<a class="reference external" href="output.html#output.SolutionWriter">output.SolutionWriter</a> instance.</p>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="modules.html" class="btn btn-neutral float-right" title="Code documentation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to Hot-STARSHIP’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Nils Henkel
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

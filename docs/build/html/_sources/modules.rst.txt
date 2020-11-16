@@ -1,6 +1,5 @@
-H_STARSHIP
-==========
-
+Code documentation
+==================
 .. toctree::
    :maxdepth: 4
 
