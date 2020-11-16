@@ -1,3 +1,16 @@
+"""
+The assembly module provides a vast amount of functions for assembling the
+Jacobian matrix and function vector for the implicit Newton-Raphson iteration
+scheme. Functions are available for internal energy for internal and interface
+cells, conductivity flux, pyrolysis gas convection flux, apparent grid movement
+flux as well as several others related to ablation.
+The matrix diagonals (main diagonal and first super- and subdiagonal) are stored
+as Diags instances to assemble the resulting matrix only once for efficiency
+purposes).
+The module also provides functions for updating the nodal densities of ablative
+materials and calculate the resulting pyrolysis gas mass flux that is used for
+assembling the convection flux derivatives and values.
+"""
 import material
 import numpy as np
 from scipy.sparse import dia_matrix, lil_matrix
@@ -15,11 +28,35 @@ sw = 1  # stencil width
 
 class Diags:
     def __init__(self, nVals):
+        """
+        holds the main diagonal and first super- and subdiagonal as arrays
+        for the tridiagonal Jacobian matrix of the temperature iteration
+
+        Parameters
+        ----------
+        nVals : int
+            number of values to hold on each diagonal
+        """
         self.c = np.zeros(nVals)
         self.p1 = np.zeros(nVals+1)
         self.m1 = np.zeros(nVals+1)
 
     def assignFluxes(self, fluxes, signs, offsets):
+        """
+        for a list of fluxes, signs (+1/-1) and offsets (-1/0/+1) the
+        function stores the fluxes with their respective signs in the
+        Diags c, p1 and m1 arrays;
+        offsets refer to the diagonals (0: main, +1: super, -1: sub)
+
+        Parameters
+        ----------
+        fluxes : list
+            list of flux values
+        signs : list
+            list of signs
+        offsets : list
+            list of offsets
+        """
         for flux, sign, offset in zip(fluxes, signs, offsets):
             if offset == 0:
                 self.c += sign*flux
@@ -31,11 +68,30 @@ class Diags:
                 raise ValueError("Unknown offset %i" % offset)
 
     def __iter__(self):
+        """
+        iteration function for native use with Python
+
+        Returns
+        -------
+        zipped list of fluxes and offsets
+        """
         return zip([self.c, self.p1, self.m1], [0, +1, -1])
 
 
 def addVariables(layers):
+    """
+    sets virgin weight fraction initially to one
 
+    Parameters
+    ----------
+    layers : list
+        list of layers
+
+    Returns
+    -------
+    layers : list
+        modified list of layers
+    """
     for layer in layers:
         layer.wv = np.ones(layer.grid.nC)
 
@@ -43,35 +99,72 @@ def addVariables(layers):
 
 
 def createUnknownVectors(layers):
+    """
+    creates vectors of variables (sdot, T and rho) with the respective lengths
+    as well as dictionaries that map each layer to the locations in the
+    T and rho arrays (T contains both, recession rate and temperature)
 
-    # For Tmap
+    Parameters
+    ----------
+    layers : list
+        list of layers
+
+    Returns
+    -------
+    T : np.ndarray
+        temperature iterative solution
+    rho : np.ndarray
+        density iterative solution
+    rhoi : np.ndarray
+        density iterative solution for each component i
+    Tmap : dict
+        maps each layer to the location in T array
+    rhomap : dict
+        maps each layer to the location in rho array
+
+    """
+
+    # For Tmap, maps layer number to the respective indices of Tnu
+    # i.e. sdot -> index 0
+    #      layer 0 -> indices 1 to 10
+    #      layer 1 -> indices 12 to 28
+    #      interface 0 -> index 11
     Tmap = {}
 
+    # Count number of variables to store
     counter = 0
 
+    # One variable for recession rate sdot
     if layers[0].ablative:
         Tmap["sdot"] = counter
         counter += 1
 
+    # Add to Tmap for layers and interfaces
     for layer in layers:
+        # Count number of cells for layer i
         Tmap["lay%i" % layer.number] = np.arange(counter, counter+layer.grid.nC)
         if layer is not layers[-1]:
+            # For an interface, one equation
             Tmap["int%i" % layer.number] = counter+layer.grid.nC
         counter += layer.grid.nC + 1
 
     numTs = Tmap["lay%i" % layers[-1].number][-1] + 1
 
-    # For rhomap
+    # For rhomap, rhomap is similar to Tmap, except that rho only
+    # contains actual cells, but not sdot or collapsed cells such
+    # as material interface cells
     rhomap = {}
 
     counter = 0
 
+    # Count for each layer
     for layer in layers:
         rhomap["lay%i" % layer.number] = np.arange(counter, counter + layer.grid.nC)
         counter += layer.grid.nC
 
     numRhos = rhomap["lay%i" % layers[-1].number][-1] + 1
 
+    # Create empty arrays with the respective identified lengths, rhoi holds densities for each component
     T, rho = np.zeros(numTs), np.zeros(numRhos)
     rhoi = np.zeros((numRhos, layers[0].material.data.nDecomp)) if layers[0].ablative else np.zeros((numRhos, 1))
 
@@ -79,7 +172,27 @@ def createUnknownVectors(layers):
 
 
 def createGlobFlux(flux, length, iStart, iEnd, offset):
+    """
+    fits a flux with a length smaller than the function vector into the
+    function vector by providing start and end loctions
 
+    Parameters
+    ----------
+    flux : np.ndarray
+        flux to fit into function vector
+    length : int
+        length of function vector
+    iStart : int
+        start location
+    iEnd : int
+        end location
+    offset : int
+        diagonal offset
+
+    Returns
+    -------
+
+    """
     globflux = np.zeros(length + sw) if offset != 0 else np.zeros(length)
     if iStart+offset < 0:
         st = 0
@@ -94,10 +207,65 @@ def createGlobFlux(flux, length, iStart, iEnd, offset):
 
 
 def createGlobFluxes(fluxes, length, iStart, iEnd, offsets):
+    """
+    same as createGlobFlux, but just iterates of a list of fluxes and offsets
+
+    Parameters
+    ----------
+    fluxes : list
+        list of fluxes to fit into function vector
+    length : int
+        length of function vector
+    iStart : int
+        start location
+    iEnd : int
+        end location
+    offset : list
+        list of diagonal offsets
+
+    Returns
+    -------
+
+    """
     return (createGlobFlux(flux, length, iStart, iEnd, offset) for flux, offset in zip(fluxes, offsets))
 
 
 def init_T_rho(T, rho, rhoi, Tmap, rhomap, layers, inputvars):
+    """
+    initializes temperature and density arrays with same temperature
+    in all cells and density according to temperature for non-ablative
+    materials or as specified in Decomposition_Kinetics.csv for ablative
+    materials
+
+    Parameters
+    ----------
+    T : np.ndarray
+        temperature array
+    rho : np.ndarray
+        density array
+    rhoi : np.ndarray
+        density components array
+    Tmap : dict
+        temperature map
+    rhomap : dict
+        density map
+    layers : list
+        list of layers
+    inputvars : Input
+        input variables
+
+    Returns
+    -------
+    T : np.ndarray
+        initialized temperature arary
+    rho : np.ndarray
+        initialized density array
+    rhoi : np.ndarray
+        initialized density component array
+    mgas : np.ndarray
+        initialized pyrolysis gas mass flux array
+
+    """
     if inputvars.initType == "Temperature":
         if "sdot" in Tmap:
             T[0] = 0
@@ -125,7 +293,47 @@ def init_T_rho(T, rho, rhoi, Tmap, rhomap, layers, inputvars):
 
 
 def assembleT(layers, gridpre_f, wvpre_f, Tmap, Tnu, Tn, rhomap, rhonu, rhon, mgas, t, tDelta, inputvars):
+    """
+    this functions assembles the Jacobi matrix and function vector
+    at iteration level nu based on number of parameters
 
+    Parameters
+    ----------
+    layers : list
+        list of layers holding material and grid information
+    gridpre_f : Grid
+        grid at previous time level
+    wvpre_f : np.ndarray
+        virgin weight fraction at previous time level
+    Tmap : dict
+        temperature map
+    Tnu : dict
+        temperature solution at previous iteration level nu
+    Tn : np.ndarray
+        temperature solution at previous time level n
+    rhomap : dict
+        density map
+    rhonu : np.ndarray
+        density solution at previous iteration level nu
+    rhon : np.ndarray
+        density solution at previous time level n
+    mgas : np.ndarray
+        pyrolysis gas mass flux
+    t : float
+        time at current time level
+    tDelta : float
+        difference between current and last time level
+    inputvars : Input
+        input values
+
+    Returns
+    -------
+    J : np.ndarray
+        Jacobi matrix of iteration scheme
+    fnu : np.ndarray
+        function vector at iteration level nu of iteration scheme
+
+    """
     J = assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars, t)
 
     fnu = assembleTVector(layers, gridpre_f, wvpre_f, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas, t, tDelta, inputvars)
@@ -134,7 +342,20 @@ def assembleT(layers, gridpre_f, wvpre_f, Tmap, Tnu, Tn, rhomap, rhonu, rhon, mg
 
 
 def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars, t):
+    """
+    assembles the Jacobi matrix by adding flux derivative after flux derivative
+    for each of the fluxes (conduction, pyrolysis gas convection, grid
+    movement, internal energy, etc.)
 
+    Parameters
+    ----------
+    see assembleT
+
+    Returns
+    -------
+    Jcsc : scipy.sparse.csc_matrix
+        Jacobian in Compressed Sparse Column matrix format at iteration level nu
+    """
     diags = Diags(len(Tnu))
     first_col = np.zeros(len(Tnu))
 
@@ -194,7 +415,21 @@ def assembleTMatrix(layers, Tmap, Tnu, rhonu, rhomap, mgas, tDelta, inputvars, t
 
 
 def assembleTVector(layers, gridpre_f, wvpre_f, Tnu, Tn, Tmap, rhonu, rhon, rhomap, mgas, t, tDelta, inputvars):
+    """
+    assembles the function vector by adding flux derivative after flux
+    derivative for each of the fluxes (conduction, pyrolysis gas convection,
+    grid movement, internal energy, etc.)
 
+    Parameters
+    ----------
+    see assembleT
+
+    Returns
+    -------
+    fnu : np.ndarray
+        function vector at iteration level nu
+
+    """
     fnu = np.zeros(len(Tnu))
 
     for key in Tmap:
@@ -238,7 +473,14 @@ def assembleTVector(layers, gridpre_f, wvpre_f, Tnu, Tn, Tmap, rhonu, rhon, rhom
 
 
 def addConductionMatrixInner(diags, first_col, Tnu, Tmap, layers, key, tDelta):
+    """
+    adds conduction derivatives to Jacobian for interal cells, not
+    zero-width interface cells
 
+    Parameters
+    ----------
+    see assembleT
+    """
     # Store some variables
     iStart = Tmap[key][0]
     iEnd = Tmap[key][-1]
@@ -278,8 +520,13 @@ def addConductionMatrixInner(diags, first_col, Tnu, Tmap, layers, key, tDelta):
 
 
 def addConductionMatrixOuter(diags, first_col, Tnu, Tmap, layers, key, tDelta):
+    """
+    adds conduction derivatives to Jacobian for zero-width interface cells
 
-
+    Parameters
+    ----------
+    see assembleT
+    """
     # Store some variables
     iInt = Tmap[key]
     lay_left = layers[int(key[3:])]
@@ -334,7 +581,24 @@ def addConductionMatrixOuter(diags, first_col, Tnu, Tmap, layers, key, tDelta):
 
 
 def addConductionVectorInner(fnu, Tnu, Tmap, layers, key):
+    """
+    adds conduction vector to function vector for interal cells, not
+    zero-width interface cells
 
+    Parameters
+    ----------
+    fnu
+    Tnu
+    Tmap
+    layers
+    key
+
+    Returns
+    -------
+    fnu : np.ndarray
+        modified fnu array
+
+    """
     # Store some variables
     iStart = Tmap[key][0]
     iEnd = Tmap[key][-1]
@@ -357,7 +621,18 @@ def addConductionVectorInner(fnu, Tnu, Tmap, layers, key):
 
 
 def addConductionVectorOuter(fnu, Tnu, Tmap, layers, key):
+    """
+    adds conduction vector to function vector for zero-width interface cells
 
+    Parameters
+    ----------
+    see assembleT
+
+    Returns
+    -------
+    fnu : np.ndarray
+        modified fnu array
+    """
     # Store some variables
     iInt = Tmap[key]
     lay_left = layers[int(key[3:])]
@@ -385,7 +660,13 @@ def addConductionVectorOuter(fnu, Tnu, Tmap, layers, key):
 
 
 def addEnergyMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDelta, inputvars):
+    """
+    adds internal energy derivatives to Jacobian
 
+    Parameters
+    ----------
+    see assembleT
+    """
     # Store some variables
     iStart = Tmap[key][0]
     iEnd = Tmap[key][-1]
@@ -486,7 +767,19 @@ def addEnergyMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, layers, key, tDe
 
 
 def addEnergyVector(fnu, Tnu, Tn, Tmap, rhonu, rhon, rhomap, layers, gridpre_f, wvpre_f, key, tDelta, inputvars):
+    """
+    adds internal energy vector to function vector
 
+    Parameters
+    ----------
+    see assembleT
+
+    Returns
+    -------
+    fnu : np.ndarray
+        modified function vector
+
+    """
     # Store some variables
     iStart = Tmap[key][0]
     iEnd = Tmap[key][-1]
@@ -580,7 +873,13 @@ def addEnergyVector(fnu, Tnu, Tn, Tmap, rhonu, rhon, rhomap, layers, gridpre_f, 
 
 
 def addGridMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, layers, key):
+    """
+    adds grid movement flux derivatives to Jacobian
 
+    Parameters
+    ----------
+    see assembleT
+    """
     lay = layers[int(key[3:])]
     # The deeper layers are not moving, nor is the front layer if we don't have an ablative case
     # Thus we don't have any convection due to grid movement
@@ -632,7 +931,19 @@ def addGridMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, layers, key):
 
 
 def addGridVector(fnu, Tnu, Tmap, rhonu, rhomap, layers, key):
+    """
+    adds grid movement flux vector to function vector
 
+    Parameters
+    ----------
+    see assembleT
+
+    Returns
+    -------
+    fnu : np.ndarray
+        modified function vector
+
+    """
     lay = layers[int(key[3:])]
     # The deeper layers are not moving, nor is the front layer if we don't have an ablative case
     # Thus we don't have any convection due to grid movement
@@ -662,7 +973,14 @@ def addGridVector(fnu, Tnu, Tmap, rhonu, rhomap, layers, key):
 
 
 def addPyroMatrix(diags, Tnu, Tmap, mgas, layers, key, inputvars):
+    """
+    adds pyrolysis gas convection flux derivatives to Jacobian
 
+    Parameters
+    ----------
+    see assembleT
+
+    """
     lay = layers[int(key[3:])]
     # The deeper layers are not pyrolyzing, nor is the front layer if we don't have an ablative case
     # Thus we don't have any convection due to pyrolysis gas
@@ -703,7 +1021,19 @@ def addPyroMatrix(diags, Tnu, Tmap, mgas, layers, key, inputvars):
 
 
 def addPyroVector(fnu, Tnu, Tmap, mgas, layers, key, inputvars):
+    """
+    adds pyrolysis gas convection flux vector to function vector
 
+    Parameters
+    ----------
+    see assembleT
+
+    Returns
+    -------
+    fnu : np.ndarray
+        modified function vector
+
+    """
     lay = layers[int(key[3:])]
     # The deeper layers are not pyrolyzing, nor is the front layer if we don't have an ablative case
     # Thus we don't have any convection due to pyrolysis gas
@@ -739,7 +1069,13 @@ def addPyroVector(fnu, Tnu, Tmap, mgas, layers, key, inputvars):
 
 
 def addWallBlowMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t):
+    """
+    adds ablation product flux derivatives to Jacobian
 
+    Parameters
+    ----------
+    see assembleT
+    """
     # Store some variables
     iStart = Tmap["lay0"][0]
     lay = layers[0]
@@ -774,7 +1110,19 @@ def addWallBlowMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, 
 
 
 def addWallBlowVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t):
+    """
+    adds ablation product flux to function vector
 
+    Parameters
+    ----------
+    see assembleT
+
+    Returns
+    -------
+    fnu : np.ndarray
+        modified function vector
+
+    """
     # Store some variables
     iStart = Tmap["lay0"][0]
     lay = layers[0]
@@ -802,7 +1150,14 @@ def addWallBlowVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
 
 
 def addHeatFluxMatrixAblative(first_col, Tnu, Tmap, rhonu, rhomap, mgas, inputvars, t):
+    """
+    adds the heat flux derivative for ablative cases to Jacobian
+    (for use with "heatflux" BC)
 
+    Parameters
+    ----------
+    see assembleT
+    """
     # Store some variables
     iStart = Tmap["lay0"][0]
     #lay = layers[0]
@@ -831,7 +1186,20 @@ def addHeatFluxMatrixAblative(first_col, Tnu, Tmap, rhonu, rhomap, mgas, inputva
 
 
 def addHeatFluxVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t):
+    """
+    adds the heat flux vector for ablative cases to function vector
+    (for use with "heatflux" BC)
 
+    Parameters
+    ----------
+    see assembleT
+
+    Returns
+    -------
+    fnu : np.ndarray
+        modified function vector
+
+    """
     # Determine first cell
     iStart = Tmap["lay0"][0]
 
@@ -859,7 +1227,14 @@ def addHeatFluxVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t)
 
 
 def addAerodynamicMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t):
+    """
+    adds aerodynamic or recovery enthalpy input heat flux derivatives
+    to Jacobian (for use with "aerodynamic" or "recovery_enthalpy" BCs)
 
+    Parameters
+    ----------
+    see assembleT
+    """
     # Store some variables
     iStart = Tmap["lay0"][0]
     lay = layers[0]
@@ -895,7 +1270,20 @@ def addAerodynamicMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layer
 
 
 def addAerodynamicVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t):
+    """
+    adds aerodynamic or recovery enthalpy input heat flux
+    to function vector (for use with "aerodynamic" or "recovery_enthalpy" BCs)
 
+    Parameters
+    ----------
+    see assembleT
+
+    Returns
+    -------
+    fnu : np.ndarray
+        modified function vector
+
+    """
     # Store some variables
     iStart = Tmap["lay0"][0]
     lay = layers[0]
@@ -923,7 +1311,14 @@ def addAerodynamicVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars,
 
 
 def addBcMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t):
+    """
+    adds zeroth equation derivatives (equality of char mass flux from sdot
+    and Bprime table) to Jacobian
 
+    Parameters
+    ----------
+    see assembleT
+    """
     # Store some variables
     isdot = Tmap["sdot"]
     iStart = Tmap["lay0"][0]
@@ -962,7 +1357,20 @@ def addBcMatrix(diags, first_col, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputv
 
 
 def addBcVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t):
+    """
+    adds zeroth equation (equality of char mass flux from sdot
+    and Bprime table) to function vector
 
+    Parameters
+    ----------
+    see assembleT
+
+    Returns
+    -------
+    fnu : np.ndarray
+        modified function vector
+
+    """
     # Store some variables
     isdot = Tmap["sdot"]
     iStart = Tmap["lay0"][0]
@@ -991,7 +1399,13 @@ def addBcVector(fnu, Tnu, Tmap, rhonu, rhomap, mgas, layers, inputvars, t):
 
 
 def addRadiationMatrix(diags, Tnu, Tmap, layers, inputvars):
+    """
+    adds radiation derivative to Jacobian
 
+    Parameters
+    ----------
+    see assembleT
+    """
     # Store some variables
     lay = layers[0]
     mat = lay.material
@@ -1009,7 +1423,19 @@ def addRadiationMatrix(diags, Tnu, Tmap, layers, inputvars):
 
 
 def addRadiationVector(fnu, Tnu, Tmap, layers, inputvars):
+    """
+    adds radiation to function vector
 
+    Parameters
+    ----------
+    see assembleT
+
+    Returns
+    -------
+    fnu : np.ndarray
+        modified function vector
+
+    """
     # Store some variables
     lay = layers[0]
     mat = lay.material
@@ -1026,6 +1452,21 @@ def addRadiationVector(fnu, Tnu, Tmap, layers, inputvars):
 
 
 def blowFromPhi(phi):
+    """
+    calculates blowing correction value from phi
+    in intervals for numerical stability
+
+    Parameters
+    ----------
+    phi : float
+        phi parameter (see thesis)
+
+    Returns
+    -------
+    blow : float
+        blowing correction value
+
+    """
     if phi < 1.0e-7:
         return 1 - phi/2 + (phi**2)/12
     elif phi < 20:
@@ -1037,7 +1478,27 @@ def blowFromPhi(phi):
 
 
 def dblowdsdotFromPhi(phi, rhow, lam, aerocoef):
+    """
+    calculates derivative of blowing correction with respect to
+    phi variable in intervals
 
+    Parameters
+    ----------
+    phi : float
+        phi variable (see thesis)
+    rhow : float
+        density at wall
+    lam : float
+        transpiration coefficient value
+    aerocoef : float
+        aerodynamic transfer coefficient (rho_e u_e CH_0)
+
+    Returns
+    -------
+    dblowdsdot : float
+        derivative of blowing correction w.r.t. phi
+
+    """
     if phi < 100:
         dphi_dsdot = 2 * lam * rhow / aerocoef
 
@@ -1052,7 +1513,40 @@ def dblowdsdotFromPhi(phi, rhow, lam, aerocoef):
 
 
 def updateRho(lay, rhoimu, rhoin, rhonu, rhomap, Tnu, Tmap, tDelta):
+    """
+    this function updates nodal densities based on the Arrhenius law
+    until convergence is reached; virgin weight fractions and pyrolysis
+    gas mass fluxes are also updated as part of it
 
+    Parameters
+    ----------
+    lay : input.Layer
+        layer instance
+    rhoimu : np.ndarray
+        nodal density components at iteration level mu
+    rhoin : np.ndarray
+        nodal density components at time level n
+    rhonu : np.ndarray
+        nodal densities at iteration level nu
+    rhomap : dict
+        maps layer to indices in rhonu array
+    Tnu : np.ndarray
+        temperature and recession rate solution
+    Tmap : dict
+        maps layer to indices in Tnu array
+    tDelta : float
+        current time step width
+
+    Returns
+    -------
+    rhonu : np.ndarray
+        updated densities
+    rhoimu : np.ndarray
+        updated density components
+    mgas : np.ndarray
+        updated pyrolysis gas mass flux
+
+    """
     key = "lay0"
     Tj = Tnu[Tmap[key]]
     mat = lay.material
@@ -1103,7 +1597,10 @@ Tramp = 5.0
 
 
 def calculateSmoothStep():
-
+    """
+    initializes smoothstep function that is used to gradually activate
+    decomposition at the minimum decomposition temperature for stability
+    """
     Tmin = 0  # Value where smoothing function shall equal 1
     Tmax = Tmin + Tramp  # Value where smoothing function shall equal 0
 
@@ -1125,7 +1622,29 @@ def calculateSmoothStep():
 
 
 def smoothStep(T, Tmin, decomp):
+    """
+    calculates smoothstep function for cells that have temperatures around
+    a minimum decomposition temperature
 
+    Parameters
+    ----------
+    T : np.ndarray
+        temperature array
+    Tmin : np.ndarray
+        minimum temperature for decomposition
+    decomp : np.ndarray
+        array of bools that indicate which components in which cells
+        have different virgin and char densities and are above the
+        minimum decomposition temperature
+
+    Returns
+    -------
+    scales : np.ndarray
+        value between 0 and 1 based on the smoothstep function
+        that changes between theses value between Tmin and
+        Tmin + Tramp
+
+    """
     # Fill arrays
     Tmax = Tmin + Tramp
 
@@ -1143,6 +1662,24 @@ def smoothStep(T, Tmin, decomp):
 
 
 def drhodt(mat, rhoi, Tj):
+    """
+    calculates derivative of density with respect to time
+
+    Parameters
+    ----------
+    mat : material.AblativeMaterial
+        ablative material instance
+    rhoi : np.ndarray
+        component densities
+    Tj : np.ndarray
+        temperature array
+
+    Returns
+    -------
+    val : np.ndarray
+        derivative
+
+    """
     rhoc = np.repeat(mat.data.charRhoFrac0.reshape(1, -1), repeats=len(Tj), axis=0)
     rhov = np.repeat(mat.data.virginRhoFrac0.reshape(1, -1), repeats=len(Tj), axis=0)
     kr = np.repeat(mat.data.kr.reshape(1, -1), repeats=len(Tj), axis=0)
@@ -1159,6 +1696,24 @@ def drhodt(mat, rhoi, Tj):
 
 
 def ddrhodt_drho(mat, rhoi, Tj):
+    """
+    calculates derivative of derivative of density w.r.t. to time w.r.t. density
+
+    Parameters
+    ----------
+    mat : material.AblativeMaterial
+        ablative material instance
+    rhoi : np.ndarray
+        component densities
+    Tj : np.ndarray
+        temperature array
+
+    Returns
+    -------
+    val : np.ndarray
+        derivative
+
+    """
     rhoc = np.repeat(mat.data.charRhoFrac0.reshape(1, -1), repeats=len(Tj), axis=0)
     rhov = np.repeat(mat.data.virginRhoFrac0.reshape(1, -1), repeats=len(Tj), axis=0)
     kr = np.repeat(mat.data.kr.reshape(1, -1), repeats=len(Tj), axis=0)

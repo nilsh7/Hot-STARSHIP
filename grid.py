@@ -1,3 +1,12 @@
+"""
+The grid module provides functions for creating 1D grids at the front of a
+multi-layered TPS and further into the material. An exponential distribution
+is used for FrontGrid and the DeepGrid cells are stretched or shrunk
+to fit into the layer.
+In addition, a plot function visualizes the generated grid. FrontGrids can
+be updated so that the surface conforms with the actual TPS surface
+during ablation.
+"""
 import numpy as np
 from scipy.optimize import newton
 import matplotlib.pyplot as plt
@@ -72,7 +81,8 @@ initializes grid with None values
 class FrontGrid(Grid):
 
     def __init__(self, length, l0, maxgrowth=1.1):
-        """creates grid at front of TPS
+        """creates grid at front of TPS with an exponential variation
+        of cell volumes
 
         Parameters
         ----------
@@ -127,7 +137,8 @@ class FrontGrid(Grid):
 class DeepGrid(Grid):
 
     def __init__(self, length, lIni, z0):
-        """creates grid at inside layer of TPS
+        """creates grid at inside layer of TPS fit so that the cell volume
+        variation is as little as possible
 
         Parameters
         ----------

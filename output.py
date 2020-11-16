@@ -1,3 +1,11 @@
+"""
+The output module provides function related to producing output from Hot-STARSHIP,
+but also reading that output again and plotting the results. For this, the
+SolutionWriter object writes an empty .csv file on initialization and can be called
+in the main function for output. The SolutionReader object reads said .csv file
+and uses the .plot functions to display temperature, extent of reaction, density,
+pyrolysis gas and char mass flux etc.
+"""
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path

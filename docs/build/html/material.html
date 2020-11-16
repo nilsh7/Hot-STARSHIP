@@ -163,6 +163,15 @@
             
   <div class="section" id="module-material">
 <span id="material-module"></span><h1>material module<a class="headerlink" href="#module-material" title="Permalink to this headline">¶</a></h1>
+<p>The material module provides function related to reading and providing material data.
+It reads material data in form of .csv files in a set directory structure.
+For ablative materials, it runs Mutation++ to generate B’ tables and pyrolysis gas
+enthalpy data. The Material objects hold piecewise linear splines of conductivity,
+heat capacity, emissivity and internal energy as a function of temperature and
+virgin weight fraction.
+It can be invoked with the main function at the bottom to produce material properties
+.matp files that are especially useful for ablative materials by saving the time to
+run Mutation++ on each run or use these files on Windows machines.</p>
 <dl class="py class">
 <dt id="material.AblativeMaterial">
 <em class="property">class </em><code class="sig-prename descclassname">material.</code><code class="sig-name descname">AblativeMaterial</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#material.AblativeMaterial" title="Permalink to this definition">¶</a></dt>

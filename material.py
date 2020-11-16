@@ -1,3 +1,14 @@
+"""
+The material module provides function related to reading and providing material data.
+It reads material data in form of .csv files in a set directory structure.
+For ablative materials, it runs Mutation++ to generate B' tables and pyrolysis gas
+enthalpy data. The Material objects hold piecewise linear splines of conductivity,
+heat capacity, emissivity and internal energy as a function of temperature and
+virgin weight fraction.
+It can be invoked with the main function at the bottom to produce material properties
+.matp files that are especially useful for ablative materials by saving the time to
+run Mutation++ on each run or use these files on Windows machines.
+"""
 from pathlib import Path
 import pandas as pd
 import warnings

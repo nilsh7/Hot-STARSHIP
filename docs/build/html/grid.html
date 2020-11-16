@@ -163,11 +163,19 @@
             
   <div class="section" id="module-grid">
 <span id="grid-module"></span><h1>grid module<a class="headerlink" href="#module-grid" title="Permalink to this headline">¶</a></h1>
+<p>The grid module provides functions for creating 1D grids at the front of a
+multi-layered TPS and further into the material. An exponential distribution
+is used for FrontGrid and the DeepGrid cells are stretched or shrunk
+to fit into the layer.
+In addition, a plot function visualizes the generated grid. FrontGrids can
+be updated so that the surface conforms with the actual TPS surface
+during ablation.</p>
 <dl class="py class">
 <dt id="grid.DeepGrid">
 <em class="property">class </em><code class="sig-prename descclassname">grid.</code><code class="sig-name descname">DeepGrid</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">length</span></em>, <em class="sig-param"><span class="n">lIni</span></em>, <em class="sig-param"><span class="n">z0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#grid.DeepGrid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#grid.Grid" title="grid.Grid"><code class="xref py py-class docutils literal notranslate"><span class="pre">grid.Grid</span></code></a></p>
-<p>creates grid at inside layer of TPS</p>
+<p>creates grid at inside layer of TPS fit so that the cell volume
+variation is as little as possible</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -184,7 +192,8 @@ taken as thickness of first volume</p></li>
 <dt id="grid.FrontGrid">
 <em class="property">class </em><code class="sig-prename descclassname">grid.</code><code class="sig-name descname">FrontGrid</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">length</span></em>, <em class="sig-param"><span class="n">l0</span></em>, <em class="sig-param"><span class="n">maxgrowth</span><span class="o">=</span><span class="default_value">1.1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#grid.FrontGrid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#grid.Grid" title="grid.Grid"><code class="xref py py-class docutils literal notranslate"><span class="pre">grid.Grid</span></code></a></p>
-<p>creates grid at front of TPS</p>
+<p>creates grid at front of TPS with an exponential variation
+of cell volumes</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">

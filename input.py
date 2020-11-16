@@ -1,3 +1,9 @@
+"""
+The input module reads the input .xml file and creates an Input instance holding the
+values from the .xml file as well as a layers array that for each layer holds
+information about each layer such as the material with its properties as well as the
+grid.
+"""
 import xml.etree.ElementTree as ET
 import dill
 import material as mat_module

@@ -1,3 +1,8 @@
+"""
+The hotstarship module is the main module containing the actual function
+hotstarship that is the realization of the solving procedure layed out
+in Nils Henkel's master thesis.
+"""
 import argparse
 import input
 import numpy as np

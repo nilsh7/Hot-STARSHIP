@@ -162,6 +162,12 @@
             
   <div class="section" id="module-output">
 <span id="output-module"></span><h1>output module<a class="headerlink" href="#module-output" title="Permalink to this headline">¶</a></h1>
+<p>The output module provides function related to producing output from Hot-STARSHIP,
+but also reading that output again and plotting the results. For this, the
+SolutionWriter object writes an empty .csv file on initialization and can be called
+in the main function for output. The SolutionReader object reads said .csv file
+and uses the .plot functions to display temperature, extent of reaction, density,
+pyrolysis gas and char mass flux etc.</p>
 <dl class="py class">
 <dt id="output.SolutionReader">
 <em class="property">class </em><code class="sig-prename descclassname">output.</code><code class="sig-name descname">SolutionReader</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file</span></em><span class="sig-paren">)</span><a class="headerlink" href="#output.SolutionReader" title="Permalink to this definition">¶</a></dt>

@@ -163,181 +163,608 @@
             
   <div class="section" id="module-assembly">
 <span id="assembly-module"></span><h1>assembly module<a class="headerlink" href="#module-assembly" title="Permalink to this headline">¶</a></h1>
+<p>The assembly module provides a vast amount of functions for assembling the
+Jacobian matrix and function vector for the implicit Newton-Raphson iteration
+scheme. Functions are available for internal energy for internal and interface
+cells, conductivity flux, pyrolysis gas convection flux, apparent grid movement
+flux as well as several others related to ablation.
+The matrix diagonals (main diagonal and first super- and subdiagonal) are stored
+as Diags instances to assemble the resulting matrix only once for efficiency
+purposes).
+The module also provides functions for updating the nodal densities of ablative
+materials and calculate the resulting pyrolysis gas mass flux that is used for
+assembling the convection flux derivatives and values.</p>
 <dl class="py class">
 <dt id="assembly.Diags">
 <em class="property">class </em><code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">Diags</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nVals</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.Diags" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>holds the main diagonal and first super- and subdiagonal as arrays
+for the tridiagonal Jacobian matrix of the temperature iteration</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nVals</strong> (<em>int</em>) – number of values to hold on each diagonal</p>
+</dd>
+</dl>
 <dl class="py method">
 <dt id="assembly.Diags.assignFluxes">
 <code class="sig-name descname">assignFluxes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fluxes</span></em>, <em class="sig-param"><span class="n">signs</span></em>, <em class="sig-param"><span class="n">offsets</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.Diags.assignFluxes" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>for a list of fluxes, signs (+1/-1) and offsets (-1/0/+1) the
+function stores the fluxes with their respective signs in the
+Diags c, p1 and m1 arrays;
+offsets refer to the diagonals (0: main, +1: super, -1: sub)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fluxes</strong> (<em>list</em>) – list of flux values</p></li>
+<li><p><strong>signs</strong> (<em>list</em>) – list of signs</p></li>
+<li><p><strong>offsets</strong> (<em>list</em>) – list of offsets</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addAerodynamicMatrix">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addAerodynamicMatrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">diags</span></em>, <em class="sig-param"><span class="n">first_col</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">inputvars</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addAerodynamicMatrix" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>adds aerodynamic or recovery enthalpy input heat flux derivatives
+to Jacobian (for use with “aerodynamic” or “recovery_enthalpy” BCs)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addAerodynamicVector">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addAerodynamicVector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fnu</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">inputvars</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addAerodynamicVector" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>adds aerodynamic or recovery enthalpy input heat flux
+to function vector (for use with “aerodynamic” or “recovery_enthalpy” BCs)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>fnu</strong> – modified function vector</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addBcMatrix">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addBcMatrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">diags</span></em>, <em class="sig-param"><span class="n">first_col</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">inputvars</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addBcMatrix" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>adds zeroth equation derivatives (equality of char mass flux from sdot
+and Bprime table) to Jacobian</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addBcVector">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addBcVector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fnu</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">inputvars</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addBcVector" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>adds zeroth equation (equality of char mass flux from sdot
+and Bprime table) to function vector</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>fnu</strong> – modified function vector</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addConductionMatrixInner">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addConductionMatrixInner</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">diags</span></em>, <em class="sig-param"><span class="n">first_col</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">tDelta</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addConductionMatrixInner" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>adds conduction derivatives to Jacobian for interal cells, not
+zero-width interface cells</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addConductionMatrixOuter">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addConductionMatrixOuter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">diags</span></em>, <em class="sig-param"><span class="n">first_col</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">tDelta</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addConductionMatrixOuter" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>adds conduction derivatives to Jacobian for zero-width interface cells</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addConductionVectorInner">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addConductionVectorInner</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fnu</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">key</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addConductionVectorInner" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>adds conduction vector to function vector for interal cells, not
+zero-width interface cells</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fnu</strong> – </p></li>
+<li><p><strong>Tnu</strong> – </p></li>
+<li><p><strong>Tmap</strong> – </p></li>
+<li><p><strong>layers</strong> – </p></li>
+<li><p><strong>key</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>fnu</strong> – modified fnu array</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addConductionVectorOuter">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addConductionVectorOuter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fnu</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">key</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addConductionVectorOuter" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>adds conduction vector to function vector for zero-width interface cells</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>fnu</strong> – modified fnu array</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addEnergyMatrix">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addEnergyMatrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">diags</span></em>, <em class="sig-param"><span class="n">first_col</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">tDelta</span></em>, <em class="sig-param"><span class="n">inputvars</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addEnergyMatrix" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>adds internal energy derivatives to Jacobian</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addEnergyVector">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addEnergyVector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fnu</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tn</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhon</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">gridpre_f</span></em>, <em class="sig-param"><span class="n">wvpre_f</span></em>, <em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">tDelta</span></em>, <em class="sig-param"><span class="n">inputvars</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addEnergyVector" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>adds internal energy vector to function vector</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>fnu</strong> – modified function vector</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addGridMatrix">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addGridMatrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">diags</span></em>, <em class="sig-param"><span class="n">first_col</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">key</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addGridMatrix" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>adds grid movement flux derivatives to Jacobian</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addGridVector">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addGridVector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fnu</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">key</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addGridVector" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>adds grid movement flux vector to function vector</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>fnu</strong> – modified function vector</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addHeatFluxMatrixAblative">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addHeatFluxMatrixAblative</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">first_col</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">inputvars</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addHeatFluxMatrixAblative" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>adds the heat flux derivative for ablative cases to Jacobian
+(for use with “heatflux” BC)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addHeatFluxVector">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addHeatFluxVector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fnu</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">inputvars</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addHeatFluxVector" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>adds the heat flux vector for ablative cases to function vector
+(for use with “heatflux” BC)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>fnu</strong> – modified function vector</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addPyroMatrix">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addPyroMatrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">diags</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">inputvars</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addPyroMatrix" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>adds pyrolysis gas convection flux derivatives to Jacobian</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addPyroVector">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addPyroVector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fnu</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">inputvars</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addPyroVector" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>adds pyrolysis gas convection flux vector to function vector</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>fnu</strong> – modified function vector</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addRadiationMatrix">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addRadiationMatrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">diags</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">inputvars</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addRadiationMatrix" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>adds radiation derivative to Jacobian</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addRadiationVector">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addRadiationVector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fnu</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">inputvars</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addRadiationVector" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>adds radiation to function vector</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>fnu</strong> – modified function vector</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addVariables">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addVariables</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layers</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addVariables" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>sets virgin weight fraction initially to one</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>layers</strong> (<em>list</em>) – list of layers</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>layers</strong> – modified list of layers</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addWallBlowMatrix">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addWallBlowMatrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">diags</span></em>, <em class="sig-param"><span class="n">first_col</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">inputvars</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addWallBlowMatrix" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>adds ablation product flux derivatives to Jacobian</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.addWallBlowVector">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">addWallBlowVector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fnu</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">inputvars</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.addWallBlowVector" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>adds ablation product flux to function vector</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>fnu</strong> – modified function vector</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.assembleT">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">assembleT</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">gridpre_f</span></em>, <em class="sig-param"><span class="n">wvpre_f</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tn</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhon</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">tDelta</span></em>, <em class="sig-param"><span class="n">inputvars</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.assembleT" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>this functions assembles the Jacobi matrix and function vector
+at iteration level nu based on number of parameters</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>layers</strong> (<em>list</em>) – list of layers holding material and grid information</p></li>
+<li><p><strong>gridpre_f</strong> (<a class="reference internal" href="grid.html#grid.Grid" title="grid.Grid"><em>Grid</em></a>) – grid at previous time level</p></li>
+<li><p><strong>wvpre_f</strong> (<em>np.ndarray</em>) – virgin weight fraction at previous time level</p></li>
+<li><p><strong>Tmap</strong> (<em>dict</em>) – temperature map</p></li>
+<li><p><strong>Tnu</strong> (<em>dict</em>) – temperature solution at previous iteration level nu</p></li>
+<li><p><strong>Tn</strong> (<em>np.ndarray</em>) – temperature solution at previous time level n</p></li>
+<li><p><strong>rhomap</strong> (<em>dict</em>) – density map</p></li>
+<li><p><strong>rhonu</strong> (<em>np.ndarray</em>) – density solution at previous iteration level nu</p></li>
+<li><p><strong>rhon</strong> (<em>np.ndarray</em>) – density solution at previous time level n</p></li>
+<li><p><strong>mgas</strong> (<em>np.ndarray</em>) – pyrolysis gas mass flux</p></li>
+<li><p><strong>t</strong> (<em>float</em>) – time at current time level</p></li>
+<li><p><strong>tDelta</strong> (<em>float</em>) – difference between current and last time level</p></li>
+<li><p><strong>inputvars</strong> (<a class="reference internal" href="input.html#input.Input" title="input.Input"><em>Input</em></a>) – input values</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>J</strong> (<em>np.ndarray</em>) – Jacobi matrix of iteration scheme</p></li>
+<li><p><strong>fnu</strong> (<em>np.ndarray</em>) – function vector at iteration level nu of iteration scheme</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.assembleTMatrix">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">assembleTMatrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">tDelta</span></em>, <em class="sig-param"><span class="n">inputvars</span></em>, <em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.assembleTMatrix" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>assembles the Jacobi matrix by adding flux derivative after flux derivative
+for each of the fluxes (conduction, pyrolysis gas convection, grid
+movement, internal energy, etc.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>Jcsc</strong> – Jacobian in Compressed Sparse Column matrix format at iteration level nu</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>scipy.sparse.csc_matrix</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.assembleTVector">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">assembleTVector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">gridpre_f</span></em>, <em class="sig-param"><span class="n">wvpre_f</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tn</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhon</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">mgas</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">tDelta</span></em>, <em class="sig-param"><span class="n">inputvars</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.assembleTVector" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>assembles the function vector by adding flux derivative after flux
+derivative for each of the fluxes (conduction, pyrolysis gas convection,
+grid movement, internal energy, etc.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>assembleT</strong> (<em>see</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>fnu</strong> – function vector at iteration level nu</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.blowFromPhi">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">blowFromPhi</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">phi</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.blowFromPhi" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>calculates blowing correction value from phi
+in intervals for numerical stability</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>phi</strong> (<em>float</em>) – phi parameter (see thesis)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>blow</strong> – blowing correction value</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.calculateSmoothStep">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">calculateSmoothStep</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#assembly.calculateSmoothStep" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>initializes smoothstep function that is used to gradually activate
+decomposition at the minimum decomposition temperature for stability</p>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.createGlobFlux">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">createGlobFlux</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">flux</span></em>, <em class="sig-param"><span class="n">length</span></em>, <em class="sig-param"><span class="n">iStart</span></em>, <em class="sig-param"><span class="n">iEnd</span></em>, <em class="sig-param"><span class="n">offset</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.createGlobFlux" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>fits a flux with a length smaller than the function vector into the
+function vector by providing start and end loctions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flux</strong> (<em>np.ndarray</em>) – flux to fit into function vector</p></li>
+<li><p><strong>length</strong> (<em>int</em>) – length of function vector</p></li>
+<li><p><strong>iStart</strong> (<em>int</em>) – start location</p></li>
+<li><p><strong>iEnd</strong> (<em>int</em>) – end location</p></li>
+<li><p><strong>offset</strong> (<em>int</em>) – diagonal offset</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.createGlobFluxes">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">createGlobFluxes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fluxes</span></em>, <em class="sig-param"><span class="n">length</span></em>, <em class="sig-param"><span class="n">iStart</span></em>, <em class="sig-param"><span class="n">iEnd</span></em>, <em class="sig-param"><span class="n">offsets</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.createGlobFluxes" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>same as createGlobFlux, but just iterates of a list of fluxes and offsets</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fluxes</strong> (<em>list</em>) – list of fluxes to fit into function vector</p></li>
+<li><p><strong>length</strong> (<em>int</em>) – length of function vector</p></li>
+<li><p><strong>iStart</strong> (<em>int</em>) – start location</p></li>
+<li><p><strong>iEnd</strong> (<em>int</em>) – end location</p></li>
+<li><p><strong>offset</strong> (<em>list</em>) – list of diagonal offsets</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.createUnknownVectors">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">createUnknownVectors</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">layers</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.createUnknownVectors" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>creates vectors of variables (sdot, T and rho) with the respective lengths
+as well as dictionaries that map each layer to the locations in the
+T and rho arrays (T contains both, recession rate and temperature)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>layers</strong> (<em>list</em>) – list of layers</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>T</strong> (<em>np.ndarray</em>) – temperature iterative solution</p></li>
+<li><p><strong>rho</strong> (<em>np.ndarray</em>) – density iterative solution</p></li>
+<li><p><strong>rhoi</strong> (<em>np.ndarray</em>) – density iterative solution for each component i</p></li>
+<li><p><strong>Tmap</strong> (<em>dict</em>) – maps each layer to the location in T array</p></li>
+<li><p><strong>rhomap</strong> (<em>dict</em>) – maps each layer to the location in rho array</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.dblowdsdotFromPhi">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">dblowdsdotFromPhi</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">phi</span></em>, <em class="sig-param"><span class="n">rhow</span></em>, <em class="sig-param"><span class="n">lam</span></em>, <em class="sig-param"><span class="n">aerocoef</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.dblowdsdotFromPhi" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>calculates derivative of blowing correction with respect to
+phi variable in intervals</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>phi</strong> (<em>float</em>) – phi variable (see thesis)</p></li>
+<li><p><strong>rhow</strong> (<em>float</em>) – density at wall</p></li>
+<li><p><strong>lam</strong> (<em>float</em>) – transpiration coefficient value</p></li>
+<li><p><strong>aerocoef</strong> (<em>float</em>) – aerodynamic transfer coefficient (rho_e u_e CH_0)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>dblowdsdot</strong> – derivative of blowing correction w.r.t. phi</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.ddrhodt_drho">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">ddrhodt_drho</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mat</span></em>, <em class="sig-param"><span class="n">rhoi</span></em>, <em class="sig-param"><span class="n">Tj</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.ddrhodt_drho" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>calculates derivative of derivative of density w.r.t. to time w.r.t. density</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mat</strong> (<a class="reference internal" href="material.html#material.AblativeMaterial" title="material.AblativeMaterial"><em>material.AblativeMaterial</em></a>) – ablative material instance</p></li>
+<li><p><strong>rhoi</strong> (<em>np.ndarray</em>) – component densities</p></li>
+<li><p><strong>Tj</strong> (<em>np.ndarray</em>) – temperature array</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>val</strong> – derivative</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.drhodt">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">drhodt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mat</span></em>, <em class="sig-param"><span class="n">rhoi</span></em>, <em class="sig-param"><span class="n">Tj</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.drhodt" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>calculates derivative of density with respect to time</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mat</strong> (<a class="reference internal" href="material.html#material.AblativeMaterial" title="material.AblativeMaterial"><em>material.AblativeMaterial</em></a>) – ablative material instance</p></li>
+<li><p><strong>rhoi</strong> (<em>np.ndarray</em>) – component densities</p></li>
+<li><p><strong>Tj</strong> (<em>np.ndarray</em>) – temperature array</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>val</strong> – derivative</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.init_T_rho">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">init_T_rho</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="n">rho</span></em>, <em class="sig-param"><span class="n">rhoi</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">layers</span></em>, <em class="sig-param"><span class="n">inputvars</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.init_T_rho" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>initializes temperature and density arrays with same temperature
+in all cells and density according to temperature for non-ablative
+materials or as specified in Decomposition_Kinetics.csv for ablative
+materials</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>T</strong> (<em>np.ndarray</em>) – temperature array</p></li>
+<li><p><strong>rho</strong> (<em>np.ndarray</em>) – density array</p></li>
+<li><p><strong>rhoi</strong> (<em>np.ndarray</em>) – density components array</p></li>
+<li><p><strong>Tmap</strong> (<em>dict</em>) – temperature map</p></li>
+<li><p><strong>rhomap</strong> (<em>dict</em>) – density map</p></li>
+<li><p><strong>layers</strong> (<em>list</em>) – list of layers</p></li>
+<li><p><strong>inputvars</strong> (<a class="reference internal" href="input.html#input.Input" title="input.Input"><em>Input</em></a>) – input variables</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>T</strong> (<em>np.ndarray</em>) – initialized temperature arary</p></li>
+<li><p><strong>rho</strong> (<em>np.ndarray</em>) – initialized density array</p></li>
+<li><p><strong>rhoi</strong> (<em>np.ndarray</em>) – initialized density component array</p></li>
+<li><p><strong>mgas</strong> (<em>np.ndarray</em>) – initialized pyrolysis gas mass flux array</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.m1">
@@ -362,12 +789,58 @@
 <dl class="py function">
 <dt id="assembly.smoothStep">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">smoothStep</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="n">Tmin</span></em>, <em class="sig-param"><span class="n">decomp</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.smoothStep" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>calculates smoothstep function for cells that have temperatures around
+a minimum decomposition temperature</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>T</strong> (<em>np.ndarray</em>) – temperature array</p></li>
+<li><p><strong>Tmin</strong> (<em>np.ndarray</em>) – minimum temperature for decomposition</p></li>
+<li><p><strong>decomp</strong> (<em>np.ndarray</em>) – array of bools that indicate which components in which cells
+have different virgin and char densities and are above the
+minimum decomposition temperature</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>scales</strong> – value between 0 and 1 based on the smoothstep function
+that changes between theses value between Tmin and
+Tmin + Tramp</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="assembly.updateRho">
 <code class="sig-prename descclassname">assembly.</code><code class="sig-name descname">updateRho</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">lay</span></em>, <em class="sig-param"><span class="n">rhoimu</span></em>, <em class="sig-param"><span class="n">rhoin</span></em>, <em class="sig-param"><span class="n">rhonu</span></em>, <em class="sig-param"><span class="n">rhomap</span></em>, <em class="sig-param"><span class="n">Tnu</span></em>, <em class="sig-param"><span class="n">Tmap</span></em>, <em class="sig-param"><span class="n">tDelta</span></em><span class="sig-paren">)</span><a class="headerlink" href="#assembly.updateRho" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>this function updates nodal densities based on the Arrhenius law
+until convergence is reached; virgin weight fractions and pyrolysis
+gas mass fluxes are also updated as part of it</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lay</strong> (<a class="reference internal" href="input.html#input.Layer" title="input.Layer"><em>input.Layer</em></a>) – layer instance</p></li>
+<li><p><strong>rhoimu</strong> (<em>np.ndarray</em>) – nodal density components at iteration level mu</p></li>
+<li><p><strong>rhoin</strong> (<em>np.ndarray</em>) – nodal density components at time level n</p></li>
+<li><p><strong>rhonu</strong> (<em>np.ndarray</em>) – nodal densities at iteration level nu</p></li>
+<li><p><strong>rhomap</strong> (<em>dict</em>) – maps layer to indices in rhonu array</p></li>
+<li><p><strong>Tnu</strong> (<em>np.ndarray</em>) – temperature and recession rate solution</p></li>
+<li><p><strong>Tmap</strong> (<em>dict</em>) – maps layer to indices in Tnu array</p></li>
+<li><p><strong>tDelta</strong> (<em>float</em>) – current time step width</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>rhonu</strong> (<em>np.ndarray</em>) – updated densities</p></li>
+<li><p><strong>rhoimu</strong> (<em>np.ndarray</em>) – updated density components</p></li>
+<li><p><strong>mgas</strong> (<em>np.ndarray</em>) – updated pyrolysis gas mass flux</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
 
 </div>
 
