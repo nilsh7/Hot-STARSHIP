@@ -1,4 +1,10 @@
 """
+Copyright (c) 2023, Nils Henkel
+All rights reserved.
+
+This source code is licensed under the GPL-3.0 license found in the
+LICENSE.md file in the root directory of this source tree. 
+
 The hotstarship module is the main module containing the actual function
 hotstarship that is the realization of the solving procedure layed out
 in Nils Henkel's master thesis.
