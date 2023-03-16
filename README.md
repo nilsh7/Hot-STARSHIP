@@ -11,7 +11,7 @@ Some features include:
 - recovery enthalpy or heat flux boundary conditions
 - only adiabatic back face boundary condition (so far)
 
-The code was developed as part of the master thesis of [Nils Henkel](https://www.linkedin.com/in/nilshenkel/) at the [Institute of Structural Mechanics and Lightweight Design](https://www.sla.rwth-aachen.de/cms/~fald/Institut-fuer-Strukturmechanik-und-Leichtbau/?lidx=1) at RWTH Aachen University. 
+The code was developed as part of the master thesis of [Nils Henkel](https://www.linkedin.com/in/nilshenkel/) at the [Institute of Structural Mechanics and Lightweight Design](https://www.sla.rwth-aachen.de/cms/~fald/Institut-fuer-Strukturmechanik-und-Leichtbau/?lidx=1) (SLA) at RWTH Aachen University. It is now being maintained by [Stefano Piacquadio](mailto:stefano.piacquadio@sla.rwth-aachen.de) and the Institute of Structural Mechanics and Lightweight Design.
 
 # Requirements
 
